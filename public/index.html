@@ -40,51 +40,73 @@
 
         <section id="cours" class="page">
             <div class="container">
-                <h2>Mes Cours</h2>
-                <div class="course-grid">
-                    <div class="course-card" data-course="fonctionnement-entreprise">
-                        <h3>Synthèse du fonctionnement de l'entreprise</h3>
-                        <p>Définitions, typologie, classification et facteurs de différenciation</p>
-                        <button class="btn-view" onclick="showCourse('fonctionnement-entreprise')">Voir le cours</button>
-                    </div>
-                    <div class="course-card">
-                        <h3>Cours 2</h3>
-                        <p>Description du deuxième cours</p>
-                        <button class="btn-view">Voir le cours</button>
-                    </div>
-                    <div class="course-card">
-                        <h3>Cours 3</h3>
-                        <p>Description du troisième cours</p>
-                        <button class="btn-view">Voir le cours</button>
-                    </div>
+                <div class="courses-header">
+                    <h2>Mes Cours</h2>
+                    <button class="btn-primary" onclick="showPage('ajouter')">+ Ajouter un cours</button>
+                </div>
+                <div class="course-controls">
+                    <input type="text" id="course-search" placeholder="Rechercher un cours..." class="search-input">
+                    <select id="course-filter" class="filter-select">
+                        <option value="">Tous les sujets</option>
+                    </select>
+                </div>
+                <div class="course-grid" id="course-grid">
+                    <!-- Les cours seront générés dynamiquement -->
                 </div>
             </div>
         </section>
 
         <section id="ajouter" class="page">
             <div class="container">
-                <h2>Ajouter un nouveau cours</h2>
-                <form id="add-course-form">
+                <h2 id="form-title">Ajouter un nouveau cours</h2>
+                <form id="course-form">
+                    <input type="hidden" id="course-id">
                     <div class="form-group">
-                        <label for="course-title">Titre du cours</label>
-                        <input type="text" id="course-title" required>
+                        <label for="course-title">Titre du cours *</label>
+                        <input type="text" id="course-title" required placeholder="Ex: Synthèse du fonctionnement de l'entreprise">
+                    </div>
+                    <div class="form-group">
+                        <label for="course-subject">Sujet *</label>
+                        <input type="text" id="course-subject" required placeholder="Ex: Économie d'entreprise">
                     </div>
                     <div class="form-group">
                         <label for="course-description">Description</label>
-                        <textarea id="course-description" rows="3"></textarea>
+                        <textarea id="course-description" rows="3" placeholder="Brève description du cours..."></textarea>
                     </div>
                     <div class="form-group">
-                        <label for="course-content">Contenu du cours</label>
-                        <textarea id="course-content" rows="10"></textarea>
+                        <label>Contenu du cours *</label>
+                        <div class="editor-toolbar">
+                            <button type="button" onclick="formatText('bold')" title="Gras"><strong>B</strong></button>
+                            <button type="button" onclick="formatText('italic')" title="Italique"><em>I</em></button>
+                            <button type="button" onclick="formatText('underline')" title="Souligné"><u>U</u></button>
+                            <button type="button" onclick="formatText('insertUnorderedList')" title="Liste à puces">•</button>
+                            <button type="button" onclick="formatText('insertOrderedList')" title="Liste numérotée">1.</button>
+                            <button type="button" onclick="insertHeading()" title="Titre">H</button>
+                            <button type="button" onclick="insertLink()" title="Lien">🔗</button>
+                            <button type="button" onclick="toggleHtmlView()" title="Vue HTML">HTML</button>
+                        </div>
+                        <div class="editor-container">
+                            <div id="course-editor" contenteditable="true" class="rich-editor"></div>
+                            <textarea id="course-html" style="display:none;" rows="15" placeholder="Code HTML..."></textarea>
+                        </div>
                     </div>
-                    <button type="submit" class="btn-primary">Ajouter le cours</button>
+                    <div class="form-actions">
+                        <button type="button" onclick="cancelForm()" class="btn-cancel">Annuler</button>
+                        <button type="submit" class="btn-primary">Enregistrer le cours</button>
+                    </div>
                 </form>
             </div>
         </section>
 
         <section id="course-detail" class="page">
             <div class="container">
-                <button onclick="backToCourses()" class="btn-back">← Retour aux cours</button>
+                <div class="course-detail-header">
+                    <button onclick="backToCourses()" class="btn-back">← Retour aux cours</button>
+                    <div class="course-actions">
+                        <button onclick="editCourse()" class="btn-edit">✏️ Modifier</button>
+                        <button onclick="deleteCourse()" class="btn-delete">🗑️ Supprimer</button>
+                    </div>
+                </div>
                 <div id="course-content"></div>
             </div>
         </section>

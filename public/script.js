@@ -1,10 +1,11 @@
-const courses = {
-    'fonctionnement-entreprise': {
+let courses = [
+    {
+        id: 1,
         title: 'Synthèse du fonctionnement de l\'entreprise',
+        subject: 'Économie d\'entreprise',
+        description: 'Définitions, typologie, classification et facteurs de différenciation',
         content: `
             <div class="course-detail-content">
-                <h2>Synthèse du fonctionnement de l'entreprise</h2>
-                
                 <div class="section">
                     <h3>Définitions de l'entreprise</h3>
                     <p>L'entreprise peut être abordée sous deux angles principaux :</p>
@@ -51,7 +52,10 @@ const courses = {
             </div>
         `
     }
-};
+];
+
+let currentCourseId = null;
+let isHtmlView = false;
 
 function showPage(pageId) {
     const pages = document.querySelectorAll('.page');
@@ -61,18 +65,144 @@ function showPage(pageId) {
     if (targetPage) {
         targetPage.classList.add('active');
     }
+    
+    if (pageId === 'cours') {
+        renderCourses();
+        updateFilters();
+    }
 }
 
-function showCourse(courseId) {
-    const course = courses[courseId];
+function renderCourses() {
+    const grid = document.getElementById('course-grid');
+    const searchTerm = document.getElementById('course-search').value.toLowerCase();
+    const subjectFilter = document.getElementById('course-filter').value;
+    
+    let filteredCourses = courses.filter(course => {
+        const matchesSearch = course.title.toLowerCase().includes(searchTerm) || 
+                             course.subject.toLowerCase().includes(searchTerm) ||
+                             course.description.toLowerCase().includes(searchTerm);
+        const matchesSubject = !subjectFilter || course.subject === subjectFilter;
+        return matchesSearch && matchesSubject;
+    });
+    
+    grid.innerHTML = filteredCourses.map(course => `
+        <div class="course-card" data-course-id="${course.id}">
+            <h3>${course.title}</h3>
+            <span class="course-subject-tag">${course.subject}</span>
+            <p>${course.description}</p>
+            <div class="course-card-actions">
+                <button class="btn-view" onclick="viewCourse(${course.id})">Voir le cours</button>
+            </div>
+        </div>
+    `).join('');
+    
+    // Mettre à jour les statistiques
+    document.querySelectorAll('.stat-card h3')[0].textContent = courses.length;
+    document.querySelectorAll('.stat-card h3')[1].textContent = courses.reduce((sum, course) => 
+        sum + (course.content.match(/<h3>/g) || []).length, 0
+    );
+}
+
+function updateFilters() {
+    const subjects = [...new Set(courses.map(course => course.subject))];
+    const filter = document.getElementById('course-filter');
+    filter.innerHTML = '<option value="">Tous les sujets</option>' + 
+        subjects.map(subject => `<option value="${subject}">${subject}</option>`).join('');
+}
+
+function viewCourse(id) {
+    const course = courses.find(c => c.id === id);
     if (course) {
-        document.getElementById('course-content').innerHTML = course.content;
+        currentCourseId = id;
+        document.getElementById('course-content').innerHTML = `
+            <h2>${course.title}</h2>
+            <span class="course-subject-tag">${course.subject}</span>
+            ${course.content}
+        `;
         showPage('course-detail');
     }
 }
 
-function backToCourses() {
+function editCourse() {
+    const course = courses.find(c => c.id === currentCourseId);
+    if (course) {
+        document.getElementById('form-title').textContent = 'Modifier le cours';
+        document.getElementById('course-id').value = course.id;
+        document.getElementById('course-title').value = course.title;
+        document.getElementById('course-subject').value = course.subject;
+        document.getElementById('course-description').value = course.description;
+        document.getElementById('course-editor').innerHTML = course.content;
+        document.getElementById('course-html').value = course.content;
+        
+        showPage('ajouter');
+    }
+}
+
+function deleteCourse() {
+    if (confirm('Êtes-vous sûr de vouloir supprimer ce cours ?')) {
+        courses = courses.filter(c => c.id !== currentCourseId);
+        saveCourses();
+        backToCourses();
+        alert('Cours supprimé avec succès');
+    }
+}
+
+function cancelForm() {
+    document.getElementById('course-form').reset();
+    currentCourseId = null;
     showPage('cours');
+}
+
+function formatText(command) {
+    document.execCommand(command, false, null);
+    document.getElementById('course-editor').focus();
+}
+
+function insertHeading() {
+    const selection = window.getSelection();
+    const range = selection.getRangeAt(0);
+    const heading = document.createElement('h3');
+    heading.textContent = selection.toString() || 'Titre';
+    range.deleteContents();
+    range.insertNode(heading);
+    range.selectNodeContents(heading);
+    selection.removeAllRanges();
+    selection.addRange(range);
+}
+
+function insertLink() {
+    const url = prompt('Entrez l\'URL du lien:');
+    if (url) {
+        document.execCommand('createLink', false, url);
+    }
+}
+
+function toggleHtmlView() {
+    const editor = document.getElementById('course-editor');
+    const htmlView = document.getElementById('course-html');
+    
+    if (isHtmlView) {
+        editor.innerHTML = htmlView.value;
+        editor.style.display = 'block';
+        htmlView.style.display = 'none';
+    } else {
+        htmlView.value = editor.innerHTML;
+        editor.style.display = 'none';
+        htmlView.style.display = 'block';
+    }
+    
+    isHtmlView = !isHtmlView;
+}
+
+function saveCourses() {
+    localStorage.setItem('courses', JSON.stringify(courses));
+}
+
+function loadCourses() {
+    const saved = localStorage.getItem('courses');
+    if (saved) {
+        courses = JSON.parse(saved);
+    }
 }
 
 function initNavigation() {
@@ -84,31 +214,65 @@ function initNavigation() {
             const href = link.getAttribute('href');
             if (href === '#accueil') showPage('accueil');
             else if (href === '#cours') showPage('cours');
-            else if (href === '#ajouter') showPage('ajouter');
+            else if (href === '#ajouter') {
+                document.getElementById('form-title').textContent = 'Ajouter un nouveau cours';
+                document.getElementById('course-form').reset();
+                document.getElementById('course-id').value = '';
+                showPage('ajouter');
+            }
         });
     });
+    
+    // Gérer la recherche et le filtrage
+    document.getElementById('course-search').addEventListener('input', renderCourses);
+    document.getElementById('course-filter').addEventListener('change', renderCourses);
 }
 
 function initForm() {
-    const form = document.getElementById('add-course-form');
+    const form = document.getElementById('course-form');
     
-    if (form) {
-        form.addEventListener('submit', (e) => {
-            e.preventDefault();
-            
-            const title = document.getElementById('course-title').value;
-            const description = document.getElementById('course-description').value;
-            const content = document.getElementById('course-content').value;
-            
-            alert(`Cours "${title}" ajouté avec succès!`);
-            
-            form.reset();
-            showPage('cours');
-        });
-    }
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        const courseId = document.getElementById('course-id').value;
+        const courseData = {
+            title: document.getElementById('course-title').value,
+            subject: document.getElementById('course-subject').value,
+            description: document.getElementById('course-description').value,
+            content: isHtmlView ? document.getElementById('course-html').value : document.getElementById('course-editor').innerHTML
+        };
+        
+        if (courseId) {
+            // Modification
+            const index = courses.findIndex(c => c.id === parseInt(courseId));
+            if (index !== -1) {
+                courses[index] = { ...courses[index], ...courseData };
+            }
+        } else {
+            // Création
+            const newCourse = {
+                id: Date.now(),
+                ...courseData
+            };
+            courses.push(newCourse);
+        }
+        
+        saveCourses();
+        alert(courseId ? 'Cours modifié avec succès!' : 'Cours ajouté avec succès!');
+        
+        form.reset();
+        currentCourseId = null;
+        showPage('cours');
+    });
+}
+
+function backToCourses() {
+    currentCourseId = null;
+    showPage('cours');
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    loadCourses();
     showPage('accueil');
     initNavigation();
     initForm();
