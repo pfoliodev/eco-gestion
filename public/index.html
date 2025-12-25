@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Cours - Économie</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="nav-container">
+                <h1>Gestion des Cours</h1>
+                <ul class="nav-menu">
+                    <li><a href="#accueil">Accueil</a></li>
+                    <li><a href="#cours">Cours</a></li>
+                    <li><a href="#ajouter">Ajouter un cours</a></li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section id="accueil" class="page active">
+            <div class="container">
+                <h2>Bienvenue dans votre espace de gestion des cours</h2>
+                <p>Organisez et consultez facilement vos synthèses de cours en économie.</p>
+                <div class="stats">
+                    <div class="stat-card">
+                        <h3>5</h3>
+                        <p>Cours disponibles</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>12</h3>
+                        <p>Chapitres au total</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="cours" class="page">
+            <div class="container">
+                <h2>Mes Cours</h2>
+                <div class="course-grid">
+                    <div class="course-card" data-course="fonctionnement-entreprise">
+                        <h3>Synthèse du fonctionnement de l'entreprise</h3>
+                        <p>Définitions, typologie, classification et facteurs de différenciation</p>
+                        <button class="btn-view" onclick="showCourse('fonctionnement-entreprise')">Voir le cours</button>
+                    </div>
+                    <div class="course-card">
+                        <h3>Cours 2</h3>
+                        <p>Description du deuxième cours</p>
+                        <button class="btn-view">Voir le cours</button>
+                    </div>
+                    <div class="course-card">
+                        <h3>Cours 3</h3>
+                        <p>Description du troisième cours</p>
+                        <button class="btn-view">Voir le cours</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="ajouter" class="page">
+            <div class="container">
+                <h2>Ajouter un nouveau cours</h2>
+                <form id="add-course-form">
+                    <div class="form-group">
+                        <label for="course-title">Titre du cours</label>
+                        <input type="text" id="course-title" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="course-description">Description</label>
+                        <textarea id="course-description" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="course-content">Contenu du cours</label>
+                        <textarea id="course-content" rows="10"></textarea>
+                    </div>
+                    <button type="submit" class="btn-primary">Ajouter le cours</button>
+                </form>
+            </div>
+        </section>
+
+        <section id="course-detail" class="page">
+            <div class="container">
+                <button onclick="backToCourses()" class="btn-back">← Retour aux cours</button>
+                <div id="course-content"></div>
+            </div>
+        </section>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
