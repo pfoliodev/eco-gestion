@@ -1,3 +1,26 @@
+:root {
+    --primary-color: #667eea;
+    --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --background-color: #f5f5f5;
+    --card-background: white;
+    --text-color: #333;
+    --text-muted: #666;
+    --border-color: #ddd;
+    --shadow-color: rgba(0,0,0,0.1);
+    --header-text: white;
+}
+
+body.dark-mode {
+    --primary-color: #764ba2;
+    --primary-gradient: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    --background-color: #1a1a1a;
+    --card-background: #2c2c2c;
+    --text-color: #f5f5f5;
+    --text-muted: #aaa;
+    --border-color: #444;
+    --shadow-color: rgba(0,0,0,0.4);
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -7,15 +30,16 @@
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     line-height: 1.6;
-    color: #333;
-    background-color: #f5f5f5;
+    color: var(--text-color);
+    background-color: var(--background-color);
+    transition: background-color 0.3s, color 0.3s;
 }
 
 header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+    background: var(--primary-gradient);
+    color: var(--header-text);
     padding: 1rem 0;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 10px var(--shadow-color);
 }
 
 .nav-container {
@@ -27,6 +51,12 @@ header {
     align-items: center;
 }
 
+.nav-right {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
 .nav-menu {
     display: flex;
     list-style: none;
@@ -34,7 +64,7 @@ header {
 }
 
 .nav-menu a {
-    color: white;
+    color: var(--header-text);
     text-decoration: none;
     padding: 0.5rem 1rem;
     border-radius: 5px;
@@ -42,6 +72,23 @@ header {
 }
 
 .nav-menu a:hover {
+    background-color: rgba(255,255,255,0.2);
+}
+
+.theme-btn {
+    background: none;
+    border: none;
+    color: var(--header-text);
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s;
+}
+
+.theme-btn:hover {
     background-color: rgba(255,255,255,0.2);
 }
 
@@ -62,13 +109,13 @@ header {
 #accueil h2 {
     font-size: 2.5rem;
     margin-bottom: 1rem;
-    color: #667eea;
+    color: var(--primary-color);
 }
 
 #accueil p {
     font-size: 1.2rem;
     margin-bottom: 2rem;
-    color: #666;
+    color: var(--text-muted);
 }
 
 .stats {
@@ -79,12 +126,12 @@ header {
 }
 
 .stat-card {
-    background: white;
+    background: var(--card-background);
     padding: 2rem;
     border-radius: 10px;
     text-align: center;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    transition: transform 0.3s;
+    box-shadow: 0 5px 15px var(--shadow-color);
+    transition: transform 0.3s, background-color 0.3s;
 }
 
 .stat-card:hover {
@@ -93,7 +140,7 @@ header {
 
 .stat-card h3 {
     font-size: 2.5rem;
-    color: #667eea;
+    color: var(--primary-color);
     margin-bottom: 0.5rem;
 }
 
@@ -113,10 +160,12 @@ header {
 
 .search-input, .filter-select {
     padding: 0.75rem;
-    border: 2px solid #ddd;
+    border: 2px solid var(--border-color);
+    background-color: var(--card-background);
+    color: var(--text-color);
     border-radius: 5px;
     font-size: 1rem;
-    transition: border-color 0.3s;
+    transition: border-color 0.3s, background-color 0.3s;
 }
 
 .search-input {
@@ -130,7 +179,7 @@ header {
 
 .search-input:focus, .filter-select:focus {
     outline: none;
-    border-color: #667eea;
+    border-color: var(--primary-color);
 }
 
 .course-grid {
@@ -141,11 +190,11 @@ header {
 }
 
 .course-card {
-    background: white;
+    background: var(--card-background);
     padding: 2rem;
     border-radius: 10px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    transition: transform 0.3s;
+    box-shadow: 0 5px 15px var(--shadow-color);
+    transition: transform 0.3s, background-color 0.3s;
 }
 
 .course-card:hover {
@@ -153,17 +202,17 @@ header {
 }
 
 .course-card h3 {
-    color: #667eea;
+    color: var(--primary-color);
     margin-bottom: 1rem;
 }
 
 .course-card p {
-    color: #666;
+    color: var(--text-muted);
     margin-bottom: 1.5rem;
 }
 
 .btn-view, .btn-primary, .btn-back, .btn-edit, .btn-cancel, .btn-delete {
-    color: white;
+    color: var(--header-text);
     border: none;
     padding: 0.75rem 1.5rem;
     border-radius: 5px;
@@ -173,7 +222,7 @@ header {
 }
 
 .btn-view, .btn-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--primary-gradient);
 }
 
 .btn-back {
@@ -208,76 +257,19 @@ header {
     display: block;
     margin-bottom: 0.5rem;
     font-weight: bold;
-    color: #333;
+    color: var(--text-color);
 }
 
 .form-group input,
 .form-group textarea {
     width: 100%;
     padding: 0.75rem;
-    border: 2px solid #ddd;
+    border: 2px solid var(--border-color);
     border-radius: 5px;
     font-size: 1rem;
-    transition: border-color 0.3s;
-}
-
-.editor-toolbar {
-    display: flex;
-    gap: 0.5rem;
-    padding: 0.5rem;
-    background: #f8f9fa;
-    border: 2px solid #ddd;
-    border-bottom: none;
-    border-radius: 5px 5px 0 0;
-    flex-wrap: wrap;
-}
-
-.editor-toolbar button {
-    padding: 0.5rem;
-    background: white;
-    border: 1px solid #ddd;
-    border-radius: 3px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    min-width: 35px;
-    transition: background-color 0.2s;
-}
-
-.editor-toolbar button:hover {
-    background: #e9ecef;
-}
-
-.editor-container {
-    position: relative;
-}
-
-.rich-editor {
-    min-height: 300px;
-    padding: 1rem;
-    border: 2px solid #ddd;
-    border-radius: 0 0 5px 5px;
-    background: white;
-    overflow-y: auto;
-    line-height: 1.6;
-}
-
-.rich-editor:focus {
-    outline: none;
-    border-color: #667eea;
-}
-
-#course-html {
-    width: 100%;
-    padding: 1rem;
-    border: 2px solid #ddd;
-    border-radius: 5px;
-    font-family: 'Courier New', monospace;
-    font-size: 0.9rem;
-}
-
-#course-html:focus {
-    outline: none;
-    border-color: #667eea;
+    background-color: var(--card-background);
+    color: var(--text-color);
+    transition: border-color 0.3s, background-color 0.3s;
 }
 
 .form-actions {
@@ -285,7 +277,7 @@ header {
     justify-content: flex-end;
     margin-top: 2rem;
     padding-top: 1rem;
-    border-top: 1px solid #eee;
+    border-top: 1px solid var(--border-color);
 }
 
 .course-detail-header {
@@ -304,8 +296,8 @@ header {
 
 .course-subject-tag {
     display: inline-block;
-    background: #667eea;
-    color: white;
+    background: var(--primary-color);
+    color: var(--header-text);
     padding: 0.25rem 0.75rem;
     border-radius: 15px;
     font-size: 0.8rem;
@@ -315,18 +307,50 @@ header {
 .form-group input:focus,
 .form-group textarea:focus {
     outline: none;
-    border-color: #667eea;
+    border-color: var(--primary-color);
+}
+
+#editor-container {
+    background-color: var(--card-background);
+    border: 2px solid var(--border-color);
+    border-radius: 5px;
+    color: var(--text-color);
+}
+
+.ql-toolbar {
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    border-bottom: 1px solid var(--border-color) !important;
+}
+
+.ql-toolbar .ql-picker-label,
+.ql-toolbar .ql-stroke,
+.ql-toolbar .ql-fill {
+    color: var(--text-color) !important;
+    stroke: var(--text-color) !important;
+}
+
+.ql-container {
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+    background: var(--card-background);
+}
+
+.ql-editor {
+    min-height: 260px;
+    color: var(--text-color);
 }
 
 .course-detail-content {
-    background: white;
+    background: var(--card-background);
     padding: 2rem;
     border-radius: 10px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    box-shadow: 0 5px 15px var(--shadow-color);
+    transition: background-color 0.3s;
 }
 
 .course-detail-content h2 {
-    color: #667eea;
+    color: var(--primary-color);
     margin-bottom: 2rem;
     font-size: 2rem;
 }
@@ -334,18 +358,19 @@ header {
 .section {
     margin-bottom: 2rem;
     padding: 1.5rem;
-    background: #f8f9fa;
+    background: var(--background-color);
     border-radius: 8px;
-    border-left: 4px solid #667eea;
+    border-left: 4px solid var(--primary-color);
+    transition: background-color 0.3s;
 }
 
 .section h3 {
-    color: #333;
+    color: var(--text-color);
     margin-bottom: 1rem;
 }
 
 .section p, .section li {
-    color: #555;
+    color: var(--text-muted);
     line-height: 1.8;
 }
 
@@ -354,14 +379,14 @@ header {
 }
 
 .definition {
-    background: #e8f4f8;
+    background: rgba(102, 126, 234, 0.1);
     padding: 1rem;
     border-radius: 5px;
     margin: 1rem 0;
 }
 
 .highlight {
-    background: #fff3cd;
+    background: rgba(255, 243, 205, 0.5);
     padding: 0.2rem 0.4rem;
     border-radius: 3px;
 }
@@ -372,13 +397,60 @@ header {
         gap: 1rem;
     }
     
+    .nav-right {
+        flex-direction: column;
+        gap: 1rem;
+        width: 100%;
+    }
+
     .nav-menu {
         flex-direction: column;
         text-align: center;
         gap: 1rem;
+        width: 100%;
     }
     
     .container {
         padding: 1rem;
     }
+}
+
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: var(--card-background);
+    padding: 2rem;
+    border-radius: 10px;
+    box-shadow: 0 5px 20px var(--shadow-color);
+    text-align: center;
+    max-width: 400px;
+    width: 90%;
+    transition: background-color 0.3s;
+}
+
+.modal-content h3 {
+    margin-bottom: 1rem;
+    color: var(--text-color);
+}
+
+.modal-content p {
+    margin-bottom: 2rem;
+    color: var(--text-muted);
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
 }
