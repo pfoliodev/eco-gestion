@@ -1,7 +1,9 @@
 import { app } from './firebase-config.js';
 import { getFirestore, collection, getDocs, doc, addDoc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-auth.js";
 
 const db = getFirestore(app);
+const auth = getAuth(app);
 const coursesCollection = collection(db, 'courses');
 let courses = []; // This will be populated from Firestore
 
@@ -186,6 +188,7 @@ function initNavigation() {
                 document.getElementById('course-id').value = '';
                 showPage('ajouter');
             }
+            else if (href === '#login') showPage('login');
         });
     });
     
@@ -194,12 +197,73 @@ function initNavigation() {
     document.getElementById('course-filter').addEventListener('change', renderCourses);
 }
 
+function initAuth() {
+    const loginForm = document.getElementById('login-form');
+    const logoutBtn = document.getElementById('logout-btn');
+    const loginNavLink = document.getElementById('login-nav-link');
+    const adminActions = document.getElementById('admin-actions');
+    const addCourseBtn = document.querySelector('.courses-header .btn-primary');
+    const addCourseNavLink = document.querySelector('.nav-menu a[href="#ajouter"]');
+
+    onAuthStateChanged(auth, user => {
+        if (user) {
+            // User is signed in
+            loginNavLink.style.display = 'none';
+            logoutBtn.style.display = 'block';
+            adminActions.style.display = 'flex';
+            addCourseBtn.style.display = 'block';
+            addCourseNavLink.style.display = 'block';
+        } else {
+            // User is signed out
+            loginNavLink.style.display = 'block';
+            logoutBtn.style.display = 'none';
+            adminActions.style.display = 'none';
+            addCourseBtn.style.display = 'none';
+            addCourseNavLink.style.display = 'none';
+            if(document.querySelector('.page.active').id === 'ajouter') {
+                showPage('cours');
+            }
+        }
+    });
+
+    loginForm.addEventListener('submit', async e => {
+        e.preventDefault();
+        const email = document.getElementById('login-email').value;
+        const password = document.getElementById('login-password').value;
+
+        try {
+            await signInWithEmailAndPassword(auth, email, password);
+            notyf.success('Connexion réussie !');
+            showPage('cours');
+        } catch (error) {
+            console.error("Login error:", error);
+            notyf.error('Email ou mot de passe incorrect.');
+        }
+    });
+
+    logoutBtn.addEventListener('click', async () => {
+        try {
+            await signOut(auth);
+            notyf.success('Déconnexion réussie.');
+            showPage('accueil');
+        } catch (error) {
+            console.error("Logout error:", error);
+            notyf.error('Erreur lors de la déconnexion.');
+        }
+    });
+}
+
 function initForm() {
     const form = document.getElementById('course-form');
     
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         
+        if (!auth.currentUser) {
+            notyf.error("Vous devez être connecté pour effectuer cette action.");
+            return;
+        }
+
         const courseId = document.getElementById('course-id').value;
         const courseData = {
             title: document.getElementById('course-title').value,
@@ -236,6 +300,7 @@ function initForm() {
         }
     });
 }
+
 
 function initQuillEditor() {
     quill = new Quill('#editor-container', {
@@ -287,6 +352,7 @@ function initTheme() {
 document.addEventListener('DOMContentLoaded', () => {
     initTheme();
     initQuillEditor();
+    initAuth();
     initForm();
     initNavigation();
     loadCourses(); // This will now fetch from Firestore and then render
