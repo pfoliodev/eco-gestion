@@ -80,7 +80,7 @@ function renderCourses() {
             <span class="course-subject-tag">${course.subject}</span>
             <p>${course.description}</p>
             <div class="course-card-actions">
-                <button class="btn-view" onclick="viewCourse(${course.id})">Voir le cours</button>
+                <button class="btn-view" data-id="${course.id}">Voir le cours</button>
             </div>
         </div>
     `).join('');
@@ -191,10 +191,33 @@ function initNavigation() {
             else if (href === '#login') showPage('login');
         });
     });
-    
-    // Gérer la recherche et le filtrage
+}
+
+function initEventListeners() {
+    // Search and filter
     document.getElementById('course-search').addEventListener('input', renderCourses);
     document.getElementById('course-filter').addEventListener('change', renderCourses);
+
+    // Static buttons
+    document.getElementById('add-course-btn').addEventListener('click', () => {
+        document.getElementById('form-title').textContent = 'Ajouter un nouveau cours';
+        document.getElementById('course-form').reset();
+        document.getElementById('course-id').value = '';
+        quill.root.innerHTML = '';
+        showPage('ajouter');
+    });
+    document.getElementById('cancel-form-btn').addEventListener('click', cancelForm);
+    document.getElementById('back-to-courses-btn').addEventListener('click', backToCourses);
+    document.getElementById('edit-course-btn').addEventListener('click', editCourse);
+    document.getElementById('delete-course-btn').addEventListener('click', deleteCourse);
+
+    // Event delegation for dynamic buttons
+    document.getElementById('course-grid').addEventListener('click', e => {
+        if (e.target && e.target.classList.contains('btn-view')) {
+            const courseId = e.target.dataset.id;
+            viewCourse(courseId);
+        }
+    });
 }
 
 function initAuth() {
@@ -355,6 +378,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initAuth();
     initForm();
     initNavigation();
+    initEventListeners();
     loadCourses(); // This will now fetch from Firestore and then render
     showPage('accueil');
 });

@@ -51,7 +51,7 @@
             <div class="container">
                 <div class="courses-header">
                     <h2>Mes Cours</h2>
-                    <button class="btn-primary" onclick="showPage('ajouter')">+ Ajouter un cours</button>
+                    <button id="add-course-btn" class="btn-primary">+ Ajouter un cours</button>
                 </div>
                 <div class="course-controls">
                     <input type="text" id="course-search" placeholder="Rechercher un cours..." class="search-input">
@@ -87,7 +87,7 @@
                         <div id="editor-container" style="height: 300px;"></div>
                     </div>
                     <div class="form-actions">
-                        <button type="button" onclick="cancelForm()" class="btn-cancel">Annuler</button>
+                        <button type="button" id="cancel-form-btn" class="btn-cancel">Annuler</button>
                         <button type="submit" class="btn-primary">Enregistrer le cours</button>
                     </div>
                 </form>
@@ -97,10 +97,10 @@
         <section id="course-detail" class="page">
             <div class="container">
                 <div class="course-detail-header">
-                    <button onclick="backToCourses()" class="btn-back">← Retour aux cours</button>
+                    <button id="back-to-courses-btn" class="btn-back">← Retour aux cours</button>
                     <div id="admin-actions" class="course-actions" style="display: none;">
-                        <button onclick="editCourse()" class="btn-edit">✏️ Modifier</button>
-                        <button onclick="deleteCourse()" class="btn-delete">🗑️ Supprimer</button>
+                        <button id="edit-course-btn" class="btn-edit">✏️ Modifier</button>
+                        <button id="delete-course-btn" class="btn-delete">🗑️ Supprimer</button>
                     </div>
                 </div>
                 <div id="course-content"></div>
@@ -138,12 +138,7 @@
         </div>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-app.js";
-        import { getFirestore } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js";
-        import { getAuth } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-auth.js";
-    </script>
-    <script src="firebase-config.js"></script>
+    <script type="module" src="firebase-config.js"></script>
     <script type="module" src="script.js"></script>
 </body>
 </html>
