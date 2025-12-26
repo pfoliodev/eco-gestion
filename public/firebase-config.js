@@ -3,12 +3,13 @@
 // https://console.firebase.google.com/
 
 const firebaseConfig = {
-  apiKey: "VOTRE_API_KEY",
-  authDomain: "VOTRE_AUTH_DOMAIN",
-  projectId: "VOTRE_PROJECT_ID",
-  storageBucket: "VOTRE_STORAGE_BUCKET",
-  messagingSenderId: "VOTRE_MESSAGING_SENDER_ID",
-  appId: "VOTRE_APP_ID"
+  apiKey: "AIzaSyAORwn_pzOaOYEYYxcTrAQowkcCCWG-88Y",
+  authDomain: "eco-gestion-d764e.firebaseapp.com",
+  projectId: "eco-gestion-d764e",
+  storageBucket: "eco-gestion-d764e.firebasestorage.app",
+  messagingSenderId: "726385041984",
+  appId: "1:726385041984:web:c1c6bd5e0fed934162b5a5",
+  measurementId: "G-B6PN1TYS20"
 };
 
 // Ne modifiez pas le code ci-dessous
