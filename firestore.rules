@@ -1,9 +1,21 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /courses/{course} {
+    
+    // Users collection - users can read their own data, only they can write
+    match /users/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Courses collection
+    match /courses/{courseId} {
+      // Anyone (authenticated or not) can read courses
       allow read: if true;
-      allow write: if request.auth != null;
+      
+      // Only admins can create, update, or delete courses
+      allow create, update, delete: if request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
   }
 }

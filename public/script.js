@@ -1,11 +1,13 @@
 import { app } from './firebase-config.js';
-import { getFirestore, collection, getDocs, doc, addDoc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js";
+import { getFirestore, collection, getDocs, doc, addDoc, deleteDoc, updateDoc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-auth.js";
 
 const db = getFirestore(app);
 const auth = getAuth(app);
 const coursesCollection = collection(db, 'courses');
+const usersCollection = collection(db, 'users');
 let courses = []; // This will be populated from Firestore
+let isAdmin = false; // Track if current user is admin
 
 const notyf = new Notyf({
     duration: 3000,
@@ -261,6 +263,27 @@ function initEventListeners() {
     });
 }
 
+// Check user role from Firestore
+async function getUserRole(userId) {
+    try {
+        const userDoc = await getDoc(doc(db, 'users', userId));
+        if (userDoc.exists()) {
+            return userDoc.data().role || 'student';
+        } else {
+            // Create default student role for new users
+            await setDoc(doc(db, 'users', userId), {
+                role: 'student',
+                email: auth.currentUser.email,
+                createdAt: new Date()
+            });
+            return 'student';
+        }
+    } catch (error) {
+        console.error("Error getting user role:", error);
+        return 'student'; // Default to student on error
+    }
+}
+
 function initAuth() {
     const loginForm = document.getElementById('login-form');
     const logoutBtn = document.getElementById('logout-btn');
@@ -269,16 +292,28 @@ function initAuth() {
     const addCourseBtn = document.querySelector('.courses-header .btn-primary');
     const addCourseNavLink = document.querySelector('.nav-menu a[href="#ajouter"]');
 
-    onAuthStateChanged(auth, user => {
+    onAuthStateChanged(auth, async user => {
         if (user) {
-            // User is signed in
+            // User is signed in - check their role
+            const userRole = await getUserRole(user.uid);
+            isAdmin = (userRole === 'admin');
+
             loginNavLink.style.display = 'none';
             logoutBtn.style.display = 'inline-flex';
-            adminActions.style.display = 'flex';
-            addCourseBtn.style.display = 'inline-flex';
-            addCourseNavLink.style.display = 'inline-flex';
+
+            // Only show admin controls if user is admin
+            if (isAdmin) {
+                adminActions.style.display = 'flex';
+                addCourseBtn.style.display = 'inline-flex';
+                addCourseNavLink.style.display = 'inline-flex';
+            } else {
+                adminActions.style.display = 'none';
+                addCourseBtn.style.display = 'none';
+                addCourseNavLink.style.display = 'none';
+            }
         } else {
             // User is signed out
+            isAdmin = false;
             loginNavLink.style.display = 'inline-flex';
             logoutBtn.style.display = 'none';
             adminActions.style.display = 'none';
@@ -354,6 +389,11 @@ function initForm() {
 
         if (!auth.currentUser) {
             notyf.error("Vous devez être connecté pour effectuer cette action.");
+            return;
+        }
+
+        if (!isAdmin) {
+            notyf.error("Vous n'avez pas les permissions pour effectuer cette action.");
             return;
         }
 
