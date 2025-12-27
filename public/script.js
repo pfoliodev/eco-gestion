@@ -143,8 +143,38 @@ function viewCourse(id) {
             </div>
             ${course.content}
         `;
+
+        // Load related courses
+        renderRelatedCourses(course.subject, id);
+
         showPage('course-detail');
     }
+}
+
+function renderRelatedCourses(subject, currentCourseId) {
+    const relatedCoursesList = document.getElementById('related-courses-list');
+
+    // Filter courses by same subject, excluding current course
+    const relatedCourses = courses.filter(c =>
+        c.subject === subject && c.id !== currentCourseId
+    );
+
+    if (relatedCourses.length === 0) {
+        relatedCoursesList.innerHTML = '<p style="color: var(--text-secondary); font-size: 0.875rem; text-align: center; padding: 1rem 0;">Aucun autre cours dans ce sujet.</p>';
+        return;
+    }
+
+    relatedCoursesList.innerHTML = relatedCourses.map(course => {
+        const type = course.type || 'cours';
+        const typeLabel = type.charAt(0).toUpperCase() + type.slice(1);
+
+        return `
+            <div class="related-course-item" onclick="viewCourse('${course.id}')">
+                <div class="related-course-title">${course.title}</div>
+                <span class="related-course-type">${typeLabel}</span>
+            </div>
+        `;
+    }).join('');
 }
 
 function editCourse() {

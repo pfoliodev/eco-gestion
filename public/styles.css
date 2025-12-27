@@ -550,6 +550,88 @@ p {
     color: white;
 }
 
+/* Course Detail Layout */
+.course-detail-layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 2rem;
+    margin-top: 2rem;
+}
+
+.related-courses-sidebar {
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    height: fit-content;
+    position: sticky;
+    top: 2rem;
+}
+
+.related-courses-sidebar h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.related-course-item {
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 0.15s;
+    border: 1px solid transparent;
+}
+
+.related-course-item:hover {
+    background-color: var(--surface-hover);
+    border-color: var(--border-color);
+}
+
+.related-course-item.active {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.related-course-item.active .related-course-title {
+    color: white;
+}
+
+.related-course-item.active .related-course-type {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: white;
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.related-course-title {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-main);
+    margin-bottom: 0.25rem;
+    line-height: 1.4;
+}
+
+.related-course-type {
+    display: inline-block;
+    font-size: 0.7rem;
+    padding: 0.15rem 0.4rem;
+    border-radius: var(--radius-sm);
+    background-color: var(--surface-hover);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+}
+
+.course-content-main {
+    min-width: 0;
+}
+
 .course-detail-content {
     background: var(--surface-color);
     padding: 3rem;
@@ -678,8 +760,26 @@ p {
     font-weight: 500;
 }
 
+
 .btn-change-role:hover {
     background-color: var(--primary-color);
     color: white;
     border-color: var(--primary-color);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .course-detail-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .related-courses-sidebar {
+        position: static;
+        order: 2;
+        margin-top: 2rem;
+    }
+
+    .course-content-main {
+        order: 1;
+    }
 }
