@@ -29,35 +29,53 @@ const notyf = new Notyf({
 });
 
 let currentCourseId = null;
-let quill = null;
+let currentCourseId = null;
+
+// TinyMCE initialization
+function initTinyMCE() {
+    tinymce.init({
+        selector: '#editor-container',
+        height: 400,
+        menubar: true,
+        plugins: [
+            'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+            'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+            'insertdatetime', 'media', 'table', 'help', 'wordcount'
+        ],
+        toolbar: 'undo redo | blocks | ' +
+            'bold italic backcolor | alignleft aligncenter ' +
+            'alignright alignjustify | bullist numlist outdent indent | ' +
+            'removeformat | code | help',
+        content_style: 'body { font-family:Inter,sans-serif; font-size:14px }',
+        skin: (localStorage.getItem('theme') === 'dark' ? 'oxide-dark' : 'oxide'),
+        content_css: (localStorage.getItem('theme') === 'dark' ? 'dark' : 'default')
+    });
+}
+
+
+const pages = document.querySelectorAll('.page');
+
+pages.forEach(page => page.classList.remove('active'));
 
 
 
-function showPage(pageId) {
+const targetPage = document.getElementById(pageId);
 
-    const pages = document.querySelectorAll('.page');
+if (targetPage) {
 
-    pages.forEach(page => page.classList.remove('active'));
+    targetPage.classList.add('active');
 
-
-
-    const targetPage = document.getElementById(pageId);
-
-    if (targetPage) {
-
-        targetPage.classList.add('active');
-
-    }
+}
 
 
 
-    if (pageId === 'cours') {
+if (pageId === 'cours') {
 
-        renderCourses();
+    renderCourses();
 
-        updateFilters();
+    updateFilters();
 
-    }
+}
 
 }
 
@@ -120,7 +138,7 @@ function editCourse() {
         document.getElementById('course-title').value = course.title;
         document.getElementById('course-subject').value = course.subject;
         document.getElementById('course-description').value = course.description;
-        quill.root.innerHTML = course.content;
+        tinymce.get('editor-container').setContent(course.content);
 
         showPage('ajouter');
     }
@@ -203,7 +221,9 @@ function initEventListeners() {
         document.getElementById('form-title').textContent = 'Ajouter un nouveau cours';
         document.getElementById('course-form').reset();
         document.getElementById('course-id').value = '';
-        quill.root.innerHTML = '';
+        if (tinymce.get('editor-container')) {
+            tinymce.get('editor-container').setContent('');
+        }
         showPage('ajouter');
     });
     document.getElementById('cancel-form-btn').addEventListener('click', cancelForm);
@@ -321,7 +341,7 @@ function initForm() {
             title: document.getElementById('course-title').value,
             subject: document.getElementById('course-subject').value,
             description: document.getElementById('course-description').value,
-            content: quill.root.innerHTML
+            content: tinymce.get('editor-container').getContent()
         };
 
         try {
@@ -343,7 +363,7 @@ function initForm() {
             }
 
             form.reset();
-            quill.root.innerHTML = '';
+            tinymce.get('editor-container').setContent('');
             currentCourseId = null;
             showPage('cours');
         } catch (error) {
@@ -354,43 +374,7 @@ function initForm() {
 }
 
 
-function initQuillEditor() {
-    // Add a custom button to the toolbar
-    const toolbarOptions = [
-        [{ 'header': [1, 2, 3, false] }],
-        ['bold', 'italic', 'underline', 'strike'],
-        [{ 'color': [] }, { 'background': [] }],
-        [{ 'align': [] }],
-        [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-        ['blockquote', 'code-block'], // 'code-block' is repurposed for HTML input but good to have
-        ['link'],
-        ['clean']
-    ];
 
-    quill = new Quill('#editor-container', {
-        theme: 'snow',
-        modules: {
-            toolbar: {
-                container: toolbarOptions,
-                handlers: {
-                    'code-block': function () {
-                        const html = prompt("Collez votre code HTML ici :");
-                        if (html) {
-                            const range = this.quill.getSelection();
-                            if (range) {
-                                this.quill.clipboard.dangerouslyPasteHTML(range.index, html);
-                            } else {
-                                // If no selection, append to the end
-                                const length = this.quill.getLength();
-                                this.quill.clipboard.dangerouslyPasteHTML(length, html);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    });
-}
 
 function backToCourses() {
     currentCourseId = null;
@@ -426,7 +410,7 @@ function initTheme() {
 
 document.addEventListener('DOMContentLoaded', () => {
     initTheme();
-    initQuillEditor();
+    initTinyMCE();
     initAuth();
     initForm();
     initNavigation();

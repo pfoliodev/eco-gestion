@@ -495,58 +495,7 @@ body.dark-mode .course-subject-tag {
     border: 1px solid var(--border-color);
 }
 
-.ql-toolbar {
-    border-top-left-radius: var(--radius-lg);
-    border-top-right-radius: var(--radius-lg);
-    border-color: var(--border-color) !important;
-    background-color: var(--surface-hover);
-}
-
-.ql-container {
-    border-bottom-left-radius: var(--radius-lg);
-    border-bottom-right-radius: var(--radius-lg);
-    border-color: var(--border-color) !important;
-    font-family: var(--font-body) !important;
-    font-size: 1rem;
-}
-
-/* Quill Dark Mode Overrides */
-body.dark-mode .ql-toolbar .ql-stroke {
-    stroke: var(--text-main);
-}
-
-body.dark-mode .ql-toolbar .ql-fill {
-    fill: var(--text-main);
-}
-
-body.dark-mode .ql-toolbar .ql-picker {
-    color: var(--text-main);
-}
-
-body.dark-mode .ql-toolbar button:hover .ql-stroke,
-body.dark-mode .ql-toolbar button.ql-active .ql-stroke,
-body.dark-mode .ql-toolbar .ql-picker-label:hover .ql-stroke,
-body.dark-mode .ql-toolbar .ql-picker-label.ql-active .ql-stroke,
-body.dark-mode .ql-toolbar .ql-picker-item:hover .ql-stroke,
-body.dark-mode .ql-toolbar .ql-picker-item.ql-selected .ql-stroke {
-    stroke: var(--primary-color) !important;
-}
-
-body.dark-mode .ql-toolbar button:hover .ql-fill,
-body.dark-mode .ql-toolbar button.ql-active .ql-fill,
-body.dark-mode .ql-toolbar .ql-picker-label:hover .ql-fill,
-body.dark-mode .ql-toolbar .ql-picker-label.ql-active .ql-fill,
-body.dark-mode .ql-toolbar .ql-picker-item:hover .ql-fill,
-body.dark-mode .ql-toolbar .ql-picker-item.ql-selected .ql-fill {
-    fill: var(--primary-color) !important;
-}
-
-body.dark-mode .ql-toolbar .ql-picker-label:hover,
-body.dark-mode .ql-toolbar .ql-picker-label.ql-active,
-body.dark-mode .ql-toolbar .ql-picker-item:hover,
-body.dark-mode .ql-toolbar .ql-picker-item.ql-selected {
-    color: var(--primary-color) !important;
-}
+/* Modal */
 
 /* Modal */
 .modal {
