@@ -193,17 +193,18 @@ function renderRelatedCourses(subject, currentCourseId) {
 function renderRelatedExercises(subject, currentCourseId) {
     const relatedExercisesList = document.getElementById('related-exercises-list');
 
-    // Filter exercises by same subject, excluding current course, and only type 'exercice'
-    const relatedExercises = courses.filter(c =>
-        c.subject === subject &&
-        c.id !== currentCourseId &&
-        c.type === 'exercice'
-    );
+    // Get the current course to access its linkedExercises
+    const currentCourse = courses.find(c => c.id === currentCourseId);
+    const linkedExerciseIds = currentCourse?.linkedExercises || [];
 
-    if (relatedExercises.length === 0) {
-        relatedExercisesList.innerHTML = '<p style="color: var(--text-secondary); font-size: 0.875rem; text-align: center; padding: 1rem 0;">Aucun exercice disponible.</p>';
+    // If no linked exercises, show message
+    if (linkedExerciseIds.length === 0) {
+        relatedExercisesList.innerHTML = '<p style="color: var(--text-secondary); font-size: 0.875rem; text-align: center; padding: 1rem 0;">Aucun exercice lié.<br><small>Utilisez l\'interface admin pour assigner des exercices.</small></p>';
         return;
     }
+
+    // Get the actual exercise objects from the IDs
+    const relatedExercises = courses.filter(c => linkedExerciseIds.includes(c.id));
 
     relatedExercisesList.innerHTML = relatedExercises.map(exercise => {
         return `
@@ -214,6 +215,7 @@ function renderRelatedExercises(subject, currentCourseId) {
         `;
     }).join('');
 }
+
 
 // Make viewCourse available globally for onclick handlers
 window.viewCourse = viewCourse;
@@ -647,33 +649,88 @@ function displayCourseExercises(courseId) {
     const exercisesSection = document.getElementById('course-exercises-section');
     const exercisesList = document.getElementById('available-exercises-list');
 
-    // Filter exercises with the same subject
-    const relatedExercises = courses.filter(c =>
-        c.subject === course.subject &&
-        c.type === 'exercice'
-    );
+    // Get all exercises (not just same subject)
+    const allExercises = courses.filter(c => c.type === 'exercice');
 
-    if (relatedExercises.length === 0) {
-        exercisesList.innerHTML = '<p style="color: var(--text-secondary); padding: 1rem; text-align: center;">Aucun exercice disponible pour ce sujet.</p>';
+    // Get currently linked exercises
+    const linkedExercises = course.linkedExercises || [];
+
+    if (allExercises.length === 0) {
+        exercisesList.innerHTML = '<p style="color: var(--text-secondary); padding: 1rem; text-align: center;">Aucun exercice disponible.</p>';
     } else {
         exercisesList.innerHTML = `
             <p style="color: var(--text-secondary); margin-bottom: 1rem;">
-                ${relatedExercises.length} exercice(s) trouvé(s) pour le sujet "${course.subject}". 
-                Ces exercices seront automatiquement affichés dans la sidebar du cours.
+                Sélectionnez les exercices à associer à ce cours. ${linkedExercises.length} exercice(s) actuellement lié(s).
             </p>
-            <div style="display: grid; gap: 0.75rem;">
-                ${relatedExercises.map(ex => `
-                    <div style="padding: 1rem; background: var(--surface-hover); border: 1px solid var(--border-color); border-radius: var(--radius-md);">
-                        <strong>${ex.title}</strong>
-                        ${ex.category ? `<div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem;">Catégorie: ${ex.category}</div>` : ''}
-                    </div>
-                `).join('')}
+            <div style="display: grid; gap: 0.75rem; margin-bottom: 1.5rem;">
+                ${allExercises.map(ex => {
+            const isLinked = linkedExercises.includes(ex.id);
+            const isSameSubject = ex.subject === course.subject;
+
+            return `
+                        <label style="display: flex; align-items: center; padding: 1rem; background: var(--surface-hover); border: 1px solid var(--border-color); border-radius: var(--radius-md); cursor: pointer; transition: all 0.15s;" 
+                               onmouseover="this.style.backgroundColor='var(--surface-color)'" 
+                               onmouseout="this.style.backgroundColor='var(--surface-hover)'">
+                            <input type="checkbox" 
+                                   class="exercise-checkbox" 
+                                   data-exercise-id="${ex.id}" 
+                                   ${isLinked ? 'checked' : ''}
+                                   style="margin-right: 0.75rem; width: 18px; height: 18px; cursor: pointer;">
+                            <div style="flex: 1;">
+                                <strong>${ex.title}</strong>
+                                <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem;">
+                                    Sujet: ${ex.subject}
+                                    ${isSameSubject ? '<span style="color: var(--primary-color); font-weight: 600;"> (même sujet)</span>' : ''}
+                                    ${ex.category ? ` • Catégorie: ${ex.category}` : ''}
+                                </div>
+                            </div>
+                        </label>
+                    `;
+        }).join('')}
             </div>
+            <button onclick="saveLinkedExercises('${courseId}')" class="btn-primary" style="width: 100%;">
+                Enregistrer les exercices liés
+            </button>
         `;
     }
 
     exercisesSection.style.display = 'block';
 }
+
+async function saveLinkedExercises(courseId) {
+    if (!isAdmin) {
+        notyf.error("Accès non autorisé.");
+        return;
+    }
+
+    const checkboxes = document.querySelectorAll('.exercise-checkbox');
+    const linkedExercises = Array.from(checkboxes)
+        .filter(cb => cb.checked)
+        .map(cb => cb.dataset.exerciseId);
+
+    try {
+        await updateDoc(doc(db, 'courses', courseId), {
+            linkedExercises: linkedExercises
+        });
+
+        // Update local courses array
+        const courseIndex = courses.findIndex(c => c.id === courseId);
+        if (courseIndex !== -1) {
+            courses[courseIndex].linkedExercises = linkedExercises;
+        }
+
+        notyf.success(`${linkedExercises.length} exercice(s) lié(s) au cours avec succès !`);
+
+        // Refresh the display
+        displayCourseExercises(courseId);
+    } catch (error) {
+        console.error("Error saving linked exercises:", error);
+        notyf.error("Erreur lors de l'enregistrement des exercices liés.");
+    }
+}
+
+// Make saveLinkedExercises available globally
+window.saveLinkedExercises = saveLinkedExercises;
 
 
 function backToCourses() {
