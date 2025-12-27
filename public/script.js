@@ -355,16 +355,36 @@ function initForm() {
 
 
 function initQuillEditor() {
+    // Add a custom button to the toolbar
+    const toolbarOptions = [
+        [{ 'header': [1, 2, 3, false] }],
+        ['bold', 'italic', 'underline'],
+        [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+        ['link', 'code-block'], // Add code-block icon to represent HTML
+        ['clean']
+    ];
+
     quill = new Quill('#editor-container', {
         theme: 'snow',
         modules: {
-            toolbar: [
-                [{ 'header': [1, 2, 3, false] }],
-                ['bold', 'italic', 'underline'],
-                [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-                ['link'],
-                ['clean']
-            ]
+            toolbar: {
+                container: toolbarOptions,
+                handlers: {
+                    'code-block': function () {
+                        const html = prompt("Collez votre code HTML ici :");
+                        if (html) {
+                            const range = this.quill.getSelection();
+                            if (range) {
+                                this.quill.clipboard.dangerouslyPasteHTML(range.index, html);
+                            } else {
+                                // If no selection, append to the end
+                                const length = this.quill.getLength();
+                                this.quill.clipboard.dangerouslyPasteHTML(length, html);
+                            }
+                        }
+                    }
+                }
+            }
         }
     });
 }
