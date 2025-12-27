@@ -115,10 +115,11 @@ function renderCourses() {
     `}).join('');
 
     // Mettre à jour les statistiques
-    document.querySelectorAll('.stat-card h3')[0].textContent = courses.length;
-    document.querySelectorAll('.stat-card h3')[1].textContent = courses.reduce((sum, course) =>
-        sum + (course.content.match(/<h3>/g) || []).length, 0
-    );
+    const numCourses = courses.filter(c => c.type === 'cours' || !c.type).length;
+    const numExercises = courses.filter(c => c.type === 'exercice').length;
+
+    document.getElementById('stat-courses').textContent = numCourses;
+    document.getElementById('stat-exercises').textContent = numExercises;
 }
 
 function updateFilters() {
