@@ -177,6 +177,10 @@ function renderRelatedCourses(subject, currentCourseId) {
     }).join('');
 }
 
+// Make viewCourse available globally for onclick handlers
+window.viewCourse = viewCourse;
+
+
 function editCourse() {
     const course = courses.find(c => c.id === currentCourseId);
     if (course) {
