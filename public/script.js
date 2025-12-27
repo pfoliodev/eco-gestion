@@ -1,6 +1,6 @@
 import { app } from './firebase-config.js';
 import { getFirestore, collection, getDocs, doc, addDoc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js";
-import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-auth.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-auth.js";
 
 const db = getFirestore(app);
 const auth = getAuth(app);
@@ -39,7 +39,7 @@ function showPage(pageId) {
 
     pages.forEach(page => page.classList.remove('active'));
 
-    
+
 
     const targetPage = document.getElementById(pageId);
 
@@ -49,7 +49,7 @@ function showPage(pageId) {
 
     }
 
-    
+
 
     if (pageId === 'cours') {
 
@@ -65,15 +65,15 @@ function renderCourses() {
     const grid = document.getElementById('course-grid');
     const searchTerm = document.getElementById('course-search').value.toLowerCase();
     const subjectFilter = document.getElementById('course-filter').value;
-    
+
     let filteredCourses = courses.filter(course => {
-        const matchesSearch = course.title.toLowerCase().includes(searchTerm) || 
-                             course.subject.toLowerCase().includes(searchTerm) ||
-                             course.description.toLowerCase().includes(searchTerm);
+        const matchesSearch = course.title.toLowerCase().includes(searchTerm) ||
+            course.subject.toLowerCase().includes(searchTerm) ||
+            course.description.toLowerCase().includes(searchTerm);
         const matchesSubject = !subjectFilter || course.subject === subjectFilter;
         return matchesSearch && matchesSubject;
     });
-    
+
     grid.innerHTML = filteredCourses.map(course => `
         <div class="course-card" data-course-id="${course.id}">
             <h3>${course.title}</h3>
@@ -84,10 +84,10 @@ function renderCourses() {
             </div>
         </div>
     `).join('');
-    
+
     // Mettre à jour les statistiques
     document.querySelectorAll('.stat-card h3')[0].textContent = courses.length;
-    document.querySelectorAll('.stat-card h3')[1].textContent = courses.reduce((sum, course) => 
+    document.querySelectorAll('.stat-card h3')[1].textContent = courses.reduce((sum, course) =>
         sum + (course.content.match(/<h3>/g) || []).length, 0
     );
 }
@@ -95,7 +95,7 @@ function renderCourses() {
 function updateFilters() {
     const subjects = [...new Set(courses.map(course => course.subject))];
     const filter = document.getElementById('course-filter');
-    filter.innerHTML = '<option value="">Tous les sujets</option>' + 
+    filter.innerHTML = '<option value="">Tous les sujets</option>' +
         subjects.map(subject => `<option value="${subject}">${subject}</option>`).join('');
 }
 
@@ -121,7 +121,7 @@ function editCourse() {
         document.getElementById('course-subject').value = course.subject;
         document.getElementById('course-description').value = course.description;
         quill.root.innerHTML = course.content;
-        
+
         showPage('ajouter');
     }
 }
@@ -175,7 +175,7 @@ async function loadCourses() {
 
 function initNavigation() {
     const navLinks = document.querySelectorAll('.nav-menu a');
-    
+
     navLinks.forEach(link => {
         link.addEventListener('click', (e) => {
             e.preventDefault();
@@ -232,18 +232,18 @@ function initAuth() {
         if (user) {
             // User is signed in
             loginNavLink.style.display = 'none';
-            logoutBtn.style.display = 'block';
+            logoutBtn.style.display = 'inline-flex';
             adminActions.style.display = 'flex';
-            addCourseBtn.style.display = 'block';
-            addCourseNavLink.style.display = 'block';
+            addCourseBtn.style.display = 'inline-flex';
+            addCourseNavLink.style.display = 'inline-flex';
         } else {
             // User is signed out
-            loginNavLink.style.display = 'block';
+            loginNavLink.style.display = 'inline-flex';
             logoutBtn.style.display = 'none';
             adminActions.style.display = 'none';
             addCourseBtn.style.display = 'none';
             addCourseNavLink.style.display = 'none';
-            if(document.querySelector('.page.active').id === 'ajouter') {
+            if (document.querySelector('.page.active').id === 'ajouter') {
                 showPage('cours');
             }
         }
@@ -260,7 +260,17 @@ function initAuth() {
             showPage('cours');
         } catch (error) {
             console.error("Login error:", error);
-            notyf.error('Email ou mot de passe incorrect.');
+            let errorMessage = 'Une erreur est survenue lors de la connexion.';
+
+            if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+                errorMessage = 'Email ou mot de passe incorrect.';
+            } else if (error.code === 'auth/operation-not-allowed') {
+                errorMessage = 'La connexion par Email/Mot de passe n\'est pas activée dans Firebase.';
+            } else if (error.code === 'auth/too-many-requests') {
+                errorMessage = 'Trop de tentatives échouées. Veuillez réessayer plus tard.';
+            }
+
+            notyf.error(errorMessage);
         }
     });
 
@@ -274,14 +284,33 @@ function initAuth() {
             notyf.error('Erreur lors de la déconnexion.');
         }
     });
+
+    const googleLoginBtn = document.getElementById('google-login-btn');
+    if (googleLoginBtn) {
+        googleLoginBtn.addEventListener('click', async () => {
+            const provider = new GoogleAuthProvider();
+            try {
+                await signInWithPopup(auth, provider);
+                notyf.success('Connexion Google réussie !');
+                showPage('cours');
+            } catch (error) {
+                console.error("Google Login error:", error);
+                if (error.code === 'auth/popup-closed-by-user') {
+                    notyf.error('La connexion a été annulée.');
+                } else {
+                    notyf.error('Erreur lors de la connexion Google.');
+                }
+            }
+        });
+    }
 }
 
 function initForm() {
     const form = document.getElementById('course-form');
-    
+
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        
+
         if (!auth.currentUser) {
             notyf.error("Vous devez être connecté pour effectuer cette action.");
             return;
@@ -312,7 +341,7 @@ function initForm() {
                 courses.push(newCourse);
                 notyf.success('Cours ajouté avec succès!');
             }
-            
+
             form.reset();
             quill.root.innerHTML = '';
             currentCourseId = null;
@@ -332,7 +361,7 @@ function initQuillEditor() {
             toolbar: [
                 [{ 'header': [1, 2, 3, false] }],
                 ['bold', 'italic', 'underline'],
-                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                [{ 'list': 'ordered' }, { 'list': 'bullet' }],
                 ['link'],
                 ['clean']
             ]

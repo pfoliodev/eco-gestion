@@ -1,13 +1,16 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestion des Cours - Économie</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=3">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css">
     <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
+
 <body>
     <header>
         <nav>
@@ -22,7 +25,11 @@
                     </ul>
                     <button id="logout-btn" class="btn-cancel" style="display: none;">Logout</button>
                     <button id="theme-toggle" class="theme-btn">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-moon"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                            stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            class="feather feather-moon">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
                     </button>
                 </div>
             </div>
@@ -72,7 +79,8 @@
                     <input type="hidden" id="course-id">
                     <div class="form-group">
                         <label for="course-title">Titre du cours *</label>
-                        <input type="text" id="course-title" required placeholder="Ex: Synthèse du fonctionnement de l'entreprise">
+                        <input type="text" id="course-title" required
+                            placeholder="Ex: Synthèse du fonctionnement de l'entreprise">
                     </div>
                     <div class="form-group">
                         <label for="course-subject">Sujet *</label>
@@ -80,7 +88,8 @@
                     </div>
                     <div class="form-group">
                         <label for="course-description">Description</label>
-                        <textarea id="course-description" rows="3" placeholder="Brève description du cours..."></textarea>
+                        <textarea id="course-description" rows="3"
+                            placeholder="Brève description du cours..."></textarea>
                     </div>
                     <div class="form-group">
                         <label>Contenu du cours *</label>
@@ -121,6 +130,10 @@
                     </div>
                     <div class="form-actions">
                         <button type="submit" class="btn-primary">Se connecter</button>
+                        <button type="button" id="google-login-btn" class="btn-google"
+                            style="margin-top: 10px; background-color: #4285F4; color: white;">
+                            Se connecter avec Google
+                        </button>
                     </div>
                 </form>
             </div>
@@ -143,4 +156,5 @@
     <script type="module" src="firebase-config.js"></script>
     <script type="module" src="script.js"></script>
 </body>
+
 </html>
