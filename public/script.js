@@ -192,10 +192,12 @@ function renderRelatedCourses(subject, currentCourseId) {
 
     if (relatedCourses.length === 0) {
         sidebarSection.style.display = 'none';
+        checkSidebarVisibility();
         return;
     }
 
     sidebarSection.style.display = 'block';
+    checkSidebarVisibility();
     relatedCoursesList.innerHTML = relatedCourses.map(course => {
         const type = course.type || 'cours';
         const typeLabel = type.charAt(0).toUpperCase() + type.slice(1);
@@ -219,6 +221,7 @@ function renderRelatedExercises(subject, currentCourseId) {
     // Exercises sidebar is ONLY for courses
     if (!currentCourse || currentCourse.type === 'exercice') {
         exercisesSection.style.display = 'none';
+        checkSidebarVisibility();
         return;
     }
 
@@ -229,10 +232,12 @@ function renderRelatedExercises(subject, currentCourseId) {
 
     if (relatedExercises.length === 0) {
         exercisesSection.style.display = 'none';
+        checkSidebarVisibility();
         return;
     }
 
     exercisesSection.style.display = 'block';
+    checkSidebarVisibility();
     relatedExercisesList.innerHTML = relatedExercises.map(exercise => {
         return `
             <div class="related-course-item" onclick="viewCourse('${exercise.id}')">
@@ -243,6 +248,19 @@ function renderRelatedExercises(subject, currentCourseId) {
     }).join('');
 }
 
+function checkSidebarVisibility() {
+    const sidebar = document.querySelector('.course-sidebar-left');
+    const layout = document.querySelector('.course-detail-layout');
+    const visibleSections = sidebar.querySelectorAll('.sidebar-section[style*="display: block"]');
+
+    if (visibleSections.length === 0) {
+        sidebar.style.display = 'none';
+        layout.style.gridTemplateColumns = '1fr';
+    } else {
+        sidebar.style.display = 'flex';
+        layout.style.gridTemplateColumns = '310px 1fr';
+    }
+}
 
 
 // Make viewCourse available globally for onclick handlers

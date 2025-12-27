@@ -552,16 +552,13 @@ p {
 
 /* Course Detail Layout */
 #course-detail .container {
-    max-width: 1300px;
-    /* Widened for better reading experience */
+    max-width: 1400px;
 }
 
 .course-detail-layout {
     display: grid;
-    grid-template-columns: 280px 1fr;
-    /* Slightly narrower sidebar, more room for content */
+    grid-template-columns: 310px 1fr;
     gap: 4rem;
-    /* Increased gap for better separation */
     margin-top: 2rem;
     align-items: start;
 }
@@ -580,15 +577,19 @@ p {
     border-radius: var(--radius-lg);
     padding: 1.5rem;
     height: fit-content;
+    display: none;
+    /* Hidden by default, shown by JS if not empty */
 }
 
 .sidebar-section h3 {
-    font-size: 1rem;
-    font-weight: 600;
+    font-size: 0.95rem;
+    font-weight: 700;
     color: var(--text-main);
     margin-bottom: 1rem;
     padding-bottom: 0.75rem;
     border-bottom: 2px solid var(--border-color);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
 .related-course-item {
@@ -648,9 +649,27 @@ p {
 
 .course-detail-content {
     background: var(--surface-color);
-    padding: 3rem;
+    padding: 3.5rem;
+    /* More padding for a premium feel */
     border-radius: var(--radius-lg);
     border: 1px solid var(--border-color);
+    font-size: 1.05rem;
+    /* Larger base font for content */
+    line-height: 1.7;
+    /* Increased line-height for easier reading */
+}
+
+.course-detail-content h1,
+.course-detail-content h2 {
+    margin-top: 2rem;
+    margin-bottom: 1.25rem;
+    color: var(--text-main);
+    letter-spacing: -0.01em;
+}
+
+.course-detail-content p {
+    margin-bottom: 1.25rem;
+    color: var(--text-secondary);
 }
 
 /* Ensure complex HTML content renders correctly */
@@ -658,6 +677,7 @@ p {
     width: 100%;
     border-collapse: collapse;
     margin-bottom: 2rem;
+    font-size: 0.95rem;
 }
 
 #course-content th,
