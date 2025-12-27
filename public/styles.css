@@ -551,10 +551,17 @@ p {
 }
 
 /* Course Detail Layout */
+#course-detail .container {
+    max-width: 1300px;
+    /* Widened for better reading experience */
+}
+
 .course-detail-layout {
     display: grid;
-    grid-template-columns: 320px 1fr;
-    gap: 3rem;
+    grid-template-columns: 280px 1fr;
+    /* Slightly narrower sidebar, more room for content */
+    gap: 4rem;
+    /* Increased gap for better separation */
     margin-top: 2rem;
     align-items: start;
 }

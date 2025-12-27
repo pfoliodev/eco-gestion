@@ -159,6 +159,7 @@ function viewCourse(id) {
         }
 
         showPage('course-detail');
+        window.scrollTo(0, 0);
     }
 }
 
