@@ -148,13 +148,13 @@ function viewCourse(id) {
         renderRelatedCourses(course.subject, id);
 
         // Load related exercises only if current content is a course (not an exercise)
-        const exercisesSidebar = document.querySelector('.related-exercises-sidebar');
+        const exercisesSection = document.getElementById('exercises-sidebar-section');
         if (course.type === 'exercice') {
             // Hide exercises sidebar for exercises
-            exercisesSidebar.style.display = 'none';
+            exercisesSection.style.display = 'none';
         } else {
             // Show and populate exercises sidebar for courses
-            exercisesSidebar.style.display = 'block';
+            exercisesSection.style.display = 'block';
             renderRelatedExercises(course.subject, id);
         }
 
