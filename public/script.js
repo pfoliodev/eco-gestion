@@ -29,8 +29,6 @@ const notyf = new Notyf({
 });
 
 let currentCourseId = null;
-let currentCourseId = null;
-
 // TinyMCE initialization
 function initTinyMCE() {
     tinymce.init({
@@ -53,29 +51,30 @@ function initTinyMCE() {
 }
 
 
-const pages = document.querySelectorAll('.page');
+function showPage(pageId) {
+    const pages = document.querySelectorAll('.page');
 
-pages.forEach(page => page.classList.remove('active'));
-
-
-
-const targetPage = document.getElementById(pageId);
-
-if (targetPage) {
-
-    targetPage.classList.add('active');
-
-}
+    pages.forEach(page => page.classList.remove('active'));
 
 
 
-if (pageId === 'cours') {
+    const targetPage = document.getElementById(pageId);
 
-    renderCourses();
+    if (targetPage) {
 
-    updateFilters();
+        targetPage.classList.add('active');
 
-}
+    }
+
+
+
+    if (pageId === 'cours') {
+
+        renderCourses();
+
+        updateFilters();
+
+    }
 
 }
 
