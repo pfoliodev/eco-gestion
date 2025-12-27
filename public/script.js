@@ -358,9 +358,12 @@ function initQuillEditor() {
     // Add a custom button to the toolbar
     const toolbarOptions = [
         [{ 'header': [1, 2, 3, false] }],
-        ['bold', 'italic', 'underline'],
+        ['bold', 'italic', 'underline', 'strike'],
+        [{ 'color': [] }, { 'background': [] }],
+        [{ 'align': [] }],
         [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-        ['link', 'code-block'], // Add code-block icon to represent HTML
+        ['blockquote', 'code-block'], // 'code-block' is repurposed for HTML input but good to have
+        ['link'],
         ['clean']
     ];
 
