@@ -147,6 +147,17 @@ function viewCourse(id) {
         // Load related courses
         renderRelatedCourses(course.subject, id);
 
+        // Load related exercises only if current content is a course (not an exercise)
+        const exercisesSidebar = document.querySelector('.related-exercises-sidebar');
+        if (course.type === 'exercice') {
+            // Hide exercises sidebar for exercises
+            exercisesSidebar.style.display = 'none';
+        } else {
+            // Show and populate exercises sidebar for courses
+            exercisesSidebar.style.display = 'block';
+            renderRelatedExercises(course.subject, id);
+        }
+
         showPage('course-detail');
     }
 }
@@ -154,9 +165,11 @@ function viewCourse(id) {
 function renderRelatedCourses(subject, currentCourseId) {
     const relatedCoursesList = document.getElementById('related-courses-list');
 
-    // Filter courses by same subject, excluding current course
+    // Filter courses by same subject, excluding current course, and only type 'cours'
     const relatedCourses = courses.filter(c =>
-        c.subject === subject && c.id !== currentCourseId
+        c.subject === subject &&
+        c.id !== currentCourseId &&
+        (c.type === 'cours' || !c.type) // Include courses without type or with type 'cours'
     );
 
     if (relatedCourses.length === 0) {
@@ -172,6 +185,31 @@ function renderRelatedCourses(subject, currentCourseId) {
             <div class="related-course-item" onclick="viewCourse('${course.id}')">
                 <div class="related-course-title">${course.title}</div>
                 <span class="related-course-type">${typeLabel}</span>
+            </div>
+        `;
+    }).join('');
+}
+
+function renderRelatedExercises(subject, currentCourseId) {
+    const relatedExercisesList = document.getElementById('related-exercises-list');
+
+    // Filter exercises by same subject, excluding current course, and only type 'exercice'
+    const relatedExercises = courses.filter(c =>
+        c.subject === subject &&
+        c.id !== currentCourseId &&
+        c.type === 'exercice'
+    );
+
+    if (relatedExercises.length === 0) {
+        relatedExercisesList.innerHTML = '<p style="color: var(--text-secondary); font-size: 0.875rem; text-align: center; padding: 1rem 0;">Aucun exercice disponible.</p>';
+        return;
+    }
+
+    relatedExercisesList.innerHTML = relatedExercises.map(exercise => {
+        return `
+            <div class="related-course-item" onclick="viewCourse('${exercise.id}')">
+                <div class="related-course-title">${exercise.title}</div>
+                <span class="related-course-type">Exercice</span>
             </div>
         `;
     }).join('');
@@ -559,6 +597,84 @@ async function changeUserRole(userId, newRole) {
 // Make changeUserRole available globally
 window.changeUserRole = changeUserRole;
 
+function initAdminTabs() {
+    const tabs = document.querySelectorAll('.admin-tab');
+    const tabContents = document.querySelectorAll('.admin-tab-content');
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const targetTab = tab.dataset.tab;
+
+            // Remove active class from all tabs and contents
+            tabs.forEach(t => t.classList.remove('active'));
+            tabContents.forEach(tc => tc.classList.remove('active'));
+
+            // Add active class to clicked tab and corresponding content
+            tab.classList.add('active');
+            document.getElementById(`admin-${targetTab}-tab`).classList.add('active');
+
+            // Load data for the selected tab
+            if (targetTab === 'courses') {
+                loadCourseManagement();
+            }
+        });
+    });
+}
+
+function loadCourseManagement() {
+    const selectCourse = document.getElementById('select-course');
+
+    // Filter only courses (not exercises or videos)
+    const coursesList = courses.filter(c => c.type === 'cours' || !c.type);
+
+    selectCourse.innerHTML = '<option value="">-- Choisir un cours --</option>' +
+        coursesList.map(course => `<option value="${course.id}">${course.title} (${course.subject})</option>`).join('');
+
+    selectCourse.addEventListener('change', (e) => {
+        const courseId = e.target.value;
+        if (courseId) {
+            displayCourseExercises(courseId);
+        } else {
+            document.getElementById('course-exercises-section').style.display = 'none';
+        }
+    });
+}
+
+function displayCourseExercises(courseId) {
+    const course = courses.find(c => c.id === courseId);
+    if (!course) return;
+
+    const exercisesSection = document.getElementById('course-exercises-section');
+    const exercisesList = document.getElementById('available-exercises-list');
+
+    // Filter exercises with the same subject
+    const relatedExercises = courses.filter(c =>
+        c.subject === course.subject &&
+        c.type === 'exercice'
+    );
+
+    if (relatedExercises.length === 0) {
+        exercisesList.innerHTML = '<p style="color: var(--text-secondary); padding: 1rem; text-align: center;">Aucun exercice disponible pour ce sujet.</p>';
+    } else {
+        exercisesList.innerHTML = `
+            <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                ${relatedExercises.length} exercice(s) trouvé(s) pour le sujet "${course.subject}". 
+                Ces exercices seront automatiquement affichés dans la sidebar du cours.
+            </p>
+            <div style="display: grid; gap: 0.75rem;">
+                ${relatedExercises.map(ex => `
+                    <div style="padding: 1rem; background: var(--surface-hover); border: 1px solid var(--border-color); border-radius: var(--radius-md);">
+                        <strong>${ex.title}</strong>
+                        ${ex.category ? `<div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem;">Catégorie: ${ex.category}</div>` : ''}
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }
+
+    exercisesSection.style.display = 'block';
+}
+
 
 function backToCourses() {
     currentCourseId = null;
@@ -571,6 +687,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initAuth();
     initForm();
     initNavigation();
+    initAdminTabs();
     initEventListeners();
     loadCourses(); // This will now fetch from Firestore and then render
     showPage('accueil');

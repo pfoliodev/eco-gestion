@@ -553,12 +553,13 @@ p {
 /* Course Detail Layout */
 .course-detail-layout {
     display: grid;
-    grid-template-columns: 280px 1fr;
+    grid-template-columns: 280px 1fr 280px;
     gap: 2rem;
     margin-top: 2rem;
 }
 
-.related-courses-sidebar {
+.related-courses-sidebar,
+.related-exercises-sidebar {
     background: var(--surface-color);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
@@ -568,7 +569,8 @@ p {
     top: 2rem;
 }
 
-.related-courses-sidebar h3 {
+.related-courses-sidebar h3,
+.related-exercises-sidebar h3 {
     font-size: 1rem;
     font-weight: 600;
     color: var(--text-main);
@@ -767,19 +769,73 @@ p {
     border-color: var(--primary-color);
 }
 
+/* Admin Tabs */
+.admin-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.admin-tab {
+    padding: 0.75rem 1.5rem;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    font-weight: 500;
+    color: var(--text-secondary);
+    transition: all 0.15s;
+    font-size: 0.95rem;
+}
+
+.admin-tab:hover {
+    color: var(--text-main);
+    background-color: var(--surface-hover);
+}
+
+.admin-tab.active {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+}
+
+.admin-tab-content {
+    display: none;
+}
+
+.admin-tab-content.active {
+    display: block;
+}
+
+.course-management-container {
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+}
+
+
 /* Responsive Design */
-@media (max-width: 768px) {
+@media (max-width: 1200px) {
     .course-detail-layout {
         grid-template-columns: 1fr;
     }
 
-    .related-courses-sidebar {
+    .related-courses-sidebar,
+    .related-exercises-sidebar {
         position: static;
-        order: 2;
         margin-top: 2rem;
     }
 
     .course-content-main {
         order: 1;
+    }
+
+    .related-courses-sidebar {
+        order: 2;
+    }
+
+    .related-exercises-sidebar {
+        order: 3;
     }
 }
