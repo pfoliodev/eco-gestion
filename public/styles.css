@@ -275,6 +275,43 @@ p {
     margin-bottom: 1rem;
     border: 1px solid var(--border-color);
     align-self: flex-start;
+    margin-right: 0.5rem;
+}
+
+.course-type-tag {
+    display: inline-block;
+    padding: 0.25rem 0.6rem;
+    border-radius: var(--radius-md);
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 1rem;
+    align-self: flex-start;
+}
+
+.type-cours {
+    background-color: #dbeafe;
+    /* Blue 100 */
+    color: #1e40af;
+    /* Blue 800 */
+    border: 1px solid #bfdbfe;
+}
+
+.type-exercice {
+    background-color: #dcfce7;
+    /* Green 100 */
+    color: #166534;
+    /* Green 800 */
+    border: 1px solid #bbf7d0;
+}
+
+.type-video {
+    background-color: #fae8ff;
+    /* Fuchsia 100 */
+    color: #86198f;
+    /* Fuchsia 800 */
+    border: 1px solid #f5d0fe;
 }
 
 .course-card p {
