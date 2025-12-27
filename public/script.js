@@ -98,11 +98,13 @@ function renderCourses() {
         return `
         <div class="course-card" data-course-id="${course.id}">
             <h3>${course.title}</h3>
-            <div style="margin-bottom: 0.5rem;">
-                <span class="course-subject-tag">${course.subject}</span>
-                <span class="course-type-tag type-${type}">${typeLabel}</span>
+            <div style="margin-bottom: 0.75rem;">
+                <div style="margin-bottom: 0.5rem;">
+                    <span class="course-subject-tag">${course.subject}</span>
+                    <span class="course-type-tag type-${type}">${typeLabel}</span>
+                </div>
+                ${course.category ? `<div style="font-size: 0.85rem; color: #64748b;"><strong style="color: #4f46e5;">Catégorie :</strong> ${course.category}</div>` : ''}
             </div>
-            ${course.category ? `<p style="font-size: 0.85rem; color: #64748b; margin-bottom: 0.5rem; display: block; width: 100%;"><strong style="color: #4f46e5;">Catégorie :</strong> ${course.category}</p>` : ''}
             <p>${course.description}</p>
             <div class="course-card-actions">
                 <button class="btn-view" data-id="${course.id}">Voir le cours</button>
