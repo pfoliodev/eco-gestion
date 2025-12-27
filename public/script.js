@@ -144,19 +144,9 @@ function viewCourse(id) {
             ${course.content}
         `;
 
-        // Load related courses
+        // Load sidebars
         renderRelatedCourses(course.subject, id);
-
-        // Load related exercises only if current content is a course (not an exercise)
-        const exercisesSection = document.getElementById('exercises-sidebar-section');
-        if (course.type === 'exercice') {
-            // Hide exercises sidebar for exercises
-            exercisesSection.style.display = 'none';
-        } else {
-            // Show and populate exercises sidebar for courses
-            exercisesSection.style.display = 'block';
-            renderRelatedExercises(course.subject, id);
-        }
+        renderRelatedExercises(course.subject, id);
 
         showPage('course-detail');
         window.scrollTo(0, 0);
@@ -165,19 +155,47 @@ function viewCourse(id) {
 
 function renderRelatedCourses(subject, currentCourseId) {
     const relatedCoursesList = document.getElementById('related-courses-list');
+    const sidebarSection = relatedCoursesList.closest('.sidebar-section');
+    const currentCourse = courses.find(c => c.id === currentCourseId);
 
-    // Filter courses by same subject, excluding current course, and only type 'cours'
-    const relatedCourses = courses.filter(c =>
-        c.subject === subject &&
-        c.id !== currentCourseId &&
-        (c.type === 'cours' || !c.type) // Include courses without type or with type 'cours'
-    );
+    let relatedCourses = [];
+    let title = 'Cours du même sujet';
+
+    if (currentCourse && currentCourse.type === 'exercice') {
+        title = 'Cours associés';
+        // For an exercise, show courses that explicitly link to it
+        relatedCourses = courses.filter(c =>
+            (c.type === 'cours' || !c.type) &&
+            c.linkedExercises &&
+            c.linkedExercises.includes(currentCourseId)
+        );
+
+        // Fallback to same subject if no manual links
+        if (relatedCourses.length === 0) {
+            relatedCourses = courses.filter(c =>
+                (c.type === 'cours' || !c.type) &&
+                c.subject === subject &&
+                c.id !== currentCourseId
+            );
+        }
+    } else {
+        // For a course, show same subject courses
+        relatedCourses = courses.filter(c =>
+            (c.type === 'cours' || !c.type) &&
+            c.subject === subject &&
+            c.id !== currentCourseId
+        );
+    }
+
+    // Update title
+    sidebarSection.querySelector('h3').textContent = title;
 
     if (relatedCourses.length === 0) {
-        relatedCoursesList.innerHTML = '<p style="color: var(--text-secondary); font-size: 0.875rem; text-align: center; padding: 1rem 0;">Aucun autre cours dans ce sujet.</p>';
+        sidebarSection.style.display = 'none';
         return;
     }
 
+    sidebarSection.style.display = 'block';
     relatedCoursesList.innerHTML = relatedCourses.map(course => {
         const type = course.type || 'cours';
         const typeLabel = type.charAt(0).toUpperCase() + type.slice(1);
@@ -193,20 +211,28 @@ function renderRelatedCourses(subject, currentCourseId) {
 
 function renderRelatedExercises(subject, currentCourseId) {
     const relatedExercisesList = document.getElementById('related-exercises-list');
+    const exercisesSection = document.getElementById('exercises-sidebar-section');
 
     // Get the current course to access its linkedExercises
     const currentCourse = courses.find(c => c.id === currentCourseId);
-    const linkedExerciseIds = currentCourse?.linkedExercises || [];
 
-    // If no linked exercises, show message
-    if (linkedExerciseIds.length === 0) {
-        relatedExercisesList.innerHTML = '<p style="color: var(--text-secondary); font-size: 0.875rem; text-align: center; padding: 1rem 0;">Aucun exercice lié.<br><small>Utilisez l\'interface admin pour assigner des exercices.</small></p>';
+    // Exercises sidebar is ONLY for courses
+    if (!currentCourse || currentCourse.type === 'exercice') {
+        exercisesSection.style.display = 'none';
         return;
     }
+
+    const linkedExerciseIds = currentCourse.linkedExercises || [];
 
     // Get the actual exercise objects from the IDs
     const relatedExercises = courses.filter(c => linkedExerciseIds.includes(c.id));
 
+    if (relatedExercises.length === 0) {
+        exercisesSection.style.display = 'none';
+        return;
+    }
+
+    exercisesSection.style.display = 'block';
     relatedExercisesList.innerHTML = relatedExercises.map(exercise => {
         return `
             <div class="related-course-item" onclick="viewCourse('${exercise.id}')">
@@ -216,6 +242,7 @@ function renderRelatedExercises(subject, currentCourseId) {
         `;
     }).join('');
 }
+
 
 
 // Make viewCourse available globally for onclick handlers
