@@ -227,6 +227,14 @@ function initNavigation() {
                 document.getElementById('course-category').value = '';
                 showPage('ajouter');
             }
+            else if (href === '#admin') {
+                if (isAdmin) {
+                    loadUsers();
+                    showPage('admin');
+                } else {
+                    notyf.error("Accès non autorisé.");
+                }
+            }
             else if (href === '#login') showPage('login');
         });
     });
@@ -291,6 +299,7 @@ function initAuth() {
     const adminActions = document.getElementById('admin-actions');
     const addCourseBtn = document.querySelector('.courses-header .btn-primary');
     const addCourseNavLink = document.querySelector('.nav-menu a[href="#ajouter"]');
+    const adminNavLink = document.getElementById('admin-nav-link');
 
     onAuthStateChanged(auth, async user => {
         if (user) {
@@ -306,10 +315,12 @@ function initAuth() {
                 adminActions.style.display = 'flex';
                 addCourseBtn.style.display = 'inline-flex';
                 addCourseNavLink.style.display = 'inline-flex';
+                adminNavLink.style.display = 'inline-flex';
             } else {
                 adminActions.style.display = 'none';
                 addCourseBtn.style.display = 'none';
                 addCourseNavLink.style.display = 'none';
+                adminNavLink.style.display = 'none';
             }
         } else {
             // User is signed out
@@ -319,6 +330,7 @@ function initAuth() {
             adminActions.style.display = 'none';
             addCourseBtn.style.display = 'none';
             addCourseNavLink.style.display = 'none';
+            adminNavLink.style.display = 'none';
             if (document.querySelector('.page.active').id === 'ajouter') {
                 showPage('cours');
             }
@@ -437,7 +449,81 @@ function initForm() {
     });
 }
 
+// Admin User Management Functions
+async function loadUsers() {
+    if (!isAdmin) {
+        notyf.error("Accès non autorisé.");
+        return;
+    }
 
+    try {
+        const usersSnapshot = await getDocs(usersCollection);
+        const users = usersSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+        renderUsers(users);
+    } catch (error) {
+        console.error("Error loading users:", error);
+        notyf.error("Erreur lors du chargement des utilisateurs.");
+    }
+}
+
+function renderUsers(users) {
+    const tbody = document.getElementById('users-table-body');
+
+    if (users.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 2rem; color: var(--text-secondary);">Aucun utilisateur trouvé.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = users.map(user => {
+        const createdDate = user.createdAt ? new Date(user.createdAt.seconds * 1000).toLocaleDateString('fr-FR') : 'N/A';
+        const currentRole = user.role || 'student';
+        const newRole = currentRole === 'admin' ? 'student' : 'admin';
+        const buttonText = currentRole === 'admin' ? 'Rétrograder en Étudiant' : 'Promouvoir en Admin';
+
+        return `
+            <tr>
+                <td>${user.email || 'N/A'}</td>
+                <td><span class="role-badge ${currentRole}">${currentRole === 'admin' ? 'Administrateur' : 'Étudiant'}</span></td>
+                <td>${createdDate}</td>
+                <td>
+                    <button class="btn-change-role" onclick="changeUserRole('${user.id}', '${newRole}')">
+                        ${buttonText}
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+async function changeUserRole(userId, newRole) {
+    if (!isAdmin) {
+        notyf.error("Accès non autorisé.");
+        return;
+    }
+
+    // Prevent admin from changing their own role
+    if (userId === auth.currentUser.uid) {
+        notyf.error("Vous ne pouvez pas modifier votre propre rôle.");
+        return;
+    }
+
+    try {
+        await updateDoc(doc(db, 'users', userId), {
+            role: newRole
+        });
+        notyf.success(`Rôle modifié avec succès en ${newRole === 'admin' ? 'Administrateur' : 'Étudiant'}.`);
+        loadUsers(); // Reload the users table
+    } catch (error) {
+        console.error("Error changing user role:", error);
+        notyf.error("Erreur lors de la modification du rôle.");
+    }
+}
+
+// Make changeUserRole available globally
+window.changeUserRole = changeUserRole;
 
 
 function backToCourses() {
