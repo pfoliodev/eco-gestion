@@ -26,5 +26,15 @@ service cloud.firestore {
       allow create, update, delete: if request.auth != null && 
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
+
+    // Bugs collection
+    match /bugs/{bugId} {
+      // Anyone can create a bug report
+      allow create: if true;
+      
+      // Only admins can read, update, or delete bug reports
+      allow read, update, delete: if request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
   }
 }

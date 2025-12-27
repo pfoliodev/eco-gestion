@@ -6,3 +6,4 @@ export const db = getFirestore(app);
 export const auth = getAuth(app);
 export const coursesCollection = collection(db, 'courses');
 export const usersCollection = collection(db, 'users');
+export const bugsCollection = collection(db, 'bugs');

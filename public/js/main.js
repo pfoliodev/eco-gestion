@@ -1,8 +1,10 @@
 import { initTinyMCE, showPage, notyf } from './ui.js';
+import { auth } from './firebase.js';
 import { initAuth } from './auth.js';
 import { initForm, loadCourses, renderCourses, updateFilters, viewCourse, editCourse, deleteCourse } from './course.js';
 import { initAdminTabs, loadUsers } from './admin.js';
-import { isAdmin } from './state.js';
+import { initBugSystem } from './bug.js';
+import { state } from './state.js';
 
 // Global exports for inline HTML handlers
 window.viewCourse = viewCourse;
@@ -18,10 +20,13 @@ function initNavigation() {
                 document.getElementById('form-title').textContent = 'Nouveau cours';
                 document.getElementById('course-form').reset();
                 document.getElementById('course-id').value = '';
+                if (auth.currentUser) {
+                    document.getElementById('course-author').value = auth.currentUser.displayName || auth.currentUser.email.split('@')[0];
+                }
                 showPage('ajouter');
             }
             else if (href === '#admin') {
-                if (isAdmin) { loadUsers(); showPage('admin'); }
+                if (state.isAdmin) { loadUsers(); showPage('admin'); }
                 else notyf.error("Accès non autorisé.");
             }
             else if (href === '#login') showPage('login');
@@ -32,10 +37,30 @@ function initNavigation() {
 function initEventListeners() {
     document.getElementById('course-search')?.addEventListener('input', renderCourses);
     document.getElementById('course-filter')?.addEventListener('change', renderCourses);
+    document.getElementById('course-type-filter')?.addEventListener('change', renderCourses);
+
+    // Dashboard navigation
+    document.getElementById('card-courses')?.addEventListener('click', () => {
+        const typeFilter = document.getElementById('course-type-filter');
+        if (typeFilter) typeFilter.value = 'cours';
+        showPage('cours');
+        renderCourses();
+    });
+
+    document.getElementById('card-exercises')?.addEventListener('click', () => {
+        const typeFilter = document.getElementById('course-type-filter');
+        if (typeFilter) typeFilter.value = 'exercice';
+        showPage('cours');
+        renderCourses();
+    });
+
     document.getElementById('add-course-btn')?.addEventListener('click', () => {
         document.getElementById('form-title').textContent = 'Nouveau cours';
         document.getElementById('course-form').reset();
         document.getElementById('course-id').value = '';
+        if (auth.currentUser) {
+            document.getElementById('course-author').value = auth.currentUser.displayName || auth.currentUser.email.split('@')[0];
+        }
         tinymce.get('editor-container')?.setContent('');
         showPage('ajouter');
     });
@@ -55,6 +80,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initForm();
     initNavigation();
     initAdminTabs();
+    initBugSystem();
     initEventListeners();
     loadCourses();
     showPage('accueil');

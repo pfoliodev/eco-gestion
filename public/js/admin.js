@@ -1,11 +1,11 @@
-import { db, usersCollection } from './firebase.js';
-import { getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js";
-import { isAdmin, courses } from './state.js';
+import { db, usersCollection, bugsCollection } from './firebase.js';
+import { getDocs, doc, updateDoc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js";
+import { state } from './state.js';
 import { auth } from './firebase.js';
 import { notyf } from './ui.js';
 
 export async function loadUsers() {
-    if (!isAdmin) return;
+    if (!state.isAdmin) return;
     try {
         const snap = await getDocs(usersCollection);
         const users = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -40,7 +40,7 @@ export function renderUsers(users) {
 }
 
 export async function changeUserRole(userId, newRole) {
-    if (!isAdmin || userId === auth.currentUser.uid) {
+    if (!state.isAdmin || userId === auth.currentUser.uid) {
         notyf.error("Action non autorisée.");
         return;
     }
@@ -63,22 +63,155 @@ export function initAdminTabs() {
             tab.classList.add('active');
             document.getElementById(`admin-${target}-tab`).classList.add('active');
             if (target === 'courses') loadCourseManagement();
+            if (target === 'bugs') loadBugs();
         });
     });
+
+    // Bug Detail Modal Listeners
+    document.getElementById('close-bug-detail-modal')?.addEventListener('click', closeBugDetail);
+    window.addEventListener('click', (e) => {
+        const modal = document.getElementById('bug-detail-modal');
+        if (e.target === modal) closeBugDetail();
+    });
 }
+
+let currentBugs = []; // Local cache for detail view
+
+export async function loadBugs() {
+    if (!state.isAdmin) return;
+    try {
+        const snap = await getDocs(bugsCollection);
+        currentBugs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        renderBugs(currentBugs);
+    } catch (error) {
+        console.error("Error loading bugs:", error);
+        notyf.error("Erreur de chargement des signalements.");
+    }
+}
+
+export function renderBugs(bugs) {
+    const tbody = document.getElementById('bugs-table-body');
+    if (!tbody) return;
+    if (!bugs || bugs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 2rem;">Aucun signalement. Tout va bien ! ☀️</td></tr>';
+        return;
+    }
+
+    const sortedBugs = [...bugs].sort((a, b) => {
+        const dateA = a.createdAt?.seconds || 0;
+        const dateB = b.createdAt?.seconds || 0;
+        return dateB - dateA;
+    });
+
+    tbody.innerHTML = sortedBugs.map(bug => {
+        let date = 'Date en attente...';
+        if (bug.createdAt && bug.createdAt.seconds) {
+            date = new Date(bug.createdAt.seconds * 1000).toLocaleString('fr-FR');
+        }
+        const isResolved = bug.status === 'resolved';
+        const statusClass = isResolved ? 'status-resolved' : 'status-new';
+        const statusLabel = isResolved ? 'Résolu' : 'Nouveau';
+
+        return `
+            <tr class="bug-row" onclick="viewBugDetail('${bug.id}')">
+                <td><strong>${bug.user}</strong></td>
+                <td>
+                    <div style="font-weight: 600;">${bug.subject}</div>
+                    <div class="text-truncate-2" style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem;">${bug.description}</div>
+                </td>
+                <td><span class="bug-status ${statusClass}">${statusLabel}</span><br><small>${date}</small></td>
+                <td>
+                    <div style="display: flex; gap: 0.5rem;" onclick="event.stopPropagation()">
+                        <button class="btn-bug-action ${isResolved ? 'btn-bug-reopen' : 'btn-bug-solve'}" 
+                                onclick="toggleBugStatus('${bug.id}', '${bug.status}')">
+                            ${isResolved ? 'Réouvrir' : 'Résoudre'}
+                        </button>
+                        <button class="btn-delete" style="padding: 0.4rem 0.6rem;" onclick="deleteBug('${bug.id}')">🗑️</button>
+                    </div>
+                </td>
+            </tr>`;
+    }).join('');
+}
+
+export function viewBugDetail(bugId) {
+    const bug = currentBugs.find(b => b.id === bugId);
+    if (!bug) return;
+
+    const modal = document.getElementById('bug-detail-modal');
+    if (!modal) return;
+
+    const isResolved = bug.status === 'resolved';
+
+    document.getElementById('bug-detail-subject').textContent = bug.subject;
+    document.getElementById('bug-detail-description').textContent = bug.description;
+    document.getElementById('bug-detail-user').textContent = bug.user;
+
+    let date = 'Date inconnue';
+    if (bug.createdAt && bug.createdAt.seconds) {
+        date = new Date(bug.createdAt.seconds * 1000).toLocaleString('fr-FR');
+    }
+    document.getElementById('bug-detail-date').textContent = date;
+
+    const statusSpan = document.getElementById('bug-detail-status');
+    statusSpan.textContent = isResolved ? 'Résolu' : 'Nouveau';
+    statusSpan.className = `bug-status ${isResolved ? 'status-resolved' : 'status-new'}`;
+
+    const actionsDiv = document.getElementById('bug-detail-actions');
+    actionsDiv.innerHTML = `
+        <button class="btn-bug-action ${isResolved ? 'btn-bug-reopen' : 'btn-bug-solve'}" 
+                onclick="toggleBugStatus('${bug.id}', '${bug.status}'); closeBugDetail();">
+            ${isResolved ? 'Réouvrir le bug' : 'Marquer comme résolu'}
+        </button>
+    `;
+
+    modal.style.display = 'flex';
+}
+
+export function closeBugDetail() {
+    const modal = document.getElementById('bug-detail-modal');
+    if (modal) modal.style.display = 'none';
+}
+
+window.viewBugDetail = viewBugDetail;
+window.closeBugDetail = closeBugDetail;
+
+export async function toggleBugStatus(bugId, currentStatus) {
+    const newStatus = currentStatus === 'resolved' ? 'new' : 'resolved';
+    try {
+        await updateDoc(doc(db, 'bugs', bugId), { status: newStatus });
+        notyf.success('Statut mis à jour.');
+        loadBugs();
+    } catch (error) {
+        notyf.error("Erreur de mise à jour.");
+    }
+}
+
+export async function deleteBug(bugId) {
+    if (!confirm("Supprimer ce signalement ?")) return;
+    try {
+        await deleteDoc(doc(db, 'bugs', bugId));
+        notyf.success('Signalement supprimé.');
+        loadBugs();
+    } catch (error) {
+        notyf.error("Erreur de suppression.");
+    }
+}
+
+window.toggleBugStatus = toggleBugStatus;
+window.deleteBug = deleteBug;
 
 export function loadCourseManagement() {
     const select = document.getElementById('select-course');
     if (!select) return;
-    const clist = courses.filter(c => c.type === 'cours' || !c.type);
+    const clist = state.courses.filter(c => c.type === 'cours' || !c.type);
     select.innerHTML = '<option value="">-- Choisir un cours --</option>' + clist.map(c => `<option value="${c.id}">${c.title}</option>`).join('');
     select.onchange = (e) => e.target.value ? displayCourseExercises(e.target.value) : document.getElementById('course-exercises-section').style.display = 'none';
 }
 
 export function displayCourseExercises(courseId) {
-    const course = courses.find(c => c.id === courseId);
+    const course = state.courses.find(c => c.id === courseId);
     const list = document.getElementById('available-exercises-list');
-    const allEx = courses.filter(c => c.type === 'exercice');
+    const allEx = state.courses.filter(c => c.type === 'exercice');
     const linked = course?.linkedExercises || [];
 
     list.innerHTML = allEx.map(ex => `
@@ -100,8 +233,8 @@ export async function saveLinkedExercises(courseId) {
     const linked = Array.from(document.querySelectorAll('.exercise-checkbox:checked')).map(cb => cb.dataset.exerciseId);
     try {
         await updateDoc(doc(db, 'courses', courseId), { linkedExercises: linked });
-        const idx = courses.findIndex(c => c.id === courseId);
-        if (idx !== -1) courses[idx].linkedExercises = linked;
+        const idx = state.courses.findIndex(c => c.id === courseId);
+        if (idx !== -1) state.courses[idx].linkedExercises = linked;
         notyf.success('Liaison enregistrée !');
     } catch (error) {
         notyf.error("Erreur d'enregistrement.");

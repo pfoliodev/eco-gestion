@@ -1,7 +1,7 @@
 import { auth, db } from './firebase.js';
 import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js";
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-auth.js";
-import { setIsAdmin, isAdmin } from './state.js';
+import { setIsAdmin, state } from './state.js';
 import { notyf, showPage } from './ui.js';
 
 export async function getUserRole(userId) {
@@ -40,7 +40,7 @@ export function initAuth() {
             loginNavLink.style.display = 'none';
             logoutBtn.style.display = 'inline-flex';
 
-            if (isAdmin) {
+            if (state.isAdmin) {
                 adminActions.style.display = 'flex';
                 if (addCourseBtn) addCourseBtn.style.display = 'inline-flex';
                 if (addCourseNavLink) addCourseNavLink.style.display = 'inline-flex';
