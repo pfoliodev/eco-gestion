@@ -570,3 +570,22 @@ body.dark-mode .ql-toolbar .ql-picker-item.ql-selected {
     box-shadow: var(--shadow-sm);
     border: 1px solid var(--border-color);
 }
+
+/* Ensure complex HTML content renders correctly */
+#course-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1rem;
+}
+
+#course-content th,
+#course-content td {
+    padding: 0.75rem;
+    border: 1px solid var(--border-color);
+}
+
+#course-content .flex-container {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
