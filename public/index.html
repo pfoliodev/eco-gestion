@@ -80,6 +80,19 @@
                         <input type="text" id="course-subject" required placeholder="Ex: Économie d'entreprise">
                     </div>
                     <div class="form-group">
+                        <label for="course-type">Type de contenu</label>
+                        <select id="course-type" required>
+                            <option value="cours">Cours</option>
+                            <option value="exercice">Exercice</option>
+                            <option value="video">Vidéo</option>
+                        </select>
+                    </div>
+                    <!-- Nouveau champ Catégorie -->
+                    <div class="form-group">
+                        <label for="course-category">Catégorie</label>
+                        <input type="text" id="course-category" placeholder="Ex: Chapitre 1, Introduction...">
+                    </div>
+                    <div class="form-group">
                         <label for="course-description">Description</label>
                         <textarea id="course-description" rows="3"
                             placeholder="Brève description du cours..."></textarea>

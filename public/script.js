@@ -91,16 +91,24 @@ function renderCourses() {
         return matchesSearch && matchesSubject;
     });
 
-    grid.innerHTML = filteredCourses.map(course => `
+    grid.innerHTML = filteredCourses.map(course => {
+        const type = course.type || 'cours';
+        const typeLabel = type.charAt(0).toUpperCase() + type.slice(1);
+
+        return `
         <div class="course-card" data-course-id="${course.id}">
             <h3>${course.title}</h3>
-            <span class="course-subject-tag">${course.subject}</span>
+            <div style="margin-bottom: 0.5rem;">
+                <span class="course-subject-tag">${course.subject}</span>
+                <span class="course-type-tag type-${type}">${typeLabel}</span>
+            </div>
             <p>${course.description}</p>
+            ${course.category ? `<p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1rem;"><strong style="color: #4f46e5;">Catégorie :</strong> ${course.category}</p>` : ''}
             <div class="course-card-actions">
                 <button class="btn-view" data-id="${course.id}">Voir le cours</button>
             </div>
         </div>
-    `).join('');
+    `}).join('');
 
     // Mettre à jour les statistiques
     document.querySelectorAll('.stat-card h3')[0].textContent = courses.length;
@@ -120,9 +128,15 @@ function viewCourse(id) {
     const course = courses.find(c => c.id === id);
     if (course) {
         currentCourseId = id;
+        const type = course.type || 'cours';
+        const typeLabel = type.charAt(0).toUpperCase() + type.slice(1);
+
         document.getElementById('course-content').innerHTML = `
             <h2>${course.title}</h2>
-            <span class="course-subject-tag">${course.subject}</span>
+            <div>
+                <span class="course-subject-tag">${course.subject}</span>
+                <span class="course-type-tag type-${type}">${typeLabel}</span>
+            </div>
             ${course.content}
         `;
         showPage('course-detail');
@@ -136,6 +150,8 @@ function editCourse() {
         document.getElementById('course-id').value = course.id;
         document.getElementById('course-title').value = course.title;
         document.getElementById('course-subject').value = course.subject;
+        document.getElementById('course-type').value = course.type || 'cours';
+        document.getElementById('course-category').value = course.category || '';
         document.getElementById('course-description').value = course.description;
         tinymce.get('editor-container').setContent(course.content);
 
@@ -203,6 +219,8 @@ function initNavigation() {
                 document.getElementById('form-title').textContent = 'Ajouter un nouveau cours';
                 document.getElementById('course-form').reset();
                 document.getElementById('course-id').value = '';
+                document.getElementById('course-type').value = 'cours';
+                document.getElementById('course-category').value = '';
                 showPage('ajouter');
             }
             else if (href === '#login') showPage('login');
@@ -220,6 +238,8 @@ function initEventListeners() {
         document.getElementById('form-title').textContent = 'Ajouter un nouveau cours';
         document.getElementById('course-form').reset();
         document.getElementById('course-id').value = '';
+        document.getElementById('course-type').value = 'cours';
+        document.getElementById('course-category').value = '';
         if (tinymce.get('editor-container')) {
             tinymce.get('editor-container').setContent('');
         }
@@ -339,6 +359,8 @@ function initForm() {
         const courseData = {
             title: document.getElementById('course-title').value,
             subject: document.getElementById('course-subject').value,
+            type: document.getElementById('course-type').value,
+            category: document.getElementById('course-category').value,
             description: document.getElementById('course-description').value,
             content: tinymce.get('editor-container').getContent()
         };
@@ -363,6 +385,7 @@ function initForm() {
 
             form.reset();
             tinymce.get('editor-container').setContent('');
+            document.getElementById('course-type').value = 'cours';
             currentCourseId = null;
             showPage('cours');
         } catch (error) {
