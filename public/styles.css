@@ -2180,3 +2180,56 @@ input:checked+.slider:before {
         padding: 1.5rem;
     }
 }
+/* Icon Action Buttons for Reminders */
+.reminder-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-start;
+}
+
+.btn-icon-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: transparent;
+}
+
+.btn-icon-action svg {
+    width: 18px;
+    height: 18px;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.btn-icon-action.btn-edit {
+    color: #3b82f6;
+    background: rgba(59, 130, 246, 0.1);
+}
+
+.btn-icon-action.btn-edit:hover {
+    background: rgba(59, 130, 246, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(59, 130, 246, 0.2);
+}
+
+.btn-icon-action.btn-delete {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.btn-icon-action.btn-delete:hover {
+    background: rgba(239, 68, 68, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(239, 68, 68, 0.2);
+}
+
+.btn-icon-action:active {
+    transform: translateY(0);
+}
