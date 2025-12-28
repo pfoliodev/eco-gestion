@@ -1007,6 +1007,7 @@ tr.bug-row:hover {
     font-size: 1.1rem;
     color: var(--text-main);
     transition: all 0.15s;
+    overflow: hidden;
 }
 
 .btn-icon:hover {

@@ -8,13 +8,30 @@ export async function getUserRole(userId) {
     try {
         const userDoc = await getDoc(doc(db, 'users', userId));
         if (userDoc.exists()) {
-            return userDoc.data().role || 'student';
+            const userData = userDoc.data();
+
+            // Update profile button icon if photoURL exists
+            if (userData.photoURL) {
+                const profileBtn = document.getElementById('profile-btn');
+                if (profileBtn) {
+                    profileBtn.innerHTML = `<img src="${userData.photoURL}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+                }
+            } else {
+                const profileBtn = document.getElementById('profile-btn');
+                if (profileBtn) {
+                    profileBtn.innerHTML = '👤';
+                }
+            }
+
+            return userData.role || 'student';
         } else {
             await setDoc(doc(db, 'users', userId), {
                 role: 'student',
                 email: auth.currentUser.email,
                 createdAt: new Date()
             });
+            const profileBtn = document.getElementById('profile-btn');
+            if (profileBtn) profileBtn.innerHTML = '👤';
             return 'student';
         }
     } catch (error) {
@@ -61,7 +78,10 @@ export function initAuth() {
             if (addCourseBtn) addCourseBtn.style.display = 'none';
             if (addCourseNavLink) addCourseNavLink.style.display = 'none';
             adminNavLink.style.display = 'none';
-            if (profileBtn) profileBtn.style.display = 'none';
+            if (profileBtn) {
+                profileBtn.style.display = 'none';
+                profileBtn.innerHTML = '👤'; // Reset icon on logout
+            }
             if (document.querySelector('.page.active').id === 'ajouter') {
                 showPage('cours');
             }
