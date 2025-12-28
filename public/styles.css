@@ -112,6 +112,44 @@ header {
     background-color: var(--surface-hover);
 }
 
+/* Coming Soon Badge */
+.coming-soon-link {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.badge-coming-soon {
+    background: #ef4444;
+    color: white;
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    animation: pulse-badge 2s ease-in-out infinite;
+}
+
+@keyframes pulse-badge {
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.8;
+        transform: scale(0.95);
+    }
+}
+
+.coming-soon-link:hover .badge-coming-soon {
+    background: #dc2626;
+}
+
 /* Header Buttons Specifics */
 #logout-btn {
     height: 32px;
@@ -1513,7 +1551,9 @@ body.menu-open {
         align-items: flex-start;
         gap: 0.5rem;
     }
-}/* ========================================
+}
+
+/* ========================================
    GDPR & Cookie Consent Styles
    ======================================== */
 
