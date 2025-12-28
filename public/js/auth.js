@@ -72,7 +72,7 @@ export function initAuth() {
             }
         } else {
             setIsAdmin(false);
-            loginNavLink.style.display = 'inline-flex';
+            loginNavLink.style.display = 'flex';
             logoutBtn.style.display = 'none';
             adminActions.style.display = 'none';
             if (addCourseBtn) addCourseBtn.style.display = 'none';
