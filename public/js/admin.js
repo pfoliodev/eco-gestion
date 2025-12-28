@@ -162,9 +162,9 @@ export function initAdminSidebar() {
             if (section === 'archived-courses') loadArchivedCourses();
             if (section === 'archived-users') loadArchivedUsers();
             if (section === 'reminders') {
-                const { loadAdminReminders, initReminderForm } = require('./reminders.js');
-                loadAdminReminders();
-                initReminderForm();
+                // Import is already at top of main.js
+                window.loadAdminReminders();
+                window.initReminderForm();
             }
 
             // Close sidebar on mobile after selection

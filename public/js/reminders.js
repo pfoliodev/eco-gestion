@@ -282,3 +282,5 @@ export function initReminderForm() {
 
 // Export for global access
 window.loadReminders = loadReminders;
+window.loadAdminReminders = loadAdminReminders;
+window.initReminderForm = initReminderForm;
