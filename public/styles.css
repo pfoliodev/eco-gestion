@@ -720,14 +720,17 @@ p {
     font-weight: 600;
 }
 
-#course-content .logo-link {
+.logo-link {
     text-decoration: none;
     color: inherit;
+    display: flex;
+    align-items: center;
 }
 
 .logo-link h1 {
     cursor: pointer;
     transition: opacity 0.15s;
+    margin: 0;
 }
 
 .logo-link:hover h1 {
