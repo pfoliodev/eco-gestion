@@ -725,16 +725,20 @@ p {
     color: inherit;
     display: flex;
     align-items: center;
+    padding: 0.5rem 0;
 }
 
 .logo-link h1 {
     cursor: pointer;
     transition: opacity 0.15s;
     margin: 0;
+    font-size: 1.5rem;
+    white-space: nowrap;
 }
 
 .logo-link:hover h1 {
-    opacity: 0.8;
+    opacity: 0.7;
+    color: var(--primary-color);
 }
 
 #course-content .flex-container {
