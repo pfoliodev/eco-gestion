@@ -1,5 +1,6 @@
-import { auth, bugsCollection } from './firebase.js';
-import { getDocs, query, where, orderBy } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js";
+import { auth, bugsCollection, db, storage } from './firebase.js';
+import { getDocs, query, where, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js";
+import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-storage.js";
 import { state } from './state.js';
 import { notyf } from './ui.js';
 
@@ -7,10 +8,99 @@ export async function loadAccount() {
     if (!auth.currentUser) return;
 
     const user = auth.currentUser;
+    const userDocRef = doc(db, 'users', user.uid);
+
+    // Load static data
     document.getElementById('user-display-email').textContent = user.email;
     document.getElementById('user-role-badge').textContent = state.isAdmin ? 'Administrateur' : 'Utilisateur';
 
+    // Load Firestore data
+    try {
+        const userSnap = await getDoc(userDocRef);
+        if (userSnap.exists()) {
+            const userData = userSnap.data();
+            if (userData.firstname) document.getElementById('profile-firstname').value = userData.firstname;
+            if (userData.lastname) document.getElementById('profile-lastname').value = userData.lastname;
+
+            if (userData.firstname || userData.lastname) {
+                document.getElementById('user-display-name').textContent = `${userData.firstname || ''} ${userData.lastname || ''}`.trim();
+            } else {
+                document.getElementById('user-display-name').textContent = 'Mon Compte';
+            }
+
+            if (userData.photoURL) {
+                document.getElementById('account-avatar').src = userData.photoURL;
+                const navIcon = document.getElementById('profile-btn');
+                if (navIcon) navIcon.innerHTML = `<img src="${userData.photoURL}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+            }
+        }
+    } catch (error) {
+        console.error("Error loading profile:", error);
+    }
+
     await loadUserBugs();
+    initProfileForm();
+}
+
+function initProfileForm() {
+    const form = document.getElementById('profile-form');
+    const picInput = document.getElementById('profile-pic-input');
+    const avatarImg = document.getElementById('account-avatar');
+
+    if (picInput) {
+        picInput.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            // Preview
+            const reader = new FileReader();
+            reader.onload = (e) => avatarImg.src = e.target.result;
+            reader.readAsDataURL(file);
+        };
+    }
+
+    if (form) {
+        form.onsubmit = async (e) => {
+            e.preventDefault();
+            const submitBtn = form.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Enregistrement...';
+
+            try {
+                const user = auth.currentUser;
+                const firstname = document.getElementById('profile-firstname').value;
+                const lastname = document.getElementById('profile-lastname').value;
+                const file = picInput.files[0];
+
+                let photoURL = avatarImg.src;
+
+                // Upload image if a new file is selected
+                if (file) {
+                    const storageRef = ref(storage, `profiles/${user.uid}`);
+                    await uploadBytes(storageRef, file);
+                    photoURL = await getDownloadURL(storageRef);
+                }
+
+                // Update Firestore
+                await setDoc(doc(db, 'users', user.uid), {
+                    firstname,
+                    lastname,
+                    photoURL,
+                    email: user.email,
+                    role: state.isAdmin ? 'admin' : 'user'
+                }, { merge: true });
+
+                notyf.success('Profil mis à jour ! ✨');
+                loadAccount(); // Refresh
+            } catch (error) {
+                console.error("Error saving profile:", error);
+                notyf.error('Erreur lors de la sauvegarde du profil.');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Enregistrer les modifications';
+            }
+        };
+    }
 }
 
 export async function loadUserBugs() {
@@ -20,7 +110,6 @@ export async function loadUserBugs() {
     if (!tbody) return;
 
     try {
-        // Find bugs where userId matches OR if userId is missing, try fallback matching by email/name
         const q = query(
             bugsCollection,
             where('userId', '==', auth.currentUser.uid)
@@ -29,7 +118,6 @@ export async function loadUserBugs() {
         const snap = await getDocs(q);
         const bugs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-        // Manual sort by date since we might not have a composite index for userId + createdAt yet
         const sortedBugs = bugs.sort((a, b) => {
             const dateA = a.createdAt?.seconds || 0;
             const dateB = b.createdAt?.seconds || 0;

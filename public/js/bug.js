@@ -36,6 +36,7 @@ export function initBugSystem() {
             createdAt: serverTimestamp(),
             status: 'new'
         };
+        console.log("Submitting bug with data:", data);
 
         try {
             await addDoc(bugsCollection, data);
