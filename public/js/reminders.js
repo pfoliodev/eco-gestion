@@ -255,6 +255,10 @@ export function initReminderForm() {
     const form = document.getElementById('reminder-form');
     if (!form) return;
 
+    // Prevent multiple event listeners
+    if (form.dataset.initialized === 'true') return;
+    form.dataset.initialized = 'true';
+
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
