@@ -76,12 +76,16 @@ function initProfileForm() {
 
                 // Upload image if a new file is selected
                 if (file) {
+                    console.log("Starting upload for file:", file.name);
                     const storageRef = ref(storage, `profiles/${user.uid}`);
                     await uploadBytes(storageRef, file);
+                    console.log("Upload successful, fetching URL...");
                     photoURL = await getDownloadURL(storageRef);
+                    console.log("Download URL obtained:", photoURL);
                 }
 
                 // Update Firestore
+                console.log("Updating Firestore user doc...");
                 await setDoc(doc(db, 'users', user.uid), {
                     firstname,
                     lastname,
@@ -89,6 +93,7 @@ function initProfileForm() {
                     email: user.email,
                     role: state.isAdmin ? 'admin' : 'user'
                 }, { merge: true });
+                console.log("Firestore update successful.");
 
                 notyf.success('Profil mis à jour ! ✨');
                 loadAccount(); // Refresh
