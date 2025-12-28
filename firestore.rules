@@ -12,10 +12,10 @@ service cloud.firestore {
       // Users can only create their own document
       allow create: if request.auth != null && request.auth.uid == userId;
 
-      // Users can update their name/photo but NOT their role
+      // Users can update their name/photo/favorites but NOT their role
       allow update: if request.auth != null && 
         (request.auth.uid == userId && 
-         (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['firstname', 'lastname', 'photoURL', 'email'])) ||
+         (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['firstname', 'lastname', 'photoURL', 'email', 'favorites'])) ||
          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin');
 
       // Only admins can delete users (but not themselves)
