@@ -108,6 +108,16 @@ function initMobileMenu() {
         });
     });
 
+    // Close menu when clicking on nav action buttons (login, account, etc.)
+    const navActionButtons = document.querySelectorAll('.nav-actions a, .nav-actions button');
+    navActionButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            navRight.classList.remove('active');
+            toggle.classList.remove('active');
+            document.body.classList.remove('menu-open');
+        });
+    });
+
     // Close menu when clicking outside
     document.addEventListener('click', (e) => {
         if (navRight.classList.contains('active') &&
