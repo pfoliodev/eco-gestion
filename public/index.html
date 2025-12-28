@@ -24,7 +24,10 @@
                         <li><a href="#admin" id="admin-nav-link" style="display: none;">Administration</a></li>
                         <li><a href="#login" id="login-nav-link">Login</a></li>
                     </ul>
-                    <button id="logout-btn" class="btn-cancel" style="display: none;">Logout</button>
+                    <div class="nav-actions">
+                        <button id="profile-btn" class="btn-icon" title="Mon Compte" style="display: none;">👤</button>
+                        <button id="logout-btn" class="btn-cancel" style="display: none;">Logout</button>
+                    </div>
                 </div>
             </div>
         </nav>
@@ -247,6 +250,45 @@
                                 <!-- Bug reports will be loaded here -->
                             </tbody>
                         </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- User Account Page -->
+        <section id="mon-compte" class="page">
+            <div class="container" style="max-width: 1000px;">
+                <div
+                    style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem; border-bottom: 2px solid var(--border-color); padding-bottom: 1rem;">
+                    <div>
+                        <h2 style="border-bottom: none; margin: 0;">Mon Compte</h2>
+                        <p id="user-display-email" style="color: var(--text-secondary); margin-top: 0.5rem;"></p>
+                    </div>
+                    <div style="text-align: right;">
+                        <span class="user-badge" id="user-role-badge">Utilisateur</span>
+                    </div>
+                </div>
+
+                <div class="account-grid">
+                    <div class="account-section">
+                        <h3 style="margin-bottom: 1.5rem;">Mes Signalements de Bugs</h3>
+                        <div class="users-table-container">
+                            <table class="users-table">
+                                <thead>
+                                    <tr>
+                                        <th>Sujet</th>
+                                        <th>Date</th>
+                                        <th>Statut</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="user-bugs-table-body">
+                                    <tr>
+                                        <td colspan="3" style="text-align: center; padding: 2rem;">Chargement de vos
+                                            signalements...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>

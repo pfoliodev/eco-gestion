@@ -4,6 +4,7 @@ import { initAuth } from './auth.js';
 import { initForm, loadCourses, renderCourses, updateFilters, viewCourse, editCourse, deleteCourse } from './course.js';
 import { initAdminTabs, loadUsers } from './admin.js';
 import { initBugSystem } from './bug.js';
+import { loadAccount } from './account.js';
 import { state } from './state.js';
 
 // Global exports for inline HTML handlers
@@ -71,6 +72,11 @@ function initEventListeners() {
 
     document.getElementById('course-grid')?.addEventListener('click', e => {
         if (e.target.classList.contains('btn-view')) viewCourse(e.target.dataset.id);
+    });
+
+    document.getElementById('profile-btn')?.addEventListener('click', () => {
+        loadAccount();
+        showPage('mon-compte');
     });
 }
 

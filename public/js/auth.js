@@ -31,6 +31,7 @@ export function initAuth() {
     const addCourseBtn = document.querySelector('.courses-header .btn-primary');
     const addCourseNavLink = document.querySelector('.nav-menu a[href="#ajouter"]');
     const adminNavLink = document.getElementById('admin-nav-link');
+    const profileBtn = document.getElementById('profile-btn');
 
     onAuthStateChanged(auth, async user => {
         if (user) {
@@ -39,6 +40,7 @@ export function initAuth() {
 
             loginNavLink.style.display = 'none';
             logoutBtn.style.display = 'inline-flex';
+            if (profileBtn) profileBtn.style.display = 'flex';
 
             if (state.isAdmin) {
                 adminActions.style.display = 'flex';
@@ -59,6 +61,7 @@ export function initAuth() {
             if (addCourseBtn) addCourseBtn.style.display = 'none';
             if (addCourseNavLink) addCourseNavLink.style.display = 'none';
             adminNavLink.style.display = 'none';
+            if (profileBtn) profileBtn.style.display = 'none';
             if (document.querySelector('.page.active').id === 'ajouter') {
                 showPage('cours');
             }

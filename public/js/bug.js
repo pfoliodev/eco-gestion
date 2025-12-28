@@ -29,6 +29,7 @@ export function initBugSystem() {
         e.preventDefault();
 
         const data = {
+            userId: auth.currentUser ? auth.currentUser.uid : null,
             user: userField.value,
             subject: document.getElementById('bug-subject').value,
             description: document.getElementById('bug-description').value,
