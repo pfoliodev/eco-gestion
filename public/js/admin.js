@@ -1,5 +1,5 @@
 import { db, usersCollection, bugsCollection, coursesCollection } from './firebase.js';
-import { getDocs, doc, updateDoc, deleteDoc, query, orderBy, where } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js";
+import { getDocs, doc, updateDoc, deleteDoc, query, orderBy, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js";
 import { state } from './state.js';
 import { auth } from './firebase.js';
 import { notyf } from './ui.js';
