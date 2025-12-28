@@ -1145,6 +1145,8 @@ tr.bug-row:hover {
     padding: 4px;
     z-index: 1001;
     transition: all 0.3s ease;
+    -webkit-tap-highlight-color: transparent;
+    /* Remove iOS tap highlight */
 }
 
 .mobile-menu-toggle span {
