@@ -43,5 +43,15 @@ service cloud.firestore {
       allow read, update, delete: if request.auth != null && 
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
+
+    // Reminders collection
+    match /reminders/{reminderId} {
+      // Anyone can read reminders (displayed on homepage)
+      allow read: if true;
+      
+      // Only admins can create, update, or delete reminders
+      allow create, update, delete: if request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
   }
 }

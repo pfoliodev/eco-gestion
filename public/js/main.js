@@ -2,12 +2,13 @@ import { initTinyMCE, showPage, notyf } from './ui.js';
 import { auth } from './firebase.js';
 import { initAuth } from './auth.js';
 import { initForm, loadCourses, renderCourses, updateFilters, viewCourse, editCourse, deleteCourse, loadRecentCourses } from './course.js';
-import { initAdminTabs, loadUsers } from './admin.js';
+import { initAdminSidebar, loadUsers } from './admin.js';
 import { initBugSystem } from './bug.js';
 import { loadAccount } from './account.js';
 import { state } from './state.js';
 import { loadMultipleTemplates } from './template-loader.js';
 import { initGDPR } from './gdpr.js';
+import { loadReminders, loadAdminReminders, initReminderForm } from './reminders.js';
 
 // Global exports for inline HTML handlers
 window.viewCourse = viewCourse;
@@ -166,12 +167,13 @@ async function initApp() {
         initAuth();
         initForm();
         initNavigation();
-        initAdminTabs();
+        initAdminSidebar();
         initBugSystem();
         initEventListeners();
         initMobileMenu();
         initGDPR();
         loadCourses();
+        loadReminders();
         showPage('accueil');
     } catch (error) {
         console.error('Failed to initialize app:', error);

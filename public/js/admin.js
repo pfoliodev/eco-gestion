@@ -137,20 +137,49 @@ export async function deleteUser(userId) {
 window.changeUserRole = changeUserRole;
 window.deleteUser = deleteUser;
 
-export function initAdminTabs() {
-    const tabs = document.querySelectorAll('.admin-tab');
-    tabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            const target = tab.dataset.tab;
-            document.querySelectorAll('.admin-tab, .admin-tab-content').forEach(el => el.classList.remove('active'));
-            tab.classList.add('active');
-            document.getElementById(`admin-${target}-tab`).classList.add('active');
-            if (target === 'courses') loadCourseManagement();
-            if (target === 'bugs') loadBugs();
-            if (target === 'archived') loadArchivedCourses();
-            if (target === 'archived-users') loadArchivedUsers();
+export function initAdminSidebar() {
+    const sidebarLinks = document.querySelectorAll('.sidebar-link');
+    const sidebarToggle = document.getElementById('sidebar-toggle');
+    const sidebar = document.querySelector('.admin-sidebar');
+
+    // Sidebar navigation
+    sidebarLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const section = link.dataset.section;
+
+            // Update active link
+            sidebarLinks.forEach(l => l.classList.remove('active'));
+            link.classList.add('active');
+
+            // Update active section
+            document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
+            document.getElementById(`admin-section-${section}`).classList.add('active');
+
+            // Load data for section
+            if (section === 'courses') loadCourseManagement();
+            if (section === 'bugs') loadBugs();
+            if (section === 'archived-courses') loadArchivedCourses();
+            if (section === 'archived-users') loadArchivedUsers();
+            if (section === 'reminders') {
+                const { loadAdminReminders, initReminderForm } = require('./reminders.js');
+                loadAdminReminders();
+                initReminderForm();
+            }
+
+            // Close sidebar on mobile after selection
+            if (window.innerWidth <= 768) {
+                sidebar.classList.remove('open');
+            }
         });
     });
+
+    // Sidebar toggle for mobile
+    if (sidebarToggle) {
+        sidebarToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+        });
+    }
 
     // Bug Detail Modal Listeners
     document.getElementById('close-bug-detail-modal')?.addEventListener('click', closeBugDetail);
