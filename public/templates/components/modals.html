@@ -1,0 +1,66 @@
+<!-- Delete Confirmation Modal -->
+<div id="delete-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <h3>Confirmer la suppression</h3>
+        <p>Êtes-vous sûr de vouloir supprimer ce cours ? Cette action est irréversible.</p>
+        <div class="modal-actions">
+            <button id="cancel-delete" class="btn-cancel">Annuler</button>
+            <button id="confirm-delete" class="btn-delete">Supprimer</button>
+        </div>
+    </div>
+</div>
+
+<!-- Bug Report Modal -->
+<div id="bug-modal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 500px;">
+        <h3>Signaler un Bug 🐞</h3>
+        <form id="bug-form">
+            <div class="form-group" style="margin-top: 1rem;">
+                <label for="bug-user">Votre nom/email</label>
+                <input type="text" id="bug-user" readonly style="background-color: var(--surface-hover);">
+            </div>
+            <div class="form-group">
+                <label for="bug-subject">Sujet *</label>
+                <input type="text" id="bug-subject" required placeholder="Ex: Bouton qui ne répond pas">
+            </div>
+            <div class="form-group">
+                <label for="bug-description">Description *</label>
+                <textarea id="bug-description" rows="4" required
+                    placeholder="Détaillez le problème rencontré..."></textarea>
+            </div>
+            <div class="modal-actions">
+                <button type="button" id="close-bug-modal" class="btn-cancel">Annuler</button>
+                <button type="submit" class="btn-primary">Envoyer le rapport</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Bug Detail Modal for Admin -->
+<div id="bug-detail-modal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 600px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem;">
+            <h3 id="bug-detail-subject" style="margin: 0; padding-right: 2rem;">Sujet du bug</h3>
+            <span id="bug-detail-status" class="bug-status">Nouveau</span>
+        </div>
+
+        <div
+            style="background: var(--surface-hover); padding: 1.5rem; border-radius: var(--radius-md); margin-bottom: 1.5rem; line-height: 1.6;">
+            <p id="bug-detail-description" style="margin: 0; white-space: pre-wrap;"></p>
+        </div>
+
+        <div
+            style="font-size: 0.9rem; color: var(--text-secondary); display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div>👤 <strong>Signalé par :</strong> <span id="bug-detail-user"></span></div>
+            <div>📅 <strong>Le :</strong> <span id="bug-detail-date"></span></div>
+        </div>
+
+        <div class="modal-actions"
+            style="margin-top: 2rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
+            <button type="button" id="close-bug-detail-modal" class="btn-cancel">Fermer</button>
+            <div id="bug-detail-actions" style="display: flex; gap: 0.75rem;">
+                <!-- Action buttons injected via JS -->
+            </div>
+        </div>
+    </div>
+</div>

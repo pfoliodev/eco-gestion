@@ -1,0 +1,46 @@
+<section id="ajouter" class="page">
+    <div class="container">
+        <h2 id="form-title">Ajouter un nouveau cours</h2>
+        <form id="course-form">
+            <input type="hidden" id="course-id">
+            <div class="form-group">
+                <label for="course-title">Titre du cours *</label>
+                <input type="text" id="course-title" required
+                    placeholder="Ex: Synthèse du fonctionnement de l'entreprise">
+            </div>
+            <div class="form-group">
+                <label for="course-subject">Sujet *</label>
+                <input type="text" id="course-subject" required placeholder="Ex: Économie d'entreprise">
+            </div>
+            <div class="form-group">
+                <label for="course-author">Auteur *</label>
+                <input type="text" id="course-author" required placeholder="Votre nom ou pseudo">
+            </div>
+            <div class="form-group">
+                <label for="course-type">Type de contenu</label>
+                <select id="course-type" required>
+                    <option value="cours">Cours</option>
+                    <option value="exercice">Exercice</option>
+                    <option value="video">Vidéo</option>
+                </select>
+            </div>
+            <!-- Nouveau champ Catégorie -->
+            <div class="form-group">
+                <label for="course-category">Catégorie</label>
+                <input type="text" id="course-category" placeholder="Ex: Chapitre 1, Introduction...">
+            </div>
+            <div class="form-group">
+                <label for="course-description">Description</label>
+                <textarea id="course-description" rows="3" placeholder="Brève description du cours..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>Contenu du cours *</label>
+                <textarea id="editor-container" placeholder="Contenu du cours..."></textarea>
+            </div>
+            <div class="form-actions">
+                <button type="button" id="cancel-form-btn" class="btn-cancel">Annuler</button>
+                <button type="submit" class="btn-primary">Enregistrer le cours</button>
+            </div>
+        </form>
+    </div>
+</section>

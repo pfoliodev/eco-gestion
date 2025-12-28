@@ -6,6 +6,7 @@ import { initAdminTabs, loadUsers } from './admin.js';
 import { initBugSystem } from './bug.js';
 import { loadAccount } from './account.js';
 import { state } from './state.js';
+import { loadMultipleTemplates } from './template-loader.js';
 
 // Global exports for inline HTML handlers
 window.viewCourse = viewCourse;
@@ -127,18 +128,40 @@ function initMobileMenu() {
     });
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    initTinyMCE();
-    initAuth();
-    initForm();
-    initNavigation();
-    initAdminTabs();
-    initBugSystem();
-    initEventListeners();
-    initMobileMenu();
-    loadCourses();
-    showPage('accueil');
-});
+// Initialize application after loading templates
+async function initApp() {
+    try {
+        // Load all templates first
+        await loadMultipleTemplates([
+            { containerId: 'header-container', path: 'templates/components/header.html' },
+            { containerId: 'modals-container', path: 'templates/components/modals.html' },
+            { containerId: 'page-accueil', path: 'templates/pages/home.html' },
+            { containerId: 'page-cours', path: 'templates/pages/courses.html' },
+            { containerId: 'page-ajouter', path: 'templates/pages/course-form.html' },
+            { containerId: 'page-course-detail', path: 'templates/pages/course-detail.html' },
+            { containerId: 'page-login', path: 'templates/pages/login.html' },
+            { containerId: 'page-admin', path: 'templates/pages/admin.html' },
+            { containerId: 'page-mon-compte', path: 'templates/pages/account.html' }
+        ]);
+
+        // Initialize app after templates are loaded
+        initTinyMCE();
+        initAuth();
+        initForm();
+        initNavigation();
+        initAdminTabs();
+        initBugSystem();
+        initEventListeners();
+        initMobileMenu();
+        loadCourses();
+        showPage('accueil');
+    } catch (error) {
+        console.error('Failed to initialize app:', error);
+        notyf.error('Erreur lors du chargement de l\'application');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', initApp);
 
 // Reacting to page changes if needed
 document.addEventListener('pageChange', (e) => {
