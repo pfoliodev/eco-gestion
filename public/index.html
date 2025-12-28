@@ -258,10 +258,9 @@
         <section id="mon-compte" class="page">
             <div class="container" style="max-width: 1000px;">
                 <div class="account-header">
-                    <div class="avatar-container" onclick="document.getElementById('profile-pic-input').click()">
+                    <div class="avatar-container">
                         <img id="account-avatar" src="https://ui-avatars.com/api/?name=User&background=6366f1&color=fff"
                             alt="Avatar">
-                        <div class="avatar-overlay">📷</div>
                     </div>
                     <div class="user-info-header">
                         <h2 id="user-display-name">Mon Compte</h2>
@@ -286,17 +285,10 @@
                                 <input type="text" id="profile-lastname" placeholder="Ex: Dupont">
                             </div>
                             <div class="form-group">
-                                <label for="profile-pic-input">Photo de profil</label>
-                                <div style="display: flex; gap: 0.5rem; flex-direction: column;">
-                                    <input type="file" id="profile-pic-input" accept="image/*" style="display: none;">
-                                    <button type="button" class="btn-cancel" style="width: 100%; border-style: dashed;"
-                                        onclick="document.getElementById('profile-pic-input').click()">Uploader une
-                                        image</button>
-                                    <div
-                                        style="text-align: center; font-size: 0.8rem; color: var(--text-secondary); margin: 0.25rem 0;">
-                                        ou utilisez une URL</div>
-                                    <input type="url" id="profile-pic-url" placeholder="https://exemple.com/image.jpg">
-                                </div>
+                                <label for="profile-pic-url">Photo de profil (URL)</label>
+                                <input type="url" id="profile-pic-url" placeholder="https://exemple.com/image.jpg">
+                                <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem;">Collez
+                                    le lien d'une image (ex: Google Images)</p>
                             </div>
                             <button type="submit" class="btn-primary" style="width: 100%; margin-top: 1rem;">Enregistrer
                                 les modifications</button>

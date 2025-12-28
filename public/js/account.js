@@ -30,6 +30,7 @@ export async function loadAccount() {
 
             if (userData.photoURL) {
                 document.getElementById('account-avatar').src = userData.photoURL;
+                document.getElementById('profile-pic-url').value = userData.photoURL;
                 const navIcon = document.getElementById('profile-btn');
                 if (navIcon) navIcon.innerHTML = `<img src="${userData.photoURL}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
             }
@@ -44,18 +45,14 @@ export async function loadAccount() {
 
 function initProfileForm() {
     const form = document.getElementById('profile-form');
-    const picInput = document.getElementById('profile-pic-input');
     const avatarImg = document.getElementById('account-avatar');
+    const urlInput = document.getElementById('profile-pic-url');
 
-    if (picInput) {
-        picInput.onchange = async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            // Preview
-            const reader = new FileReader();
-            reader.onload = (e) => avatarImg.src = e.target.result;
-            reader.readAsDataURL(file);
+    if (urlInput) {
+        urlInput.oninput = (e) => {
+            if (e.target.value.trim() !== '') {
+                avatarImg.src = e.target.value;
+            }
         };
     }
 
@@ -70,28 +67,9 @@ function initProfileForm() {
                 const user = auth.currentUser;
                 const firstname = document.getElementById('profile-firstname').value;
                 const lastname = document.getElementById('profile-lastname').value;
-                const photoUrlInput = document.getElementById('profile-pic-url').value;
-                const file = picInput.files[0];
-
-                let photoURL = photoUrlInput || avatarImg.src;
-
-                // Upload image if a new file is selected
-                if (file) {
-                    try {
-                        console.log("Starting upload for file:", file.name);
-                        const storageRef = ref(storage, `profiles/${user.uid}`);
-                        await uploadBytes(storageRef, file);
-                        console.log("Upload successful, fetching URL...");
-                        photoURL = await getDownloadURL(storageRef);
-                    } catch (storageError) {
-                        console.warn("Storage upload failed, likely due to rules/activation:", storageError);
-                        notyf.error("L'upload d'image n'est pas activé sur votre projet Firebase. Utilisation du lien URL si fourni.");
-                        // photoURL will stay as the current one or the URL input
-                    }
-                }
+                const photoURL = urlInput.value || avatarImg.src;
 
                 // Update Firestore
-                console.log("Updating Firestore user doc...");
                 const userDocData = {
                     firstname,
                     lastname,
@@ -102,7 +80,6 @@ function initProfileForm() {
                 };
 
                 await setDoc(doc(db, 'users', user.uid), userDocData, { merge: true });
-                console.log("Firestore update successful.");
 
                 notyf.success('Profil mis à jour ! ✨');
                 loadAccount(); // Refresh
