@@ -2430,3 +2430,44 @@ input:checked+.slider:before {
     color: var(--text-secondary);
     font-size: 0.8rem;
 }
+/* Courses Table Styles */
+.courses-table-container {
+    overflow-x: auto;
+    margin-top: 1.5rem;
+}
+
+.courses-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--surface-color);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+.courses-table th,
+.courses-table td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.courses-table th {
+    background: var(--bg-color);
+    font-weight: 600;
+    color: var(--text-main);
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.courses-table tbody tr {
+    transition: background 0.2s ease;
+}
+
+.courses-table tbody tr:hover {
+    background: var(--surface-hover);
+}
+
+.courses-table tbody tr:last-child td {
+    border-bottom: none;
+}
