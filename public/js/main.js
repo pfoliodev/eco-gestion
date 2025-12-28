@@ -11,7 +11,7 @@ import { state } from './state.js';
 window.viewCourse = viewCourse;
 
 function initNavigation() {
-    document.querySelectorAll('.nav-menu a').forEach(link => {
+    document.querySelectorAll('.nav-menu a, #login-nav-link').forEach(link => {
         link.addEventListener('click', (e) => {
             e.preventDefault();
             const href = link.getAttribute('href');
