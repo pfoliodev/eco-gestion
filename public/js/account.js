@@ -70,36 +70,45 @@ function initProfileForm() {
                 const user = auth.currentUser;
                 const firstname = document.getElementById('profile-firstname').value;
                 const lastname = document.getElementById('profile-lastname').value;
+                const photoUrlInput = document.getElementById('profile-pic-url').value;
                 const file = picInput.files[0];
 
-                let photoURL = avatarImg.src;
+                let photoURL = photoUrlInput || avatarImg.src;
 
                 // Upload image if a new file is selected
                 if (file) {
-                    console.log("Starting upload for file:", file.name);
-                    const storageRef = ref(storage, `profiles/${user.uid}`);
-                    await uploadBytes(storageRef, file);
-                    console.log("Upload successful, fetching URL...");
-                    photoURL = await getDownloadURL(storageRef);
-                    console.log("Download URL obtained:", photoURL);
+                    try {
+                        console.log("Starting upload for file:", file.name);
+                        const storageRef = ref(storage, `profiles/${user.uid}`);
+                        await uploadBytes(storageRef, file);
+                        console.log("Upload successful, fetching URL...");
+                        photoURL = await getDownloadURL(storageRef);
+                    } catch (storageError) {
+                        console.warn("Storage upload failed, likely due to rules/activation:", storageError);
+                        notyf.error("L'upload d'image n'est pas activé sur votre projet Firebase. Utilisation du lien URL si fourni.");
+                        // photoURL will stay as the current one or the URL input
+                    }
                 }
 
                 // Update Firestore
                 console.log("Updating Firestore user doc...");
-                await setDoc(doc(db, 'users', user.uid), {
+                const userDocData = {
                     firstname,
                     lastname,
                     photoURL,
                     email: user.email,
-                    role: state.isAdmin ? 'admin' : 'user'
-                }, { merge: true });
+                    role: state.isAdmin ? 'admin' : 'user',
+                    updatedAt: new Date()
+                };
+
+                await setDoc(doc(db, 'users', user.uid), userDocData, { merge: true });
                 console.log("Firestore update successful.");
 
                 notyf.success('Profil mis à jour ! ✨');
                 loadAccount(); // Refresh
             } catch (error) {
                 console.error("Error saving profile:", error);
-                notyf.error('Erreur lors de la sauvegarde du profil.');
+                notyf.error('Erreur lors de la sauvegarde : ' + (error.message || 'Inconnue'));
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Enregistrer les modifications';
