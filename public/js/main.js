@@ -7,6 +7,7 @@ import { initBugSystem } from './bug.js';
 import { loadAccount } from './account.js';
 import { state } from './state.js';
 import { loadMultipleTemplates } from './template-loader.js';
+import { initGDPR } from './gdpr.js';
 
 // Global exports for inline HTML handlers
 window.viewCourse = viewCourse;
@@ -146,6 +147,8 @@ async function initApp() {
         await loadMultipleTemplates([
             { containerId: 'header-container', path: 'templates/components/header.html' },
             { containerId: 'modals-container', path: 'templates/components/modals.html' },
+            { containerId: 'footer-container', path: 'templates/components/footer.html' },
+            { containerId: 'cookie-banner-container', path: 'templates/components/cookie-banner.html' },
             { containerId: 'page-accueil', path: 'templates/pages/home.html' },
             { containerId: 'page-cours', path: 'templates/pages/courses.html' },
             { containerId: 'page-ajouter', path: 'templates/pages/course-form.html' },
@@ -153,7 +156,9 @@ async function initApp() {
             { containerId: 'page-login', path: 'templates/pages/login.html' },
             { containerId: 'page-register', path: 'templates/pages/register.html' },
             { containerId: 'page-admin', path: 'templates/pages/admin.html' },
-            { containerId: 'page-mon-compte', path: 'templates/pages/account.html' }
+            { containerId: 'page-mon-compte', path: 'templates/pages/account.html' },
+            { containerId: 'page-privacy-policy', path: 'templates/pages/privacy-policy.html' },
+            { containerId: 'page-legal-notice', path: 'templates/pages/legal-notice.html' }
         ]);
 
         // Initialize app after templates are loaded
@@ -165,6 +170,7 @@ async function initApp() {
         initBugSystem();
         initEventListeners();
         initMobileMenu();
+        initGDPR();
         loadCourses();
         showPage('accueil');
     } catch (error) {
