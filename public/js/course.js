@@ -90,6 +90,9 @@ export function renderCourses() {
     const statExercises = document.getElementById('stat-exercises');
     if (statCourses) statCourses.textContent = numCourses;
     if (statExercises) statExercises.textContent = numExercises;
+
+    // Load recent courses for homepage
+    loadRecentCourses();
 }
 
 export function updateFilters() {
@@ -306,5 +309,58 @@ export function initForm() {
         } catch (error) {
             notyf.error("Erreur d'enregistrement.");
         }
+    });
+}
+
+// Load recent courses for homepage
+export function loadRecentCourses() {
+    const container = document.getElementById('recent-courses-list');
+    if (!container) return;
+
+    // Get all courses and sort by creation date (most recent first)
+    const recentCourses = [...state.courses]
+        .filter(course => !course.archived)
+        .sort((a, b) => {
+            const dateA = a.createdAt?.seconds || 0;
+            const dateB = b.createdAt?.seconds || 0;
+            return dateB - dateA;
+        })
+        .slice(0, 5); // Limit to 5 most recent
+
+    if (recentCourses.length === 0) {
+        container.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 2rem;">Aucun cours disponible pour le moment.</p>';
+        return;
+    }
+
+    container.innerHTML = recentCourses.map(course => {
+        const type = course.type || 'cours';
+        const typeLabel = type.charAt(0).toUpperCase() + type.slice(1);
+        const date = course.createdAt ?
+            new Date(course.createdAt.seconds * 1000).toLocaleDateString('fr-FR', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric'
+            }) :
+            'Date inconnue';
+
+        return `
+            <div class="recent-course-item" data-id="${course.id}">
+                <div class="recent-course-header">
+                    <h4 class="recent-course-title">${course.title}</h4>
+                    <span class="course-type-tag type-${type}">${typeLabel}</span>
+                </div>
+                <div class="recent-course-meta">
+                    <span class="recent-course-subject">${course.subject}</span>
+                    <span class="recent-course-date">📅 ${date}</span>
+                </div>
+            </div>`;
+    }).join('');
+
+    // Add click handlers
+    container.querySelectorAll('.recent-course-item').forEach(item => {
+        item.addEventListener('click', () => {
+            const courseId = item.dataset.id;
+            viewCourse(courseId);
+        });
     });
 }

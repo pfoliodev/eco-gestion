@@ -1,7 +1,7 @@
 import { initTinyMCE, showPage, notyf } from './ui.js';
 import { auth } from './firebase.js';
 import { initAuth } from './auth.js';
-import { initForm, loadCourses, renderCourses, updateFilters, viewCourse, editCourse, deleteCourse } from './course.js';
+import { initForm, loadCourses, renderCourses, updateFilters, viewCourse, editCourse, deleteCourse, loadRecentCourses } from './course.js';
 import { initAdminTabs, loadUsers } from './admin.js';
 import { initBugSystem } from './bug.js';
 import { loadAccount } from './account.js';
