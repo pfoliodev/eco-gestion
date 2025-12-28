@@ -34,6 +34,7 @@ function initNavigation() {
                 else notyf.error("Accès non autorisé.");
             }
             else if (href === '#login') showPage('login');
+            else if (href === '#register') showPage('register');
         }
     });
 }
@@ -140,6 +141,7 @@ async function initApp() {
             { containerId: 'page-ajouter', path: 'templates/pages/course-form.html' },
             { containerId: 'page-course-detail', path: 'templates/pages/course-detail.html' },
             { containerId: 'page-login', path: 'templates/pages/login.html' },
+            { containerId: 'page-register', path: 'templates/pages/register.html' },
             { containerId: 'page-admin', path: 'templates/pages/admin.html' },
             { containerId: 'page-mon-compte', path: 'templates/pages/account.html' }
         ]);
