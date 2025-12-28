@@ -19,7 +19,12 @@ export async function getUserRole(userId) {
             } else {
                 const profileBtn = document.getElementById('profile-btn');
                 if (profileBtn) {
-                    profileBtn.innerHTML = '👤';
+                    profileBtn.innerHTML = `
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H11a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>`;
                 }
             }
 
@@ -31,7 +36,14 @@ export async function getUserRole(userId) {
                 createdAt: new Date()
             });
             const profileBtn = document.getElementById('profile-btn');
-            if (profileBtn) profileBtn.innerHTML = '👤';
+            if (profileBtn) {
+                profileBtn.innerHTML = `
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H11a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>`;
+            }
             return 'student';
         }
     } catch (error) {
@@ -80,7 +92,12 @@ export function initAuth() {
             adminNavLink.style.display = 'none';
             if (profileBtn) {
                 profileBtn.style.display = 'none';
-                profileBtn.innerHTML = '👤'; // Reset icon on logout
+                profileBtn.innerHTML = `
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H11a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>`; // Reset icon on logout
             }
             if (document.querySelector('.page.active').id === 'ajouter') {
                 showPage('cours');
