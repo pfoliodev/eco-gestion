@@ -316,11 +316,49 @@ window.toggleBugStatus = toggleBugStatus;
 window.deleteBug = deleteBug;
 
 export function loadCourseManagement() {
+    // Render courses table
+    renderCoursesTable();
+
+    // Load dropdown for exercise linking
     const select = document.getElementById('select-course');
     if (!select) return;
     const clist = state.courses.filter(c => c.type === 'cours' || !c.type);
     select.innerHTML = '<option value="">-- Choisir un cours --</option>' + clist.map(c => `<option value="${c.id}">${c.title}</option>`).join('');
     select.onchange = (e) => e.target.value ? displayCourseExercises(e.target.value) : document.getElementById('course-exercises-section').style.display = 'none';
+}
+
+export function renderCoursesTable() {
+    const tbody = document.getElementById('courses-table-body');
+    if (!tbody) return;
+
+    const courses = state.courses.filter(c => !c.archived);
+
+    if (courses.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 2rem;">Aucun cours disponible.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = courses.map(course => {
+        const type = course.type || 'cours';
+        const typeLabel = type.charAt(0).toUpperCase() + type.slice(1);
+
+        return `
+            <tr>
+                <td><strong>${course.title}</strong></td>
+                <td>${course.subject}</td>
+                <td><span class="course-type-tag type-${type}">${typeLabel}</span></td>
+                <td>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="btn-secondary" onclick="editCourse('${course.id}')" style="padding: 0.5rem 1rem;">
+                            ✏️ Modifier
+                        </button>
+                        <button class="btn-cancel" onclick="deleteCourse('${course.id}')" style="padding: 0.5rem 1rem;">
+                            🗑️ Archiver
+                        </button>
+                    </div>
+                </td>
+            </tr>`;
+    }).join('');
 }
 
 export function displayCourseExercises(courseId) {
