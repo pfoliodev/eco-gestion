@@ -19,24 +19,53 @@ export function renderUsers(users) {
     const tbody = document.getElementById('users-table-body');
     if (!tbody) return;
     if (users.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 2rem;">Aucun utilisateur trouvé.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem;">Aucun utilisateur trouvé.</td></tr>';
         return;
     }
     tbody.innerHTML = users.map(user => {
         const date = user.createdAt ? new Date(user.createdAt.seconds * 1000).toLocaleDateString() : 'N/A';
         const role = user.role || 'student';
+        const firstname = user.firstname || 'N/A';
+        const lastname = user.lastname || 'N/A';
+        const isCurrentUser = user.id === auth.currentUser?.uid;
+
         return `
             <tr>
                 <td>${user.email || 'N/A'}</td>
+                <td>${firstname}</td>
+                <td>${lastname}</td>
                 <td><span class="role-badge ${role}">${role === 'admin' ? 'Administrateur' : 'Étudiant'}</span></td>
                 <td>${date}</td>
                 <td>
-                    <button class="btn-change-role" onclick="changeUserRole('${user.id}', '${role === 'admin' ? 'student' : 'admin'}')">
-                        ${role === 'admin' ? 'Rétrograder' : 'Promouvoir'}
-                    </button>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="btn-change-role" data-user-id="${user.id}" data-new-role="${role === 'admin' ? 'student' : 'admin'}" ${isCurrentUser ? 'disabled' : ''}>
+                            ${role === 'admin' ? 'Rétrograder' : 'Promouvoir'}
+                        </button>
+                        <button class="btn-delete" data-user-id="${user.id}" ${isCurrentUser ? 'disabled' : ''} title="${isCurrentUser ? 'Vous ne pouvez pas supprimer votre propre compte' : 'Supprimer cet utilisateur'}">
+                            🗑️
+                        </button>
+                    </div>
                 </td>
             </tr>`;
     }).join('');
+
+    // Add event listeners after rendering - use requestAnimationFrame for better browser compatibility
+    requestAnimationFrame(() => {
+        document.querySelectorAll('.btn-change-role').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const userId = this.dataset.userId;
+                const newRole = this.dataset.newRole;
+                changeUserRole(userId, newRole);
+            });
+        });
+
+        document.querySelectorAll('.btn-delete').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const userId = this.dataset.userId;
+                deleteUser(userId);
+            });
+        });
+    });
 }
 
 export async function changeUserRole(userId, newRole) {
@@ -52,7 +81,48 @@ export async function changeUserRole(userId, newRole) {
         notyf.error("Erreur lors de la modification.");
     }
 }
+
+export async function deleteUser(userId) {
+    // Prevent admin from deleting their own account
+    if (userId === auth.currentUser?.uid) {
+        notyf.error("Vous ne pouvez pas supprimer votre propre compte.");
+        return;
+    }
+
+    if (!state.isAdmin) {
+        notyf.error("Action non autorisée.");
+        return;
+    }
+
+    // Confirmation dialog
+    if (!confirm("Êtes-vous sûr de vouloir supprimer cet utilisateur ? Cette action est irréversible.")) {
+        return;
+    }
+
+    try {
+        console.log('Attempting to delete user:', userId);
+        await deleteDoc(doc(db, 'users', userId));
+        notyf.success('Utilisateur supprimé avec succès.');
+        loadUsers();
+    } catch (error) {
+        console.error("Error deleting user:", error);
+        console.error("Error code:", error.code);
+        console.error("Error message:", error.message);
+
+        let errorMessage = "Erreur lors de la suppression de l'utilisateur.";
+
+        if (error.code === 'permission-denied') {
+            errorMessage = "Permission refusée. Vérifiez que vous êtes bien administrateur.";
+        } else if (error.message) {
+            errorMessage = `Erreur: ${error.message}`;
+        }
+
+        notyf.error(errorMessage);
+    }
+}
+
 window.changeUserRole = changeUserRole;
+window.deleteUser = deleteUser;
 
 export function initAdminTabs() {
     const tabs = document.querySelectorAll('.admin-tab');

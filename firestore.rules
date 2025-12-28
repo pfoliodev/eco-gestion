@@ -18,8 +18,9 @@ service cloud.firestore {
          (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['firstname', 'lastname', 'photoURL', 'email'])) ||
          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin');
 
-      // Only admins can delete users
+      // Only admins can delete users (but not themselves)
       allow delete: if request.auth != null && 
+        request.auth.uid != userId &&
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
     
