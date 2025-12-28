@@ -1,7 +1,7 @@
 import { auth, db } from './firebase.js';
 import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js";
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-auth.js";
-import { setIsAdmin, state } from './state.js';
+import { setIsAdmin, setUser, state } from './state.js';
 import { notyf, showPage } from './ui.js';
 
 export async function createUserProfile(userId, email, firstName = '', lastName = '', photoURL = null) {
@@ -82,6 +82,7 @@ export function initAuth() {
         if (user) {
             const userRole = await getUserRole(user.uid);
             setIsAdmin(userRole === 'admin');
+            setUser(user); // Set user in state
 
             loginNavLink.style.display = 'none';
             logoutBtn.style.display = 'inline-flex';
@@ -98,8 +99,17 @@ export function initAuth() {
                 if (addCourseNavLink) addCourseNavLink.style.display = 'none';
                 adminNavLink.style.display = 'none';
             }
+
+            // Reload courses to show favorite buttons
+            if (window.location.hash === '#cours' || window.location.hash === '') {
+                import('./course.js').then(module => {
+                    module.renderCourses();
+                });
+            }
         } else {
             setIsAdmin(false);
+            setUser(null); // Clear user from state
+
             loginNavLink.style.display = 'flex';
             logoutBtn.style.display = 'none';
             adminActions.style.display = 'none';
@@ -117,6 +127,13 @@ export function initAuth() {
             }
             if (document.querySelector('.page.active').id === 'ajouter') {
                 showPage('cours');
+            }
+
+            // Reload courses to hide favorite buttons
+            if (window.location.hash === '#cours' || window.location.hash === '') {
+                import('./course.js').then(module => {
+                    module.renderCourses();
+                });
             }
         }
     });
