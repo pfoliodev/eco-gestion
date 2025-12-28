@@ -11,10 +11,12 @@ import { state } from './state.js';
 window.viewCourse = viewCourse;
 
 function initNavigation() {
-    document.querySelectorAll('.nav-menu a, #login-nav-link').forEach(link => {
-        link.addEventListener('click', (e) => {
+    document.addEventListener('click', (e) => {
+        const link = e.target.closest('a[href^="#"]');
+        if (link) {
             e.preventDefault();
             const href = link.getAttribute('href');
+
             if (href === '#accueil') showPage('accueil');
             else if (href === '#cours') showPage('cours');
             else if (href === '#ajouter') {
@@ -31,7 +33,7 @@ function initNavigation() {
                 else notyf.error("Accès non autorisé.");
             }
             else if (href === '#login') showPage('login');
-        });
+        }
     });
 }
 
