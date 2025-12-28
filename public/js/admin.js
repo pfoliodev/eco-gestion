@@ -233,7 +233,8 @@ export function renderBugs(bugs) {
                     <div style="font-weight: 600;">${bug.subject}</div>
                     <div class="text-truncate-2" style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem;">${bug.description}</div>
                 </td>
-                <td><span class="bug-status ${statusClass}">${statusLabel}</span><br><small>${date}</small></td>
+                <td><small>${date}</small></td>
+                <td><span class="bug-status ${statusClass}">${statusLabel}</span></td>
                 <td>
                     <div style="display: flex; gap: 0.5rem;" onclick="event.stopPropagation()">
                         <button class="btn-bug-action ${isResolved ? 'btn-bug-reopen' : 'btn-bug-solve'}" 
