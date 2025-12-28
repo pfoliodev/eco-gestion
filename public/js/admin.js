@@ -8,8 +8,12 @@ export async function loadUsers() {
     if (!state.isAdmin) return;
     try {
         const snap = await getDocs(usersCollection);
-        const users = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        renderUsers(users);
+        const allUsers = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        // Filter out archived users
+        const activeUsers = allUsers.filter(user => !user.archived);
+
+        renderUsers(activeUsers);
     } catch (error) {
         notyf.error("Erreur de chargement des utilisateurs.");
     }
@@ -98,21 +102,27 @@ export async function deleteUser(userId) {
     }
 
     // Confirmation dialog
-    if (!confirm("Êtes-vous sûr de vouloir supprimer cet utilisateur ? Cette action est irréversible.")) {
+    if (!confirm("Êtes-vous sûr de vouloir archiver cet utilisateur ? Vous pourrez le restaurer plus tard.")) {
         return;
     }
 
     try {
-        console.log('Attempting to delete user:', userId);
-        await deleteDoc(doc(db, 'users', userId));
-        notyf.success('Utilisateur supprimé avec succès.');
+        console.log('Attempting to archive user:', userId);
+
+        // Archive the user instead of deleting
+        await updateDoc(doc(db, 'users', userId), {
+            archived: true,
+            archivedAt: serverTimestamp()
+        });
+
+        notyf.success('Utilisateur archivé avec succès.');
         loadUsers();
     } catch (error) {
-        console.error("Error deleting user:", error);
+        console.error("Error archiving user:", error);
         console.error("Error code:", error.code);
         console.error("Error message:", error.message);
 
-        let errorMessage = "Erreur lors de la suppression de l'utilisateur.";
+        let errorMessage = "Erreur lors de l'archivage de l'utilisateur.";
 
         if (error.code === 'permission-denied') {
             errorMessage = "Permission refusée. Vérifiez que vous êtes bien administrateur.";
@@ -138,6 +148,7 @@ export function initAdminTabs() {
             if (target === 'courses') loadCourseManagement();
             if (target === 'bugs') loadBugs();
             if (target === 'archived') loadArchivedCourses();
+            if (target === 'archived-users') loadArchivedUsers();
         });
     });
 
@@ -403,3 +414,91 @@ export async function restoreCourse(courseId) {
 }
 
 window.restoreCourse = restoreCourse;
+
+// Archived Users Management
+export async function loadArchivedUsers() {
+    if (!state.isAdmin) return;
+    try {
+        const snap = await getDocs(usersCollection);
+        const archivedUsers = snap.docs
+            .map(doc => ({ id: doc.id, ...doc.data() }))
+            .filter(user => user.archived === true);
+
+        renderArchivedUsers(archivedUsers);
+    } catch (error) {
+        console.error("Error loading archived users:", error);
+        notyf.error("Erreur de chargement des utilisateurs archivés.");
+    }
+}
+
+export function renderArchivedUsers(users) {
+    const tbody = document.getElementById('archived-users-table-body');
+    if (!tbody) return;
+
+    if (users.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem;">Aucun utilisateur archivé.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = users.map(user => {
+        const role = user.role || 'student';
+        const firstname = user.firstname || 'N/A';
+        const lastname = user.lastname || 'N/A';
+        const archivedDate = user.archivedAt ?
+            new Date(user.archivedAt.seconds * 1000).toLocaleDateString('fr-FR') :
+            'N/A';
+
+        return `
+            <tr>
+                <td>${user.email || 'N/A'}</td>
+                <td>${firstname}</td>
+                <td>${lastname}</td>
+                <td><span class="role-badge ${role}">${role === 'admin' ? 'Administrateur' : 'Étudiant'}</span></td>
+                <td>${archivedDate}</td>
+                <td>
+                    <button class="btn-primary" data-user-id="${user.id}" style="padding: 0.5rem 1rem;">
+                        Restaurer
+                    </button>
+                </td>
+            </tr>`;
+    }).join('');
+
+    // Add event listeners for restore buttons
+    requestAnimationFrame(() => {
+        tbody.querySelectorAll('.btn-primary').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const userId = this.dataset.userId;
+                restoreUser(userId);
+            });
+        });
+    });
+}
+
+export async function restoreUser(userId) {
+    if (!state.isAdmin) {
+        notyf.error("Action non autorisée.");
+        return;
+    }
+
+    if (!confirm("Êtes-vous sûr de vouloir restaurer cet utilisateur ?")) {
+        return;
+    }
+
+    try {
+        // Remove archived flags
+        await updateDoc(doc(db, 'users', userId), {
+            archived: false,
+            archivedAt: null
+        });
+
+        notyf.success('Utilisateur restauré avec succès !');
+
+        // Reload archived users list
+        loadArchivedUsers();
+    } catch (error) {
+        console.error("Error restoring user:", error);
+        notyf.error("Erreur lors de la restauration de l'utilisateur.");
+    }
+}
+
+window.restoreUser = restoreUser;

@@ -10,6 +10,7 @@
             <button class="admin-tab" data-tab="courses">Gestion des Cours</button>
             <button class="admin-tab" data-tab="bugs">Signalements Bugs</button>
             <button class="admin-tab" data-tab="archived">Cours Archivés</button>
+            <button class="admin-tab" data-tab="archived-users">Utilisateurs Archivés</button>
         </div>
 
         <!-- Users Management Tab -->
@@ -93,6 +94,28 @@
                     </thead>
                     <tbody id="archived-courses-table-body">
                         <!-- Archived courses will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Archived Users Tab -->
+        <div id="admin-archived-users-tab" class="admin-tab-content">
+            <h3 style="margin-bottom: 1.5rem;">Utilisateurs Archivés</h3>
+            <div class="users-table-container">
+                <table class="users-table">
+                    <thead>
+                        <tr>
+                            <th>Email</th>
+                            <th>Prénom</th>
+                            <th>Nom</th>
+                            <th>Rôle</th>
+                            <th>Archivé le</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="archived-users-table-body">
+                        <!-- Archived users will be loaded here -->
                     </tbody>
                 </table>
             </div>
