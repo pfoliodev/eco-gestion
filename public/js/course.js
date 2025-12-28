@@ -26,7 +26,10 @@ export async function loadCourses() {
             });
         }
 
-        setCourses(data);
+        // Filter out archived courses
+        const activeCourses = data.filter(course => !course.archived);
+
+        setCourses(activeCourses);
         renderCourses();
         updateFilters();
     } catch (error) {
@@ -216,13 +219,19 @@ export async function deleteCourse() {
 
     const handleConfirm = async () => {
         try {
-            await deleteDoc(doc(db, 'courses', state.currentCourseId));
+            // Archive the course instead of deleting it
+            await updateDoc(doc(db, 'courses', state.currentCourseId), {
+                archived: true,
+                archivedAt: serverTimestamp()
+            });
+
+            // Remove from local state
             setCourses(state.courses.filter(c => c.id !== state.currentCourseId));
-            notyf.success('Cours supprimé avec succès');
+            notyf.success('Cours archivé avec succès');
             setCurrentCourseId(null);
             showPage('cours');
         } catch (error) {
-            notyf.error("Erreur lors de la suppression.");
+            notyf.error("Erreur lors de l'archivage.");
         } finally {
             modal.style.display = 'none';
         }

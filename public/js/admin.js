@@ -1,5 +1,5 @@
-import { db, usersCollection, bugsCollection } from './firebase.js';
-import { getDocs, doc, updateDoc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js";
+import { db, usersCollection, bugsCollection, coursesCollection } from './firebase.js';
+import { getDocs, doc, updateDoc, deleteDoc, query, orderBy, where } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js";
 import { state } from './state.js';
 import { auth } from './firebase.js';
 import { notyf } from './ui.js';
@@ -51,7 +51,10 @@ export function renderUsers(users) {
 
     // Add event listeners after rendering - use requestAnimationFrame for better browser compatibility
     requestAnimationFrame(() => {
-        document.querySelectorAll('.btn-change-role').forEach(btn => {
+        const usersTableBody = document.getElementById('users-table-body');
+        if (!usersTableBody) return;
+
+        usersTableBody.querySelectorAll('.btn-change-role').forEach(btn => {
             btn.addEventListener('click', function () {
                 const userId = this.dataset.userId;
                 const newRole = this.dataset.newRole;
@@ -59,7 +62,7 @@ export function renderUsers(users) {
             });
         });
 
-        document.querySelectorAll('.btn-delete').forEach(btn => {
+        usersTableBody.querySelectorAll('.btn-delete').forEach(btn => {
             btn.addEventListener('click', function () {
                 const userId = this.dataset.userId;
                 deleteUser(userId);
@@ -134,6 +137,7 @@ export function initAdminTabs() {
             document.getElementById(`admin-${target}-tab`).classList.add('active');
             if (target === 'courses') loadCourseManagement();
             if (target === 'bugs') loadBugs();
+            if (target === 'archived') loadArchivedCourses();
         });
     });
 
@@ -311,3 +315,91 @@ export async function saveLinkedExercises(courseId) {
     }
 }
 window.saveLinkedExercises = saveLinkedExercises;
+
+// Archived Courses Management
+export async function loadArchivedCourses() {
+    if (!state.isAdmin) return;
+    try {
+        const querySnapshot = await getDocs(coursesCollection);
+        const archivedCourses = querySnapshot.docs
+            .map(doc => ({ id: doc.id, ...doc.data() }))
+            .filter(course => course.archived === true);
+
+        renderArchivedCourses(archivedCourses);
+    } catch (error) {
+        console.error("Error loading archived courses:", error);
+        notyf.error("Erreur de chargement des cours archivés.");
+    }
+}
+
+export function renderArchivedCourses(courses) {
+    const tbody = document.getElementById('archived-courses-table-body');
+    if (!tbody) return;
+
+    if (courses.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 2rem;">Aucun cours archivé.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = courses.map(course => {
+        const type = course.type || 'cours';
+        const typeLabel = type.charAt(0).toUpperCase() + type.slice(1);
+        const archivedDate = course.archivedAt ?
+            new Date(course.archivedAt.seconds * 1000).toLocaleDateString('fr-FR') :
+            'N/A';
+
+        return `
+            <tr>
+                <td><strong>${course.title}</strong></td>
+                <td>${course.subject}</td>
+                <td><span class="course-type-tag type-${type}">${typeLabel}</span></td>
+                <td>${archivedDate}</td>
+                <td>
+                    <button class="btn-primary" data-course-id="${course.id}" style="padding: 0.5rem 1rem;">
+                        Restaurer
+                    </button>
+                </td>
+            </tr>`;
+    }).join('');
+
+    // Add event listeners for restore buttons
+    requestAnimationFrame(() => {
+        tbody.querySelectorAll('.btn-primary').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const courseId = this.dataset.courseId;
+                restoreCourse(courseId);
+            });
+        });
+    });
+}
+
+export async function restoreCourse(courseId) {
+    if (!state.isAdmin) {
+        notyf.error("Action non autorisée.");
+        return;
+    }
+
+    if (!confirm("Êtes-vous sûr de vouloir restaurer ce cours ?")) {
+        return;
+    }
+
+    try {
+        // Remove archived flags
+        await updateDoc(doc(db, 'courses', courseId), {
+            archived: false,
+            archivedAt: null
+        });
+
+        notyf.success('Cours restauré avec succès !');
+
+        // Reload archived courses list
+        loadArchivedCourses();
+
+        // Note: The main course list will be updated when the user navigates back to it
+    } catch (error) {
+        console.error("Error restoring course:", error);
+        notyf.error("Erreur lors de la restauration du cours.");
+    }
+}
+
+window.restoreCourse = restoreCourse;
