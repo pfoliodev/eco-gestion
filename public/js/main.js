@@ -82,6 +82,51 @@ function initEventListeners() {
     });
 }
 
+function initMobileMenu() {
+    const toggle = document.getElementById('mobile-menu-toggle');
+    const navRight = document.querySelector('.nav-right');
+    const navLinks = document.querySelectorAll('.nav-menu a');
+
+    if (!toggle || !navRight) return;
+
+    // Toggle menu on hamburger click
+    toggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isActive = navRight.classList.toggle('active');
+        toggle.classList.toggle('active');
+        document.body.classList.toggle('menu-open');
+    });
+
+    // Close menu when clicking on a navigation link
+    navLinks.forEach(link => {
+        link.addEventListener('click', () => {
+            navRight.classList.remove('active');
+            toggle.classList.remove('active');
+            document.body.classList.remove('menu-open');
+        });
+    });
+
+    // Close menu when clicking outside
+    document.addEventListener('click', (e) => {
+        if (navRight.classList.contains('active') &&
+            !navRight.contains(e.target) &&
+            !toggle.contains(e.target)) {
+            navRight.classList.remove('active');
+            toggle.classList.remove('active');
+            document.body.classList.remove('menu-open');
+        }
+    });
+
+    // Close menu on window resize if it gets too wide
+    window.addEventListener('resize', () => {
+        if (window.innerWidth > 768 && navRight.classList.contains('active')) {
+            navRight.classList.remove('active');
+            toggle.classList.remove('active');
+            document.body.classList.remove('menu-open');
+        }
+    });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     initTinyMCE();
     initAuth();
@@ -90,6 +135,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initAdminTabs();
     initBugSystem();
     initEventListeners();
+    initMobileMenu();
     loadCourses();
     showPage('accueil');
 });
