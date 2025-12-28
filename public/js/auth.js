@@ -143,7 +143,23 @@ export function initAuth() {
                 notyf.success('Connexion Google réussie !');
                 showPage('cours');
             } catch (error) {
-                notyf.error('Erreur lors de la connexion Google.');
+                console.error('Google login error:', error);
+                let errorMessage = 'Erreur lors de la connexion Google.';
+
+                // Provide more specific error messages
+                if (error.code === 'auth/popup-blocked') {
+                    errorMessage = 'Popup bloquée. Veuillez autoriser les popups pour ce site.';
+                } else if (error.code === 'auth/popup-closed-by-user') {
+                    errorMessage = 'Connexion annulée.';
+                } else if (error.code === 'auth/unauthorized-domain') {
+                    errorMessage = 'Domaine non autorisé. Veuillez contacter l\'administrateur.';
+                } else if (error.code === 'auth/cancelled-popup-request') {
+                    errorMessage = 'Une autre fenêtre de connexion est déjà ouverte.';
+                } else if (error.message) {
+                    errorMessage = `Erreur: ${error.message}`;
+                }
+
+                notyf.error(errorMessage);
             }
         });
     }
