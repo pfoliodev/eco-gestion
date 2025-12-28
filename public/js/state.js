@@ -1,7 +1,8 @@
 export const state = {
     courses: [],
     isAdmin: false,
-    currentCourseId: null
+    currentCourseId: null,
+    user: null
 };
 
 export function setCourses(newCourses) {
@@ -14,4 +15,8 @@ export function setIsAdmin(val) {
 
 export function setCurrentCourseId(id) {
     state.currentCourseId = id;
+}
+
+export function setUser(user) {
+    state.user = user;
 }

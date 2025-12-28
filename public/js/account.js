@@ -3,6 +3,7 @@ import { getDocs, query, where, doc, getDoc, setDoc } from "https://www.gstatic.
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-storage.js";
 import { state } from './state.js';
 import { notyf } from './ui.js';
+import { loadUserFavorites } from './favorites.js';
 
 export async function loadAccount() {
     if (!auth.currentUser) return;
@@ -40,6 +41,7 @@ export async function loadAccount() {
     }
 
     await loadUserBugs();
+    await loadUserFavorites();
     initProfileForm();
 }
 
