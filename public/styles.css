@@ -2397,3 +2397,77 @@ input:checked+.slider:before {
         height: 18px;
     }
 }
+/* Improved spacing for bugs table */
+.bugs-table th,
+.bugs-table td {
+    padding: 1.25rem 1rem !important;
+    vertical-align: middle;
+}
+
+.bugs-table td {
+    line-height: 1.6;
+}
+
+.bugs-table .bug-row {
+    cursor: pointer;
+}
+
+.bugs-table .bug-row:hover {
+    background: var(--surface-hover);
+}
+
+/* Better spacing for bug status and actions */
+.bug-status {
+    display: inline-block;
+    padding: 0.35rem 0.75rem;
+    border-radius: var(--radius-md);
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.bugs-table small {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+}
+/* Courses Table Styles */
+.courses-table-container {
+    overflow-x: auto;
+    margin-top: 1.5rem;
+}
+
+.courses-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--surface-color);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+.courses-table th,
+.courses-table td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.courses-table th {
+    background: var(--bg-color);
+    font-weight: 600;
+    color: var(--text-main);
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.courses-table tbody tr {
+    transition: background 0.2s ease;
+}
+
+.courses-table tbody tr:hover {
+    background: var(--surface-hover);
+}
+
+.courses-table tbody tr:last-child td {
+    border-bottom: none;
+}
