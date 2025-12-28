@@ -335,13 +335,17 @@ export function loadRecentCourses() {
     container.innerHTML = recentCourses.map(course => {
         const type = course.type || 'cours';
         const typeLabel = type.charAt(0).toUpperCase() + type.slice(1);
-        const date = course.createdAt ?
-            new Date(course.createdAt.seconds * 1000).toLocaleDateString('fr-FR', {
+        // Try createdAt first, then updatedAt as fallback
+        const timestamp = course.createdAt || course.updatedAt;
+        const date = timestamp ?
+            new Date(timestamp.seconds * 1000).toLocaleDateString('fr-FR', {
                 day: 'numeric',
                 month: 'short',
                 year: 'numeric'
             }) :
             'Date inconnue';
+
+        const author = course.author || 'Auteur inconnu';
 
         return `
             <div class="recent-course-item" data-id="${course.id}">
@@ -351,7 +355,10 @@ export function loadRecentCourses() {
                 </div>
                 <div class="recent-course-meta">
                     <span class="recent-course-subject">${course.subject}</span>
-                    <span class="recent-course-date">📅 ${date}</span>
+                    <div class="recent-course-info">
+                        <span class="recent-course-author">✍️ ${author}</span>
+                        <span class="recent-course-date">📅 ${date}</span>
+                    </div>
                 </div>
             </div>`;
     }).join('');

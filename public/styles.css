@@ -1479,6 +1479,17 @@ body.menu-open {
     font-weight: 500;
 }
 
+.recent-course-info {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.recent-course-author {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
 .recent-course-date {
     color: var(--text-secondary);
 }
