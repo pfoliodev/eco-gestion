@@ -2,7 +2,11 @@ export const state = {
     courses: [],
     isAdmin: false,
     currentCourseId: null,
-    user: null
+    user: null, // From origin/main
+    // Flashcard features (HEAD)
+    flashcards: [],
+    userProgress: {},
+    currentStudySession: null
 };
 
 export function setCourses(newCourses) {
@@ -19,4 +23,20 @@ export function setCurrentCourseId(id) {
 
 export function setUser(user) {
     state.user = user;
+}
+
+export function setFlashcards(newFlashcards) {
+    state.flashcards = newFlashcards;
+}
+
+export function setUserProgress(progress) {
+    state.userProgress = progress;
+}
+
+export function updateCardProgress(flashcardId, progressData) {
+    state.userProgress[flashcardId] = progressData;
+}
+
+export function setCurrentStudySession(session) {
+    state.currentStudySession = session;
 }

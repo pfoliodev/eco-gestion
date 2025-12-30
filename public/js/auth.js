@@ -70,13 +70,58 @@ export async function getUserRole(userId) {
 
 export function initAuth() {
     const loginForm = document.getElementById('login-form');
-    const logoutBtn = document.getElementById('logout-btn');
     const loginNavLink = document.getElementById('login-nav-link');
     const adminActions = document.getElementById('admin-actions');
     const addCourseBtn = document.querySelector('.courses-header .btn-primary');
-    const addCourseNavLink = document.querySelector('.nav-menu a[href="#ajouter"]');
-    const adminNavLink = document.getElementById('admin-nav-link');
+
+    // Profile dropdown elements
+    const profileDropdown = document.getElementById('profile-dropdown');
     const profileBtn = document.getElementById('profile-btn');
+    const dropdownMenu = document.getElementById('dropdown-menu');
+    const dropdownLogout = document.getElementById('dropdown-logout');
+    const dropdownAddCourse = document.getElementById('dropdown-add-course');
+    const dropdownAdmin = document.getElementById('dropdown-admin');
+    const dropdownAdminDivider = document.getElementById('dropdown-admin-divider');
+    const profileAvatar = document.getElementById('profile-avatar');
+    const profileEmoji = document.getElementById('profile-emoji');
+
+    // Toggle dropdown on profile button click
+    if (profileBtn) {
+        profileBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            profileDropdown.classList.toggle('active');
+        });
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+        if (profileDropdown && !profileDropdown.contains(e.target)) {
+            profileDropdown.classList.remove('active');
+        }
+    });
+
+    // Close dropdown when clicking on a dropdown item (except logout button)
+    if (dropdownMenu) {
+        dropdownMenu.querySelectorAll('a.dropdown-item').forEach(item => {
+            item.addEventListener('click', () => {
+                profileDropdown.classList.remove('active');
+            });
+        });
+    }
+
+    // Logout from dropdown
+    if (dropdownLogout) {
+        dropdownLogout.addEventListener('click', async () => {
+            profileDropdown.classList.remove('active');
+            try {
+                await signOut(auth);
+                notyf.success('Déconnexion réussie.');
+                showPage('accueil');
+            } catch (error) {
+                notyf.error('Erreur lors de la déconnexion.');
+            }
+        });
+    }
 
     onAuthStateChanged(auth, async user => {
         if (user) {
@@ -85,19 +130,32 @@ export function initAuth() {
             setUser(user); // Set user in state
 
             loginNavLink.style.display = 'none';
-            logoutBtn.style.display = 'inline-flex';
-            if (profileBtn) profileBtn.style.display = 'flex';
+            if (profileDropdown) profileDropdown.style.display = 'block';
+
+            // Update avatar
+            if (user.photoURL && profileAvatar) {
+                profileAvatar.src = user.photoURL;
+                profileAvatar.style.display = 'block';
+                if (profileEmoji) profileEmoji.style.display = 'none';
+            } else {
+                if (profileAvatar) profileAvatar.style.display = 'none';
+                if (profileEmoji) profileEmoji.style.display = 'block';
+            }
 
             if (state.isAdmin) {
-                adminActions.style.display = 'flex';
+                if (adminActions) adminActions.style.display = 'flex';
                 if (addCourseBtn) addCourseBtn.style.display = 'inline-flex';
-                if (addCourseNavLink) addCourseNavLink.style.display = 'inline-flex';
-                adminNavLink.style.display = 'inline-flex';
+                // Show admin options in dropdown
+                if (dropdownAddCourse) dropdownAddCourse.style.display = 'flex';
+                if (dropdownAdmin) dropdownAdmin.style.display = 'flex';
+                if (dropdownAdminDivider) dropdownAdminDivider.style.display = 'block';
             } else {
-                adminActions.style.display = 'none';
+                if (adminActions) adminActions.style.display = 'none';
                 if (addCourseBtn) addCourseBtn.style.display = 'none';
-                if (addCourseNavLink) addCourseNavLink.style.display = 'none';
-                adminNavLink.style.display = 'none';
+                // Hide admin options in dropdown
+                if (dropdownAddCourse) dropdownAddCourse.style.display = 'none';
+                if (dropdownAdmin) dropdownAdmin.style.display = 'none';
+                if (dropdownAdminDivider) dropdownAdminDivider.style.display = 'none';
             }
 
             // Reload courses to show favorite buttons
@@ -111,21 +169,16 @@ export function initAuth() {
             setUser(null); // Clear user from state
 
             loginNavLink.style.display = 'flex';
-            logoutBtn.style.display = 'none';
-            adminActions.style.display = 'none';
+            if (profileDropdown) profileDropdown.style.display = 'none';
+            if (adminActions) adminActions.style.display = 'none';
             if (addCourseBtn) addCourseBtn.style.display = 'none';
-            if (addCourseNavLink) addCourseNavLink.style.display = 'none';
-            adminNavLink.style.display = 'none';
-            if (profileBtn) {
-                profileBtn.style.display = 'none';
-                profileBtn.innerHTML = `
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px; pointer-events: none;">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H11a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="12" cy="7" r="4"></circle>
-                    </svg>`; // Reset icon on logout
-            }
-            if (document.querySelector('.page.active').id === 'ajouter') {
+
+            // Reset avatar
+            if (profileAvatar) profileAvatar.style.display = 'none';
+            if (profileEmoji) profileEmoji.style.display = 'block';
+
+            const activePage = document.querySelector('.page.active');
+            if (activePage && activePage.id === 'ajouter') {
                 showPage('cours');
             }
 
@@ -151,18 +204,6 @@ export function initAuth() {
                 console.error("Login error:", error);
                 let errorMessage = 'Email ou mot de passe incorrect.';
                 notyf.error(errorMessage);
-            }
-        });
-    }
-
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', async () => {
-            try {
-                await signOut(auth);
-                notyf.success('Déconnexion réussie.');
-                showPage('accueil');
-            } catch (error) {
-                notyf.error('Erreur lors de la déconnexion.');
             }
         });
     }

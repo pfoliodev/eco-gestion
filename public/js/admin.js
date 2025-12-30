@@ -316,70 +316,152 @@ window.toggleBugStatus = toggleBugStatus;
 window.deleteBug = deleteBug;
 
 export function loadCourseManagement() {
-    // Render courses table
-    renderCoursesTable();
-
-    // Load dropdown for exercise linking
-    const select = document.getElementById('select-course');
-    if (!select) return;
-    const clist = state.courses.filter(c => c.type === 'cours' || !c.type);
-    select.innerHTML = '<option value="">-- Choisir un cours --</option>' + clist.map(c => `<option value="${c.id}">${c.title}</option>`).join('');
-    select.onchange = (e) => e.target.value ? displayCourseExercises(e.target.value) : document.getElementById('course-exercises-section').style.display = 'none';
-}
-
-export function renderCoursesTable() {
     const tbody = document.getElementById('courses-table-body');
     if (!tbody) return;
+
+    // Hide exercise section when loading course management
+    const exerciseSection = document.getElementById('course-exercises-section');
+    if (exerciseSection) exerciseSection.style.display = 'none';
 
     const courses = state.courses.filter(c => !c.archived);
 
     if (courses.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 2rem;">Aucun cours disponible.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 2rem;">Aucun cours disponible.</td></tr>';
         return;
     }
 
-    tbody.innerHTML = courses.map(course => {
+    // Separate courses and exercices
+    const coursesOnly = courses.filter(c => c.type === 'cours' || !c.type);
+
+    if (coursesOnly.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 2rem;">Aucun cours disponible.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = coursesOnly.map(course => {
         const type = course.type || 'cours';
         const typeLabel = type.charAt(0).toUpperCase() + type.slice(1);
+        const linkedExercises = course.linkedExercises || [];
+        const exerciseCount = linkedExercises.length;
+        const exerciseNames = linkedExercises
+            .map(id => state.courses.find(c => c.id === id)?.title)
+            .filter(Boolean)
+            .join(', ') || 'Aucun';
 
         return `
             <tr>
                 <td><strong>${course.title}</strong></td>
                 <td>${course.subject}</td>
                 <td><span class="course-type-tag type-${type}">${typeLabel}</span></td>
+                <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${exerciseNames}">
+                    <span class="exercise-count-badge">${exerciseCount}</span> ${exerciseNames}
+                </td>
                 <td>
-                    <div style="display: flex; gap: 0.5rem;">
-                        <button class="btn-secondary" onclick="editCourse('${course.id}')" style="padding: 0.5rem 1rem;">
-                            ✏️ Modifier
+                    <div class="table-actions">
+                        <button class="btn-link-exercises" data-course-id="${course.id}" title="Lier des exercices">
+                            🔗
                         </button>
-                        <button class="btn-cancel" onclick="deleteCourse('${course.id}')" style="padding: 0.5rem 1rem;">
-                            🗑️ Archiver
+                        <button class="btn-icon-action btn-edit" data-course-id="${course.id}" title="Modifier">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
+                        </button>
+                        <button class="btn-icon-action btn-delete" data-course-id="${course.id}" title="Archiver">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="3 6 5 6 21 6"/>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                            </svg>
                         </button>
                     </div>
                 </td>
             </tr>`;
     }).join('');
+
+    // Add event listeners
+    requestAnimationFrame(() => {
+        // Link exercises button
+        tbody.querySelectorAll('.btn-link-exercises').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const courseId = this.dataset.courseId;
+                displayCourseExercises(courseId);
+            });
+        });
+
+        tbody.querySelectorAll('.btn-edit').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const courseId = this.dataset.courseId;
+                import('./course.js').then(module => {
+                    import('./state.js').then(stateModule => {
+                        stateModule.setCurrentCourseId(courseId);
+                        module.editCourse();
+                    });
+                });
+            });
+        });
+
+        tbody.querySelectorAll('.btn-delete').forEach(btn => {
+            btn.addEventListener('click', async function () {
+                const courseId = this.dataset.courseId;
+                if (!confirm('Êtes-vous sûr de vouloir archiver ce cours ?')) return;
+
+                try {
+                    await updateDoc(doc(db, 'courses', courseId), {
+                        archived: true,
+                        archivedAt: serverTimestamp()
+                    });
+                    notyf.success('Cours archivé avec succès');
+                    loadCourseManagement();
+                } catch (error) {
+                    notyf.error("Erreur lors de l'archivage.");
+                }
+            });
+        });
+    });
 }
 
 export function displayCourseExercises(courseId) {
     const course = state.courses.find(c => c.id === courseId);
+    if (!course) return;
+
+    const section = document.getElementById('course-exercises-section');
+    const titleEl = document.getElementById('linking-course-title');
     const list = document.getElementById('available-exercises-list');
-    const allEx = state.courses.filter(c => c.type === 'exercice');
+    const allEx = state.courses.filter(c => c.type === 'exercice' && !c.archived);
     const linked = course?.linkedExercises || [];
+
+    // Update title
+    if (titleEl) titleEl.textContent = `Lier des exercices à : ${course.title}`;
+
+    if (allEx.length === 0) {
+        list.innerHTML = '<p style="padding: 1rem; color: var(--text-secondary);">Aucun exercice disponible. Créez d\'abord des exercices.</p>';
+        section.style.display = 'block';
+        return;
+    }
 
     list.innerHTML = allEx.map(ex => `
         <label class="exercise-label">
             <input type="checkbox" class="exercise-checkbox" data-exercise-id="${ex.id}" ${linked.includes(ex.id) ? 'checked' : ''}>
             <div><strong>${ex.title}</strong><br><small>${ex.subject}</small></div>
-        </label>`).join('') || '<p>Aucun exercice.</p>';
+        </label>`).join('');
 
-    const saveBtn = document.createElement('button');
-    saveBtn.className = 'btn-primary';
-    saveBtn.style.width = '100%';
-    saveBtn.textContent = 'Enregistrer';
-    saveBtn.onclick = () => saveLinkedExercises(courseId);
-    list.appendChild(saveBtn);
-    document.getElementById('course-exercises-section').style.display = 'block';
+    // Add buttons
+    const btnContainer = document.createElement('div');
+    btnContainer.className = 'exercise-linking-buttons';
+    btnContainer.innerHTML = `
+        <button class="btn-primary" id="save-exercises-btn">Enregistrer</button>
+        <button class="btn-cancel" id="cancel-linking-btn">Annuler</button>
+    `;
+    list.appendChild(btnContainer);
+
+    // Event listeners
+    document.getElementById('save-exercises-btn').onclick = () => saveLinkedExercises(courseId);
+    document.getElementById('cancel-linking-btn').onclick = () => {
+        section.style.display = 'none';
+    };
+
+    section.style.display = 'block';
+    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 export async function saveLinkedExercises(courseId) {

@@ -9,3 +9,4 @@ export const storage = getStorage(app);
 export const coursesCollection = collection(db, 'courses');
 export const usersCollection = collection(db, 'users');
 export const bugsCollection = collection(db, 'bugs');
+export const flashcardsCollection = collection(db, 'flashcards');

@@ -78,23 +78,10 @@
                 </div>
 
                 <!-- Exercise Linking Section -->
-                <div
-                    style="margin-top: 2rem; background: var(--surface-color); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 2rem;">
-                    <h3 style="margin-top: 0;">Lier des exercices à un cours</h3>
-                    <div style="margin-bottom: 1.5rem;">
-                        <label for="select-course"
-                            style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Sélectionner un cours
-                            :</label>
-                        <select id="select-course"
-                            style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: var(--bg-color); color: var(--text-main); font-family: inherit;">
-                            <option value="">-- Choisir un cours --</option>
-                        </select>
-                    </div>
-                    <div id="course-exercises-section" style="display: none;">
-                        <h4 style="margin-bottom: 1rem;">Exercices disponibles</h4>
-                        <div id="available-exercises-list" style="display: flex; flex-direction: column; gap: 0.75rem;">
-                            <!-- Exercises checkboxes will be loaded here -->
-                        </div>
+                <div id="course-exercises-section" class="exercise-linking-section" style="display: none;">
+                    <h3 id="linking-course-title">Lier des exercices au cours</h3>
+                    <div id="available-exercises-list" class="exercises-checklist">
+                        <!-- Exercises checkboxes will be loaded here -->
                     </div>
                 </div>
             </div>
