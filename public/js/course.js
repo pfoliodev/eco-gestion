@@ -2,6 +2,7 @@ import { db, coursesCollection, auth } from './firebase.js';
 import { getDocs, doc, deleteDoc, updateDoc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js";
 import { state, setCourses, setCurrentCourseId } from './state.js';
 import { notyf, showPage } from './ui.js';
+import { updateCourseFlashcardsSidebar } from './flashcard-ui.js';
 
 export async function loadCourses() {
     try {
@@ -127,6 +128,7 @@ export function viewCourse(id) {
 
         renderRelatedCourses(course.subject, id);
         renderRelatedExercises(course.subject, id);
+        updateCourseFlashcardsSidebar(id);
         showPage('course-detail');
         window.scrollTo(0, 0);
     }

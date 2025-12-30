@@ -1,0 +1,58 @@
+<section id="flashcards-admin" class="page">
+    <div class="container">
+        <div class="admin-header">
+            <button class="btn-back" id="back-from-fc-admin">← Retour au cours</button>
+            <h2>📝 Gérer les flashcards</h2>
+        </div>
+
+        <!-- Course Info -->
+        <div class="fc-admin-course-info" id="fc-admin-course-info">
+            <h3 id="fc-admin-course-title">Titre du cours</h3>
+            <span class="course-subject-tag" id="fc-admin-course-subject">Sujet</span>
+        </div>
+
+        <!-- Sync Status Alert -->
+        <div class="sync-alert" id="fc-sync-alert" style="display: none;">
+            <span class="sync-icon">⚠️</span>
+            <span class="sync-text">Le cours a été modifié. Certaines flashcards peuvent être obsolètes.</span>
+            <button class="btn-small" id="fc-mark-synced">Marquer comme à jour</button>
+        </div>
+
+        <!-- Add Flashcard Form -->
+        <div class="fc-form-section">
+            <h3 id="fc-form-title">Ajouter une flashcard</h3>
+            <form id="flashcard-form">
+                <input type="hidden" id="fc-edit-id">
+                <div class="form-group">
+                    <label for="fc-question">Question</label>
+                    <textarea id="fc-question" rows="3" placeholder="Entrez la question..." required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="fc-answer">Réponse</label>
+                    <textarea id="fc-answer" rows="2" placeholder="La réponse courte..." required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="fc-explanation">Explication (optionnelle)</label>
+                    <textarea id="fc-explanation" rows="3"
+                        placeholder="Explication détaillée, exemples, contexte..."></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary" id="fc-submit-btn">Ajouter</button>
+                    <button type="button" class="btn-cancel" id="fc-cancel-btn" style="display: none;">Annuler</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Flashcards List -->
+        <div class="fc-list-section">
+            <h3>Flashcards existantes (<span id="fc-count">0</span>)</h3>
+            <div class="fc-list" id="fc-list">
+                <!-- Dynamic flashcard items -->
+                <div class="fc-empty" id="fc-empty">
+                    <p>Aucune flashcard pour ce cours.</p>
+                    <p>Ajoutez votre première flashcard ci-dessus !</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

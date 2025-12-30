@@ -13,7 +13,7 @@
                 <ul class="nav-menu">
                     <li><a href="#accueil">Accueil</a></li>
                     <li><a href="#cours">Cours</a></li>
-                    <li><a href="#ajouter">Ajouter un cours</a></li>
+                    <li><a href="#flashcards">Flashcards</a></li>
                     <li>
                         <a href="#pantheon" class="coming-soon-link">
                             Panthéon
@@ -26,7 +26,6 @@
                             <span class="badge-coming-soon">À venir</span>
                         </a>
                     </li>
-                    <li><a href="#admin" id="admin-nav-link" style="display: none;">Administration</a></li>
                 </ul>
                 <div class="nav-actions">
                     <a href="#login" id="login-nav-link" class="btn-icon" title="Connexion">
@@ -38,8 +37,33 @@
                             <circle cx="12" cy="7" r="4"></circle>
                         </svg>
                     </a>
-                    <button id="profile-btn" class="btn-icon" title="Mon Compte" style="display: none;">👤</button>
-                    <button id="logout-btn" class="btn-cancel" style="display: none;">Logout</button>
+                    <!-- Profile Dropdown (logged in users) -->
+                    <div class="profile-dropdown" id="profile-dropdown" style="display: none;">
+                        <button id="profile-btn" class="btn-icon profile-trigger" title="Mon Compte">
+                            <img id="profile-avatar" src="" alt="Avatar" style="display: none;">
+                            <span id="profile-emoji">👤</span>
+                        </button>
+                        <div class="dropdown-menu" id="dropdown-menu">
+                            <a href="#mon-compte" class="dropdown-item" id="dropdown-account">
+                                <span class="dropdown-icon">👤</span>
+                                Mon Compte
+                            </a>
+                            <div class="dropdown-divider" id="dropdown-admin-divider" style="display: none;"></div>
+                            <a href="#ajouter" class="dropdown-item" id="dropdown-add-course" style="display: none;">
+                                <span class="dropdown-icon">➕</span>
+                                Ajouter un cours
+                            </a>
+                            <a href="#admin" class="dropdown-item" id="dropdown-admin" style="display: none;">
+                                <span class="dropdown-icon">⚙️</span>
+                                Administration
+                            </a>
+                            <div class="dropdown-divider"></div>
+                            <button class="dropdown-item dropdown-logout" id="dropdown-logout">
+                                <span class="dropdown-icon">🚪</span>
+                                Déconnexion
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

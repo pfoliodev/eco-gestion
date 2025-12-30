@@ -9,9 +9,11 @@ import { state } from './state.js';
 import { loadMultipleTemplates } from './template-loader.js';
 import { initGDPR } from './gdpr.js';
 import { loadReminders, loadAdminReminders, initReminderForm } from './reminders.js';
+import { initFlashcards } from './flashcard-ui.js';
 
 // Global exports for inline HTML handlers
 window.viewCourse = viewCourse;
+window.showPage = showPage;
 
 function initNavigation() {
     document.addEventListener('click', (e) => {
@@ -37,6 +39,7 @@ function initNavigation() {
             }
             else if (href === '#login') showPage('login');
             else if (href === '#register') showPage('register');
+            else if (href === '#flashcards') showPage('flashcards');
         }
     });
 }
@@ -154,6 +157,9 @@ async function initApp() {
             { containerId: 'page-cours', path: 'templates/pages/courses.html' },
             { containerId: 'page-ajouter', path: 'templates/pages/course-form.html' },
             { containerId: 'page-course-detail', path: 'templates/pages/course-detail.html' },
+            { containerId: 'page-flashcards', path: 'templates/pages/flashcards.html' },
+            { containerId: 'page-flashcards-study', path: 'templates/pages/flashcards-study.html' },
+            { containerId: 'page-flashcards-admin', path: 'templates/pages/flashcards-admin.html' },
             { containerId: 'page-login', path: 'templates/pages/login.html' },
             { containerId: 'page-register', path: 'templates/pages/register.html' },
             { containerId: 'page-admin', path: 'templates/pages/admin.html' },
@@ -174,6 +180,7 @@ async function initApp() {
         initGDPR();
         loadCourses();
         loadReminders();
+        initFlashcards();
         showPage('accueil');
     } catch (error) {
         console.error('Failed to initialize app:', error);
