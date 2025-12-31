@@ -100,10 +100,11 @@ function addQuestionField(index, data = null) {
     const container = document.getElementById('quiz-questions-container');
     const div = document.createElement('div');
     div.className = 'question-block';
+    const questionId = data?.id || Math.random().toString(36).substr(2, 9);
     div.innerHTML = `
         <div class="question-header">
-            <h5>Question ${index + 1}</h5>
-            ${index > 0 ? '<button type="button" class="btn-remove-q text-danger">Supprimer</button>' : ''}
+            <h5>Question</h5>
+            ${index >= 0 ? '<button type="button" class="btn-remove-q text-danger">Supprimer</button>' : ''}
         </div>
         <div class="form-group">
             <label>Énoncé</label>
@@ -112,7 +113,7 @@ function addQuestionField(index, data = null) {
         <div class="options-grid">
             ${[0, 1, 2, 3].map(i => `
                 <div class="option-row">
-                    <input type="radio" name="correct-${index}" value="${i}" ${data && data.correctIndex === i ? 'checked' : (i === 0 && !data ? 'checked' : '')}>
+                    <input type="radio" name="correct-${questionId}" value="${i}" ${data && data.correctIndex === i ? 'checked' : (i === 0 && !data ? 'checked' : '')}>
                     <input type="text" class="q-option" required value="${data ? data.options[i] : ''}" placeholder="Réponse ${i + 1}">
                 </div>
             `).join('')}
@@ -123,9 +124,10 @@ function addQuestionField(index, data = null) {
         </div>
     `;
 
-    if (index > 0) {
-        div.querySelector('.btn-remove-q').onclick = () => div.remove();
-    }
+    div.querySelector('.btn-remove-q').onclick = () => {
+        div.remove();
+        // Optionnel : renvoyer un événement ou mettre à jour les labels si nécessaire
+    };
 
     container.appendChild(div);
 }
@@ -141,11 +143,12 @@ export function initQuizEditor() {
         const title = document.getElementById('quiz-title').value;
         const questionBlocks = document.querySelectorAll('.question-block');
 
-        const questions = Array.from(questionBlocks).map((block, index) => {
+        const questions = Array.from(questionBlocks).map((block) => {
             const text = block.querySelector('.q-text').value;
             const explanation = block.querySelector('.q-explanation').value;
             const options = Array.from(block.querySelectorAll('.q-option')).map(opt => opt.value);
-            const correctIndex = parseInt(block.querySelector(`input[name="correct-${index}"]:checked`).value);
+            const checkedRadio = block.querySelector('input[type="radio"]:checked');
+            const correctIndex = checkedRadio ? parseInt(checkedRadio.value) : 0;
 
             return { text, options, correctIndex, explanation };
         });
