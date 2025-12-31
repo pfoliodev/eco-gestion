@@ -75,12 +75,12 @@ export function renderCourses() {
             </button>
             ` : ''}
             <h3>${course.title}</h3>
-            <div style="margin-bottom: 0.75rem;">
-                <div style="margin-bottom: 0.5rem;">
+            <div class="course-card-content">
+                <div class="course-tags">
                     <span class="course-subject-tag">${course.subject}</span>
                     <span class="course-type-tag type-${type}">${typeLabel}</span>
                 </div>
-                ${course.category ? `<div style="font-size: 0.85rem; color: #64748b;"><strong style="color: #4f46e5;">Catégorie :</strong> ${course.category}</div>` : ''}
+                ${course.category ? `<div class="course-category-info"><strong>Catégorie :</strong> ${course.category}</div>` : ''}
                 <div class="course-metadata">
                     <span>👤 ${course.author || 'Anonyme'}</span>
                     <span>📅 ${dateStr}</span>
