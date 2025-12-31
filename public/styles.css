@@ -763,18 +763,22 @@ p {
 
 /* Course Detail Layout */
 #course-detail .container {
-    max-width: 1500px;
+    max-width: 1300px;
+    /* More readable width for reading */
+    margin: 0 auto;
 }
 
 .course-detail-layout {
     display: grid;
-    grid-template-columns: 310px 1fr;
-    gap: 4rem;
+    grid-template-columns: 1fr 300px;
+    grid-template-areas: "main-content side-info";
+    gap: 2.5rem;
     margin-top: 2rem;
     align-items: start;
 }
 
 .course-sidebar-left {
+    grid-area: side-info;
     display: flex;
     flex-direction: column;
     gap: 2rem;
@@ -4138,8 +4142,8 @@ input:checked+.slider:before {
     }
 
     .course-detail-layout.has-sidebar {
-        grid-template-columns: 310px 1fr;
-        /* Sidebar + Content */
+        grid-template-columns: 1fr 300px;
+        grid-template-areas: "main-content side-info";
     }
 
     /* If sidebar is first in HTML, grid handles placement automatically. 
@@ -4156,15 +4160,17 @@ input:checked+.slider:before {
 
 /* Tablet / Mobile Adjustments */
 @media (max-width: 1023px) {
-    .course-detail-layout {
+
+    .course-detail-layout,
+    .course-detail-layout.has-sidebar {
         display: flex;
         flex-direction: column;
-        /* Stack vertically */
+        gap: 2rem;
     }
 
-    /* If we want sidebar at the bottom on mobile, use column-reverse because sidebar is first in DOM */
-    .course-detail-layout {
-        flex-direction: column-reverse;
+    .course-sidebar-left {
+        width: 100%;
+        position: static;
     }
 }
 
