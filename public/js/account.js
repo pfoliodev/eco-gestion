@@ -4,7 +4,12 @@ import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/fireba
 import { state } from './state.js';
 import { notyf } from './ui.js';
 import { loadUserFavorites } from './favorites.js';
-import { getAllBadgeDefinitions, getUserBadges } from './badges.js';
+import { getAllBadgeDefinitions, getUserBadges, getUserBadgeStats } from './badges.js';
+
+let allBadgesCache = [];
+let userBadgesCache = [];
+let userStatsCache = null;
+let currentBadgeFilter = 'all';
 
 export async function loadAccount() {
     if (!auth.currentUser) return;
@@ -46,6 +51,7 @@ export async function loadAccount() {
     await loadUserBadges();
     initProfileForm();
     initAccountSidebar();
+    initBadgeFilters();
 }
 
 // Initialize account sidebar navigation
@@ -184,58 +190,140 @@ async function loadUserBadges() {
     if (!container) return;
 
     try {
-        // Get all badge definitions and user's unlocked badges
-        const [allBadges, userBadges] = await Promise.all([
-            getAllBadgeDefinitions(),
-            getUserBadges()
-        ]);
-
-        // Create a set of unlocked badge IDs for quick lookup
-        const unlockedBadgeIds = new Set(userBadges.map(ub => ub.badgeId));
-
-        if (allBadges.length === 0) {
-            container.innerHTML = '<div class="empty-badges">Aucun badge disponible pour le moment.</div>';
-            return;
+        if (allBadgesCache.length === 0 || !userStatsCache) {
+            const [allBadges, userBadges, stats] = await Promise.all([
+                getAllBadgeDefinitions(),
+                getUserBadges(),
+                getUserBadgeStats()
+            ]);
+            allBadgesCache = allBadges;
+            userBadgesCache = userBadges;
+            userStatsCache = stats;
         }
 
-        // Sort badges: unlocked first, then locked
-        const sortedBadges = [...allBadges].sort((a, b) => {
-            const aUnlocked = unlockedBadgeIds.has(a.id);
-            const bUnlocked = unlockedBadgeIds.has(b.id);
-            if (aUnlocked && !bUnlocked) return -1;
-            if (!aUnlocked && bUnlocked) return 1;
-            return 0;
-        });
-
-        container.innerHTML = sortedBadges.map(badge => {
-            const isUnlocked = unlockedBadgeIds.has(badge.id);
-            const userBadge = userBadges.find(ub => ub.badgeId === badge.id);
-            const unlockedDate = userBadge?.unlockedAt
-                ? new Date(userBadge.unlockedAt.seconds * 1000).toLocaleDateString('fr-FR')
-                : null;
-
-            return `
-                <div class="badge-card ${isUnlocked ? 'unlocked' : 'locked'}">
-                    <div class="badge-icon">
-                        ${badge.icon && badge.icon.includes('/')
-                    ? `<img src="${badge.icon}" alt="${badge.name}">`
-                    : (badge.icon || '🏆')}
-                    </div>
-                    <div class="badge-info">
-                        <h4 class="badge-name">${badge.name}</h4>
-                        <p class="badge-description">${badge.description || ''}</p>
-                        ${isUnlocked
-                    ? `<span class="badge-date">Débloqué le ${unlockedDate}</span>`
-                    : '<span class="badge-locked-label">🔒 Verrouillé</span>'
-                }
-                    </div>
-                </div>
-            `;
-        }).join('');
-
+        renderBadges();
     } catch (error) {
         console.error("Error loading badges:", error);
         container.innerHTML = '<div class="error-msg">Erreur de chargement des badges.</div>';
     }
 }
 
+function renderBadges() {
+    const container = document.getElementById('badges-container');
+    const unlockedBadgeIds = new Set(userBadgesCache.map(ub => ub.badgeId));
+
+    const filteredBadges = allBadgesCache.filter(badge => {
+        const isUnlocked = unlockedBadgeIds.has(badge.id);
+        const progress = calculateProgress(badge, userStatsCache);
+        const isInProgress = !isUnlocked && progress.percent > 0;
+
+        if (currentBadgeFilter === 'unlocked') return isUnlocked;
+        if (currentBadgeFilter === 'locked') return !isUnlocked && !isInProgress;
+        if (currentBadgeFilter === 'in-progress') return isInProgress;
+        return true;
+    });
+
+    if (filteredBadges.length === 0) {
+        container.innerHTML = `<div class="empty-badges">Aucun badge trouvé pour ce filtre.</div>`;
+        return;
+    }
+
+    // Sort: unlocked first, then in-progress, then locked
+    const sortedFiltered = [...filteredBadges].sort((a, b) => {
+        const aUnlocked = unlockedBadgeIds.has(a.id);
+        const bUnlocked = unlockedBadgeIds.has(b.id);
+        if (aUnlocked && !bUnlocked) return -1;
+        if (!aUnlocked && bUnlocked) return 1;
+
+        const aProg = calculateProgress(a, userStatsCache).percent;
+        const bProg = calculateProgress(b, userStatsCache).percent;
+        return bProg - aProg;
+    });
+
+    container.innerHTML = sortedFiltered.map(badge => {
+        const isUnlocked = unlockedBadgeIds.has(badge.id);
+        const userBadge = userBadgesCache.find(ub => ub.badgeId === badge.id);
+        const unlockedDate = userBadge?.unlockedAt
+            ? new Date(userBadge.unlockedAt.seconds * 1000).toLocaleDateString('fr-FR')
+            : null;
+
+        const progress = calculateProgress(badge, userStatsCache);
+
+        return `
+            <div class="badge-card ${isUnlocked ? 'unlocked' : 'locked'}">
+                <div class="badge-icon">
+                    ${badge.icon && badge.icon.includes('/')
+                ? `<img src="${badge.icon}" alt="${badge.name}">`
+                : (badge.icon || '🏆')}
+                </div>
+                <div class="badge-info">
+                    <h4 class="badge-name">${badge.name}</h4>
+                    <p class="badge-description">${badge.description || ''}</p>
+                    
+                    ${isUnlocked
+                ? `<span class="badge-date">Débloqué le ${unlockedDate}</span>`
+                : `
+                        <div class="badge-progress-container">
+                            <div class="badge-progress-bar" style="width: ${progress.percent}%"></div>
+                            <span class="badge-progress-text">${progress.current} / ${progress.target}</span>
+                        </div>
+                        <span class="badge-locked-label">🔒 ${progress.percent > 0 ? 'En cours...' : 'Verrouillé'}</span>
+                        `
+            }
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function calculateProgress(badge, stats) {
+    if (!badge.requirement || !stats) return { percent: 0, current: 0, target: 0 };
+
+    const req = badge.requirement;
+    let current = 0;
+    let target = req.value || 1;
+
+    switch (req.type) {
+        case 'first_quiz':
+            current = stats.uniqueQuizCount >= 1 ? 1 : 0;
+            break;
+        case 'quiz_count':
+            current = stats.uniqueQuizCount;
+            break;
+        case 'perfect_score':
+            current = stats.perfectScoreCount >= 1 ? 1 : 0;
+            break;
+        case 'perfect_count':
+            current = stats.perfectScoreCount;
+            break;
+        case 'streak':
+            current = stats.quizStreak;
+            break;
+        case 'perfect_unique_count':
+            current = stats.uniquePerfectCourseCount;
+            break;
+        case 'perfect_streak':
+            current = stats.perfectStreak;
+            break;
+        case 'course_read':
+            current = (stats.readCourses && stats.readCourses.length > 0) ? 1 : 0;
+            break;
+        default:
+            current = 0;
+    }
+
+    const percent = Math.min(100, Math.floor((current / target) * 100));
+    return { percent, current, target };
+}
+
+function initBadgeFilters() {
+    const filters = document.querySelectorAll('[data-badge-filter]');
+    filters.forEach(btn => {
+        btn.onclick = () => {
+            filters.forEach(f => f.classList.remove('active'));
+            btn.classList.add('active');
+            currentBadgeFilter = btn.dataset.badgeFilter;
+            renderBadges();
+        };
+    });
+}

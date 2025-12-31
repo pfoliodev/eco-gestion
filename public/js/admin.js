@@ -3,7 +3,7 @@ import { getDocs, doc, updateDoc, deleteDoc, query, orderBy, where, serverTimest
 import { state } from './state.js';
 import { auth } from './firebase.js';
 import { notyf } from './ui.js';
-import { getAllBadgeDefinitions, createBadge, updateBadge, deleteBadge, seedDefaultBadges } from './badges.js';
+import { getAllBadgeDefinitions, createBadge, updateBadge, deleteBadge, seedDefaultBadges, cleanupDuplicateBadges } from './badges.js';
 
 export async function loadUsers() {
     if (!state.isAdmin) return;
@@ -753,8 +753,12 @@ function formatRequirement(requirement) {
             return `${requirement.value} QCM`;
         case 'perfect_score':
             return 'Score 100%';
-        case 'perfect_count':
-            return `${requirement.value}x 100%`;
+        case 'perfect_unique_count':
+            return `${requirement.value} cours parfaits`;
+        case 'perfect_streak':
+            return `${requirement.value}x 100% de suite`;
+        case 'course_read':
+            return 'Lu avant QCM';
         default:
             return requirement.type;
     }
@@ -776,6 +780,23 @@ function initBadgeAdminListeners() {
         });
     }
 
+    // Cleanup duplicates button
+    const cleanupBtn = document.getElementById('cleanup-badges-btn');
+    if (cleanupBtn && !cleanupBtn._listenerAdded) {
+        cleanupBtn._listenerAdded = true;
+        cleanupBtn.addEventListener('click', async () => {
+            if (!confirm('Voulez-vous supprimer les anciens badges en double ? (Cela ne supprimera que les versions avec des IDs aléatoires qui correspondent aux noms par défaut)')) return;
+            try {
+                const result = await cleanupDuplicateBadges();
+                notyf.success(result.message);
+                loadBadgesAdmin();
+            } catch (error) {
+                console.error('Cleanup error:', error);
+                notyf.error('Erreur lors du nettoyage');
+            }
+        });
+    }
+
     // Add badge button
     const addBtn = document.getElementById('add-badge-btn');
     if (addBtn && !addBtn._listenerAdded) {
@@ -789,7 +810,7 @@ function initBadgeAdminListeners() {
         reqTypeSelect._listenerAdded = true;
         reqTypeSelect.addEventListener('change', function () {
             const valueGroup = document.getElementById('badge-requirement-value-group');
-            const needsValue = ['quiz_count', 'perfect_count'].includes(this.value);
+            const needsValue = ['quiz_count', 'perfect_count', 'streak', 'perfect_unique_count', 'perfect_streak'].includes(this.value);
             valueGroup.style.display = needsValue ? 'block' : 'none';
         });
     }
@@ -835,7 +856,7 @@ function openBadgeEditor(badge = null) {
 
     // Show/hide value field based on requirement type
     const reqType = document.getElementById('badge-requirement-type').value;
-    const needsValue = ['quiz_count', 'perfect_count'].includes(reqType);
+    const needsValue = ['quiz_count', 'perfect_count', 'streak', 'perfect_unique_count', 'perfect_streak'].includes(reqType);
     document.getElementById('badge-requirement-value-group').style.display = needsValue ? 'block' : 'none';
 
     modal.style.display = 'flex';
@@ -858,7 +879,7 @@ async function handleBadgeFormSubmit(e) {
     const requirementValue = parseInt(document.getElementById('badge-requirement-value').value) || 1;
 
     const requirement = { type: requirementType };
-    if (['quiz_count', 'perfect_count'].includes(requirementType)) {
+    if (['quiz_count', 'perfect_count', 'streak', 'perfect_unique_count', 'perfect_streak'].includes(requirementType)) {
         requirement.value = requirementValue;
     }
 
@@ -878,12 +899,11 @@ async function handleBadgeFormSubmit(e) {
             await createBadge(badgeData);
             notyf.success('Badge créé');
         }
-
         closeBadgeEditor();
         loadBadgesAdmin();
     } catch (error) {
-        console.error('Badge save error:', error);
-        notyf.error('Erreur lors de l\'enregistrement');
+        console.error("Error saving badge:", error);
+        notyf.error("Erreur d'enregistrement");
     }
 }
 

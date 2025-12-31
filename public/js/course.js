@@ -181,6 +181,10 @@ export function viewCourse(id) {
         if (state.user) {
             trackCourseView(id);
             loadCourseViewersSidebar(id);
+            // Initialize reading tracker for the "Érudit" badge
+            import('./course-tracker.js').then(module => {
+                module.initCourseReadingTracker(id);
+            });
         }
 
         showPage('course-detail');

@@ -65,11 +65,12 @@ export async function getQuizById(quizId) {
 // --- Results Handling ---
 
 // Submit a quiz result
-export async function submitQuizResult(quizId, score, totalQuestions, answers) {
+export async function submitQuizResult(quizId, courseId, score, totalQuestions, answers) {
     if (!auth.currentUser) throw new Error("User must be logged in");
 
     const resultData = {
         quizId,
+        courseId,
         userId: auth.currentUser.uid,
         score,
         totalQuestions,
