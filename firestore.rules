@@ -92,5 +92,28 @@ service cloud.firestore {
         // Admins can read all results
         allow read: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
+
+    // Badges collection (badge definitions)
+    match /badges/{badgeId} {
+      // Anyone can read badge definitions
+      allow read: if true;
+      
+      // Only admins can create, update, or delete badges
+      allow create, update, delete: if request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // User badges (unlocked badges)
+    match /users/{userId}/userBadges/{badgeId} {
+      // Users can read their own badges, admins can read all
+      allow read: if request.auth != null && 
+        (request.auth.uid == userId || 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin');
+      
+      // Users can create badges for themselves (unlocking)
+      allow create: if request.auth != null && request.auth.uid == userId;
+      
+      // No updates or deletes allowed (badges are permanent)
+    }
   }
 }
