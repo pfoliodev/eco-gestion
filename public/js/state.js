@@ -6,8 +6,18 @@ export const state = {
     // Flashcard features (HEAD)
     flashcards: [],
     userProgress: {},
-    currentStudySession: null
+    currentStudySession: null,
+    features: {
+        flashcards: true,
+        badges: true,
+        reminders: true,
+        quiz: true
+    }
 };
+
+export function setFeatures(features) {
+    state.features = { ...state.features, ...features };
+}
 
 export function setCourses(newCourses) {
     state.courses = newCourses;

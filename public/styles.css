@@ -5168,3 +5168,144 @@ input:checked+.slider:before {
 [data-theme="dark"] .tox .tox-edit-area__iframe {
     background-color: #1a1a1a !important;
 }
+
+/* Admin Configuration Section */
+.config-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.config-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    transition: transform 0.2s, border-color 0.2s;
+}
+
+.config-card:hover {
+    border-color: var(--primary-color);
+    transform: translateY(-2px);
+}
+
+.config-info h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.1rem;
+}
+
+.config-info p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+/* Switch Component */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 26px;
+    flex-shrink: 0;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked+.slider {
+    background-color: var(--primary-color);
+}
+
+input:focus+.slider {
+    box-shadow: 0 0 1px var(--primary-color);
+}
+
+input:checked+.slider:before {
+    transform: translateX(24px);
+}
+
+.section-intro {
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+}
+/* Feature Card (QCM) */
+.feature-card {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    padding: 2rem;
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    margin-bottom: 2rem;
+    transition: transform 0.2s, border-color 0.2s;
+    margin-top: 2rem;}
+
+.feature-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--primary-color);
+}
+
+.feature-card-content {
+    flex: 1;
+}
+
+.feature-card-content h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.5rem;
+}
+
+.feature-card-content p {
+    margin: 0 0 1rem 0;
+    line-height: 1.6;
+}
+
+.feature-card .feature-icon {
+    font-size: 5rem;
+    opacity: 0.2;
+    flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+    .feature-card {
+        flex-direction: column;
+        text-align: center;
+    }
+    .feature-card .feature-icon {
+        font-size: 3rem;
+    }
+}
+
+

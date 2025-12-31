@@ -128,5 +128,19 @@ service cloud.firestore {
       allow update: if request.auth != null && 
         resource.data.userId == request.auth.uid;
     }
+
+    // Settings collection (feature flags)
+    match /settings/{settingId} {
+      // Anyone can read settings (needed for feature visibility)
+      allow read: if true;
+      
+      // Only admins can update settings
+      allow update: if request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      
+      // Only admins can create settings (initial setup)
+      allow create: if request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
   }
 }

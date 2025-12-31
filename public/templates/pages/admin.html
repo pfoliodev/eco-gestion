@@ -34,6 +34,10 @@
                 <span class="sidebar-icon">👤</span>
                 <span class="sidebar-text">Utilisateurs Archivés</span>
             </a>
+            <a href="#" class="sidebar-link" data-section="config">
+                <span class="sidebar-icon">⚙️</span>
+                <span class="sidebar-text">Configuration</span>
+            </a>
         </nav>
     </aside>
 
@@ -237,6 +241,58 @@
                         <!-- Archived users will be loaded here -->
                     </tbody>
                 </table>
+            </div>
+        </div>
+
+        <!-- Configuration Section -->
+        <div id="admin-section-config" class="admin-section">
+            <h2>Configuration du Site</h2>
+            <p class="section-intro">Activez ou désactivez les fonctionnalités principales de l'application.</p>
+
+            <div class="config-grid">
+                <div class="config-card">
+                    <div class="config-info">
+                        <h3>📚 Flashcards</h3>
+                        <p>Désactivez cette option pour masquer tout le système de révision par cartes.</p>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="feature-flashcards" checked>
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+
+                <div class="config-card">
+                    <div class="config-info">
+                        <h3>🏆 Badges & Gamification</h3>
+                        <p>Masquez le système de badges et les récompenses sur le profil utilisateur.</p>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="feature-badges" checked>
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+
+                <div class="config-card">
+                    <div class="config-info">
+                        <h3>📝 QCM (Quizz)</h3>
+                        <p>Désactivez les QCM tout en gardant l'accès aux cours théoriques.</p>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="feature-quiz" checked>
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+
+                <div class="config-card">
+                    <div class="config-info">
+                        <h3>⏰ Rappels d'Évaluation</h3>
+                        <p>Affichez ou masquez la section des rappels sur la page d'accueil.</p>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="feature-reminders" checked>
+                        <span class="slider round"></span>
+                    </label>
+                </div>
             </div>
         </div>
     </main>

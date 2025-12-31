@@ -11,6 +11,7 @@ import { initGDPR } from './gdpr.js';
 import { loadReminders, loadAdminReminders, initReminderForm } from './reminders.js';
 import { initFlashcards } from './flashcard-ui.js';
 import { initQuizEditor } from './quiz-ui.js';
+import { initFeatures, applyFeatureFlags } from './features.js';
 
 // Global exports for inline HTML handlers
 window.viewCourse = viewCourse;
@@ -172,6 +173,7 @@ async function initApp() {
         ]);
 
         // Initialize app after templates are loaded
+        await initFeatures();
         initTinyMCE();
         initAuth();
         initForm();
@@ -200,8 +202,27 @@ async function initApp() {
 
 document.addEventListener('DOMContentLoaded', initApp);
 
+// Update QCM card button based on auth state
+function updateQcmCardButton() {
+    const buttonContainer = document.getElementById('qcm-card-button');
+    if (!buttonContainer) return;
+
+    if (state.user) {
+        // User is logged in - show "Voir les cours"
+        buttonContainer.innerHTML = '<button class="btn-primary" onclick="showPage(\'cours\')">Voir les cours</button>';
+    } else {
+        // User is not logged in - show "Se connecter"
+        buttonContainer.innerHTML = '<button class="btn-primary" onclick="showPage(\'login\')">Se connecter</button>';
+    }
+}
+
+// Export for use in auth.js
+window.updateQcmCardButton = updateQcmCardButton;
+
 // Reacting to page changes if needed
 document.addEventListener('pageChange', (e) => {
+    applyFeatureFlags();
+    updateQcmCardButton(); // Update button when page changes
     if (e.detail.pageId === 'cours') {
         renderCourses();
         updateFilters();

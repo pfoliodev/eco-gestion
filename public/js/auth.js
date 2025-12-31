@@ -161,6 +161,9 @@ export function initAuth() {
                     module.renderCourses();
                 });
             }
+
+            // Update QCM card button
+            if (window.updateQcmCardButton) window.updateQcmCardButton();
         } else {
             setIsAdmin(false);
             setUser(null); // Clear user from state
@@ -178,6 +181,9 @@ export function initAuth() {
             if (activePage && activePage.id === 'ajouter') {
                 showPage('cours');
             }
+
+            // Update QCM card button
+            if (window.updateQcmCardButton) window.updateQcmCardButton();
 
             // Reload courses to hide favorite buttons
             if (window.location.hash === '#cours' || window.location.hash === '') {

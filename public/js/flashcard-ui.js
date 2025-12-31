@@ -12,6 +12,7 @@ import {
 } from './flashcard.js';
 import { state, setCurrentStudySession } from './state.js';
 import { notyf, showPage, initTinyMCE } from './ui.js';
+import { escapeHtml } from './security.js';
 
 // ============================================
 // FLASHCARDS HOME PAGE
@@ -315,9 +316,9 @@ export async function updateCourseFlashcardsSidebar(courseId) {
         manageBtn.style.display = state.isAdmin ? 'inline-block' : 'none';
     }
 
-    // Show section
+    // Show section only if flashcards feature is enabled
     if (section) {
-        section.style.display = 'block';
+        section.style.display = state.features.flashcards ? 'block' : 'none';
     }
 }
 

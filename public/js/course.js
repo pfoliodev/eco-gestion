@@ -5,6 +5,8 @@ import { notyf, showPage } from './ui.js';
 import { updateCourseFlashcardsSidebar } from './flashcard-ui.js';
 import { renderQuizList, renderQuizAdmin } from './quiz-ui.js';
 import { trackCourseView, getCourseViewers, getCourseViewersCount, getAllCourseViewers, renderViewerAvatars, renderViewersList } from './courseViews.js';
+import { escapeHtml, sanitizeAttribute } from './security.js';
+import { applyFeatureFlags } from './features.js';
 
 export async function loadCourses() {
     try {
@@ -65,31 +67,39 @@ export function renderCourses() {
         const typeLabel = type.charAt(0).toUpperCase() + type.slice(1);
         const dateStr = course.createdAt ? new Date(course.createdAt.seconds * 1000).toLocaleDateString('fr-FR') : new Date().toLocaleDateString('fr-FR');
 
+        // Sanitize all user-controlled data
+        const safeTitle = escapeHtml(course.title);
+        const safeSubject = escapeHtml(course.subject);
+        const safeCategory = escapeHtml(course.category);
+        const safeAuthor = escapeHtml(course.author || 'Anonyme');
+        const safeDescription = escapeHtml(course.description);
+        const safeId = sanitizeAttribute(course.id);
+
         return `
-        <div class="course-card" data-course-id="${course.id}">
+        <div class="course-card" data-course-id="${safeId}">
             ${state.user ? `
-            <button class="btn-favorite" data-course-id="${course.id}" onclick="toggleFavorite('${course.id}')" title="Ajouter aux favoris">
+            <button class="btn-favorite" data-course-id="${safeId}" onclick="toggleFavorite('${safeId}')" title="Ajouter aux favoris">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
                 </svg>
             </button>
             ` : ''}
-            <h3>${course.title}</h3>
+            <h3>${safeTitle}</h3>
             <div class="course-card-content">
                 <div class="course-tags">
-                    <span class="course-subject-tag">${course.subject}</span>
+                    <span class="course-subject-tag">${safeSubject}</span>
                     <span class="course-type-tag type-${type}">${typeLabel}</span>
                 </div>
-                ${course.category ? `<div class="course-category-info"><strong>Catégorie :</strong> ${course.category}</div>` : ''}
+                ${course.category ? `<div class="course-category-info"><strong>Catégorie :</strong> ${safeCategory}</div>` : ''}
                 <div class="course-metadata">
-                    <span>👤 ${course.author || 'Anonyme'}</span>
+                    <span>👤 ${safeAuthor}</span>
                     <span>📅 ${dateStr}</span>
                 </div>
             </div>
-            <p>${course.description}</p>
+            <p>${safeDescription}</p>
             <div class="course-card-footer">
-                <div class="course-viewers-preview" id="viewers-${course.id}"></div>
-                <button class="btn-view" data-id="${course.id}">Voir le cours</button>
+                <div class="course-viewers-preview" id="viewers-${safeId}"></div>
+                <button class="btn-view" data-id="${safeId}">Voir le cours</button>
             </div>
         </div>
     `}).join('');
@@ -133,13 +143,18 @@ export function viewCourse(id) {
 
         const dateStr = course.createdAt ? new Date(course.createdAt.seconds * 1000).toLocaleDateString('fr-FR') : new Date().toLocaleDateString('fr-FR');
 
+        // Sanitize user-controlled data
+        const safeTitle = escapeHtml(course.title);
+        const safeSubject = escapeHtml(course.subject);
+        const safeAuthor = escapeHtml(course.author || 'Anonyme');
+
         document.getElementById('course-content').innerHTML = `
-            <h2>${course.title}</h2>
+            <h2>${safeTitle}</h2>
             <div style="margin-bottom: 1.5rem;">
-                <span class="course-subject-tag">${course.subject}</span>
+                <span class="course-subject-tag">${safeSubject}</span>
                 <span class="course-type-tag type-${type}">${typeLabel}</span>
                 <div class="course-metadata" style="margin-top: 0.75rem; font-size: 0.9rem;">
-                    <span>👤 <strong>Auteur :</strong> ${course.author || 'Anonyme'}</span>
+                    <span>👤 <strong>Auteur :</strong> ${safeAuthor}</span>
                     <span>📅 <strong>Publié le :</strong> ${dateStr}</span>
                 </div>
             </div>
@@ -188,6 +203,7 @@ export function viewCourse(id) {
         }
 
         showPage('course-detail');
+        applyFeatureFlags(); // Apply feature visibility after page load
         window.scrollTo(0, 0);
     }
 }

@@ -4,6 +4,8 @@ import { state } from './state.js';
 import { auth } from './firebase.js';
 import { notyf } from './ui.js';
 import { getAllBadgeDefinitions, createBadge, updateBadge, deleteBadge, seedDefaultBadges, cleanupDuplicateBadges } from './badges.js';
+import { updateFeatureFlag } from './features.js';
+import { escapeHtml, sanitizeAttribute } from './security.js';
 
 export async function loadUsers() {
     if (!state.isAdmin) return;
@@ -30,23 +32,25 @@ export function renderUsers(users) {
     tbody.innerHTML = users.map(user => {
         const date = user.createdAt ? new Date(user.createdAt.seconds * 1000).toLocaleDateString() : 'N/A';
         const role = user.role || 'student';
-        const firstname = user.firstname || 'N/A';
-        const lastname = user.lastname || 'N/A';
+        const firstname = escapeHtml(user.firstname || 'N/A');
+        const lastname = escapeHtml(user.lastname || 'N/A');
+        const email = escapeHtml(user.email || 'N/A');
+        const safeUserId = sanitizeAttribute(user.id);
         const isCurrentUser = user.id === auth.currentUser?.uid;
 
         return `
             <tr>
-                <td>${user.email || 'N/A'}</td>
+                <td>${email}</td>
                 <td>${firstname}</td>
                 <td>${lastname}</td>
                 <td><span class="role-badge ${role}">${role === 'admin' ? 'Administrateur' : 'Étudiant'}</span></td>
                 <td>${date}</td>
                 <td>
                     <div style="display: flex; gap: 0.5rem;">
-                        <button class="btn-change-role" data-user-id="${user.id}" data-new-role="${role === 'admin' ? 'student' : 'admin'}" ${isCurrentUser ? 'disabled' : ''}>
+                        <button class="btn-change-role" data-user-id="${safeUserId}" data-new-role="${role === 'admin' ? 'student' : 'admin'}" ${isCurrentUser ? 'disabled' : ''}>
                             ${role === 'admin' ? 'Rétrograder' : 'Promouvoir'}
                         </button>
-                        <button class="btn-delete" data-user-id="${user.id}" ${isCurrentUser ? 'disabled' : ''} title="${isCurrentUser ? 'Vous ne pouvez pas supprimer votre propre compte' : 'Supprimer cet utilisateur'}">
+                        <button class="btn-delete" data-user-id="${safeUserId}" ${isCurrentUser ? 'disabled' : ''} title="${isCurrentUser ? 'Vous ne pouvez pas supprimer votre propre compte' : 'Supprimer cet utilisateur'}">
                             🗑️
                         </button>
                     </div>
@@ -172,6 +176,9 @@ export function initAdminSidebar() {
                 window.loadAdminReminders();
                 window.initReminderForm();
             }
+            if (section === 'config') {
+                loadConfig();
+            }
 
             // Close sidebar on mobile after selection
             if (window.innerWidth <= 768) {
@@ -232,22 +239,28 @@ export function renderBugs(bugs) {
         const statusClass = isResolved ? 'status-resolved' : 'status-new';
         const statusLabel = isResolved ? 'Résolu' : 'Nouveau';
 
+        // Sanitize all bug data
+        const safeUser = escapeHtml(bug.user);
+        const safeSubject = escapeHtml(bug.subject);
+        const safeDescription = escapeHtml(bug.description);
+        const safeBugId = sanitizeAttribute(bug.id);
+
         return `
-            <tr class="bug-row" onclick="viewBugDetail('${bug.id}')">
-                <td><strong>${bug.user}</strong></td>
+            <tr class="bug-row" onclick="viewBugDetail('${safeBugId}')">
+                <td><strong>${safeUser}</strong></td>
                 <td>
-                    <div style="font-weight: 600;">${bug.subject}</div>
-                    <div class="text-truncate-2" style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem;">${bug.description}</div>
+                    <div style="font-weight: 600;">${safeSubject}</div>
+                    <div class="text-truncate-2" style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem;">${safeDescription}</div>
                 </td>
                 <td><small>${date}</small></td>
                 <td><span class="bug-status ${statusClass}">${statusLabel}</span></td>
                 <td>
                     <div style="display: flex; gap: 0.5rem;" onclick="event.stopPropagation()">
                         <button class="btn-bug-action ${isResolved ? 'btn-bug-reopen' : 'btn-bug-solve'}" 
-                                onclick="toggleBugStatus('${bug.id}', '${bug.status}')">
+                                onclick="toggleBugStatus('${safeBugId}', '${bug.status}')">
                             ${isResolved ? 'Réouvrir' : 'Résoudre'}
                         </button>
-                        <button class="btn-delete" style="padding: 0.4rem 0.6rem;" onclick="deleteBug('${bug.id}')">🗑️</button>
+                        <button class="btn-delete" style="padding: 0.4rem 0.6rem;" onclick="deleteBug('${safeBugId}')">🗑️</button>
                     </div>
                 </td>
             </tr>`;
@@ -942,3 +955,42 @@ async function handleBadgeFormSubmit(e) {
 }
 
 window.loadBadgesAdmin = loadBadgesAdmin;
+
+export function loadConfig() {
+    const { features } = state;
+
+    const checkboxes = {
+        'feature-flashcards': features.flashcards,
+        'feature-badges': features.badges,
+        'feature-quiz': features.quiz,
+        'feature-reminders': features.reminders
+    };
+
+    Object.entries(checkboxes).forEach(([id, value]) => {
+        const cb = document.getElementById(id);
+        if (cb) cb.checked = value;
+    });
+
+    initConfigListeners();
+}
+
+function initConfigListeners() {
+    const featureIds = ['flashcards', 'badges', 'quiz', 'reminders'];
+
+    featureIds.forEach(feature => {
+        const checkbox = document.getElementById(`feature-${feature}`);
+        if (checkbox && !checkbox.dataset.listenerAdded) {
+            checkbox.addEventListener('change', async (e) => {
+                const isEnabled = e.target.checked;
+                try {
+                    await updateFeatureFlag(feature, isEnabled);
+                    notyf.success(`Fonctionnalité ${feature} mise à jour.`);
+                } catch (error) {
+                    notyf.error("Erreur lors de la mise à jour.");
+                    e.target.checked = !isEnabled; // Revert on error
+                }
+            });
+            checkbox.dataset.listenerAdded = 'true';
+        }
+    });
+}
