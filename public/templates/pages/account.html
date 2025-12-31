@@ -90,7 +90,15 @@
 
         <!-- Badges Section -->
         <div id="account-section-badges" class="account-section">
-            <h2>🏆 Mes Badges</h2>
+            <div class="account-section-header">
+                <h2>🏆 Mes Badges</h2>
+                <div class="badge-filters">
+                    <button class="filter-btn active" data-badge-filter="all">Tous</button>
+                    <button class="filter-btn" data-badge-filter="unlocked">Débloqués</button>
+                    <button class="filter-btn" data-badge-filter="in-progress">En cours</button>
+                    <button class="filter-btn" data-badge-filter="locked">Verrouillés</button>
+                </div>
+            </div>
             <div id="badges-container" class="badges-grid">
                 <div style="text-align: center; padding: 2rem; color: var(--text-secondary);">Chargement...</div>
             </div>

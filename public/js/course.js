@@ -4,6 +4,7 @@ import { state, setCourses, setCurrentCourseId } from './state.js';
 import { notyf, showPage } from './ui.js';
 import { updateCourseFlashcardsSidebar } from './flashcard-ui.js';
 import { renderQuizList, renderQuizAdmin } from './quiz-ui.js';
+import { trackCourseView, getCourseViewers, getCourseViewersCount, getAllCourseViewers, renderViewerAvatars, renderViewersList } from './courseViews.js';
 
 export async function loadCourses() {
     try {
@@ -86,7 +87,8 @@ export function renderCourses() {
                 </div>
             </div>
             <p>${course.description}</p>
-            <div class="course-card-actions">
+            <div class="course-card-footer">
+                <div class="course-viewers-preview" id="viewers-${course.id}"></div>
                 <button class="btn-view" data-id="${course.id}">Voir le cours</button>
             </div>
         </div>
@@ -97,6 +99,9 @@ export function renderCourses() {
         import('./favorites.js').then(module => {
             module.updateAllFavoriteButtons();
         });
+
+        // Load viewers for each course card
+        loadCourseCardViewers(filteredCourses);
     }
 
     // Update stats
@@ -171,6 +176,17 @@ export function viewCourse(id) {
         renderRelatedCourses(course.subject, id);
         renderRelatedExercises(course.subject, id);
         updateCourseFlashcardsSidebar(id);
+
+        // Track this view and load viewers sidebar
+        if (state.user) {
+            trackCourseView(id);
+            loadCourseViewersSidebar(id);
+            // Initialize reading tracker for the "Érudit" badge
+            import('./course-tracker.js').then(module => {
+                module.initCourseReadingTracker(id);
+            });
+        }
+
         showPage('course-detail');
         window.scrollTo(0, 0);
     }
@@ -420,3 +436,80 @@ export function loadRecentCourses() {
         });
     });
 }
+
+// ============================================
+// COURSE VIEWERS DISPLAY
+// ============================================
+
+/**
+ * Load viewers avatars for all course cards
+ */
+async function loadCourseCardViewers(courses) {
+    for (const course of courses) {
+        const container = document.getElementById(`viewers-${course.id}`);
+        if (!container) continue;
+
+        try {
+            const [viewers, count] = await Promise.all([
+                getCourseViewers(course.id, 5),
+                getCourseViewersCount(course.id)
+            ]);
+
+            if (count > 0) {
+                container.innerHTML = renderViewerAvatars(viewers, count);
+            }
+        } catch (error) {
+            console.error(`Error loading viewers for course ${course.id}:`, error);
+        }
+    }
+}
+
+/**
+ * Load viewers sidebar for course detail page
+ */
+async function loadCourseViewersSidebar(courseId) {
+    const container = document.getElementById('course-viewers-section');
+    if (!container) return;
+
+    try {
+        const [viewers, count] = await Promise.all([
+            getAllCourseViewers(courseId),
+            getCourseViewersCount(courseId)
+        ]);
+
+        const headerEl = container.querySelector('.viewers-count');
+        if (headerEl) {
+            headerEl.textContent = `👁️ Vu par ${count} étudiant${count > 1 ? 's' : ''}`;
+        }
+
+        const listContainer = container.querySelector('#viewers-list-container');
+        if (listContainer) {
+            if (count > 0) {
+                listContainer.innerHTML = `
+                    ${renderViewerAvatars(viewers.slice(0, 5), count)}
+                    <div id="viewers-full-list" class="viewers-full-list" style="display: none;">
+                        ${renderViewersList(viewers, count)}
+                    </div>
+                    ${count > 5 ? `<button class="btn-show-viewers" onclick="toggleViewersList()">Voir tous</button>` : ''}
+                `;
+            } else {
+                listContainer.innerHTML = '<p class="no-viewers">Soyez le premier à voir ce cours !</p>';
+            }
+        }
+
+        container.style.display = 'block';
+    } catch (error) {
+        console.error("Error loading viewers sidebar:", error);
+    }
+}
+
+// Toggle full viewers list
+window.toggleViewersList = function () {
+    const list = document.getElementById('viewers-full-list');
+    const btn = document.querySelector('.btn-show-viewers');
+    if (list && btn) {
+        const isHidden = list.style.display === 'none';
+        list.style.display = isHidden ? 'block' : 'none';
+        btn.textContent = isHidden ? 'Masquer' : 'Voir tous';
+    }
+};

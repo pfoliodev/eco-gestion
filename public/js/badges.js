@@ -120,7 +120,7 @@ export async function unlockBadge(badgeId, metadata = {}) {
 /**
  * Get user's quiz completion count (unique quizzes)
  */
-async function getUserUniqueQuizCount() {
+export async function getUserUniqueQuizCount() {
     if (!auth.currentUser) return 0;
 
     const resultsRef = collection(db, 'quiz_results');
@@ -139,7 +139,7 @@ async function getUserUniqueQuizCount() {
 /**
  * Get user's perfect score count
  */
-async function getUserPerfectScoreCount() {
+export async function getUserPerfectScoreCount() {
     if (!auth.currentUser) return 0;
 
     const resultsRef = collection(db, 'quiz_results');
@@ -175,9 +175,148 @@ async function isFirstAttempt(quizId) {
     return snapshot.docs.length === 1;
 }
 
-// ============================================
-// BADGE CHECKING & UNLOCKING LOGIC
-// ============================================
+/**
+ * Update user's streak and last quiz date
+ */
+export async function updateStreakData() {
+    if (!auth.currentUser) return { streak: 0 };
+
+    const userRef = doc(db, 'users', auth.currentUser.uid);
+    const userSnap = await getDoc(userRef);
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+
+    let streak = 0;
+    let lastDate = null;
+
+    if (userSnap.exists()) {
+        const data = userSnap.data();
+        lastDate = data.lastQuizDate ? new Date(data.lastQuizDate.seconds * 1000) : null;
+        streak = data.quizStreak || 0;
+
+        if (lastDate) {
+            const lastDateDay = new Date(lastDate.getFullYear(), lastDate.getMonth(), lastDate.getDate()).getTime();
+            const diffDays = (today - lastDateDay) / (1000 * 60 * 60 * 24);
+
+            if (diffDays === 1) {
+                // Consecutive day
+                streak += 1;
+            } else if (diffDays > 1) {
+                // Streak broken
+                streak = 1;
+            } else if (diffDays === 0) {
+                // Already did a quiz today, keep streak as is
+            }
+        } else {
+            streak = 1;
+        }
+    } else {
+        streak = 1;
+    }
+
+    await updateDoc(userRef, {
+        quizStreak: streak,
+        lastQuizDate: serverTimestamp()
+    });
+
+    return { streak };
+}
+
+/**
+ * Update user's perfect score streak
+ */
+export async function updatePerfectStreakData(isPerfect) {
+    if (!auth.currentUser) return { streak: 0 };
+
+    const userRef = doc(db, 'users', auth.currentUser.uid);
+    const userSnap = await getDoc(userRef);
+    let streak = 0;
+
+    if (userSnap.exists()) {
+        const data = userSnap.data();
+        streak = data.perfectStreak || 0;
+
+        if (isPerfect) {
+            streak += 1;
+        } else {
+            streak = 0;
+        }
+    } else {
+        streak = isPerfect ? 1 : 0;
+    }
+
+    await updateDoc(userRef, { perfectStreak: streak });
+    return { streak };
+}
+
+/**
+ * Mark a course as read for the user
+ */
+export async function markCourseAsRead(courseId) {
+    if (!auth.currentUser) return;
+
+    const userRef = doc(db, 'users', auth.currentUser.uid);
+    const userSnap = await getDoc(userRef);
+    let readCourses = [];
+
+    if (userSnap.exists()) {
+        readCourses = userSnap.data().readCourses || [];
+    }
+
+    if (!readCourses.includes(courseId)) {
+        readCourses.push(courseId);
+        await updateDoc(userRef, { readCourses });
+    }
+}
+
+/**
+ * Get user's perfect score count on unique courses
+ */
+export async function getUserUniquePerfectCourseCount() {
+    if (!auth.currentUser) return 0;
+
+    const resultsRef = collection(db, 'quiz_results');
+    const q = query(resultsRef,
+        where('userId', '==', auth.currentUser.uid)
+    );
+    const snapshot = await getDocs(q);
+
+    const perfectCourses = new Set();
+    snapshot.docs.forEach(doc => {
+        const data = doc.data();
+        if (data.score === data.totalQuestions && data.courseId) {
+            perfectCourses.add(data.courseId);
+        }
+    });
+
+    return perfectCourses.size;
+}
+
+/**
+ * Get all user stats related to badges for progress display
+ */
+export async function getUserBadgeStats() {
+    if (!auth.currentUser) return null;
+
+    const userRef = doc(db, 'users', auth.currentUser.uid);
+    const userSnap = await getDoc(userRef);
+    const userData = userSnap.exists() ? userSnap.data() : {};
+
+    const [uniqueQuizCount, perfectScoreCount, uniquePerfectCourseCount] = await Promise.all([
+        getUserUniqueQuizCount(),
+        getUserPerfectScoreCount(),
+        getUserUniquePerfectCourseCount()
+    ]);
+
+    return {
+        uniqueQuizCount,
+        perfectScoreCount,
+        uniquePerfectCourseCount,
+        quizStreak: userData.quizStreak || 0,
+        perfectStreak: userData.perfectStreak || 0,
+        readCourses: userData.readCourses || []
+    };
+}
 
 /**
  * Check and unlock badges after a quiz is completed
@@ -185,50 +324,78 @@ async function isFirstAttempt(quizId) {
  * @param {number} score - User's score
  * @param {number} total - Total questions
  * @param {string} quizTitle - Quiz title for metadata
+ * @param {string} courseId - Course ID
  */
-export async function checkAndUnlockBadges(quizId, score, total, quizTitle = '') {
+export async function checkAndUnlockBadges(quizId, score, total, quizTitleValue = '', courseId = null) {
     if (!auth.currentUser) return [];
 
     const unlockedBadges = [];
     const allBadges = await getAllBadgeDefinitions();
+    const now = new Date();
+    const currentHour = now.getHours();
+
+    // Get fresh user data
+    const userRef = doc(db, 'users', auth.currentUser.uid);
+    const userSnap = await getDoc(userRef);
+    const userData = userSnap.exists() ? userSnap.data() : {};
+
+    const currentStreak = userData.quizStreak || 0;
+    const currentPerfectStreak = userData.perfectStreak || 0;
+    const readCourses = userData.readCourses || [];
 
     // Check each badge's requirement
     for (const badge of allBadges) {
         if (!badge.requirement) continue;
 
         let shouldUnlock = false;
-        const metadata = { quizId, quizTitle };
+        const metadata = { quizId, quizTitle: quizTitleValue };
 
         switch (badge.requirement.type) {
             case 'first_quiz':
-                // First quiz ever completed (unlock if user has at least 1 quiz)
                 const uniqueCount = await getUserUniqueQuizCount();
-                if (uniqueCount >= 1) {
-                    shouldUnlock = true;
-                }
+                if (uniqueCount >= 1) shouldUnlock = true;
                 break;
 
             case 'quiz_count':
-                // Completed X unique quizzes
                 const count = await getUserUniqueQuizCount();
-                if (count >= badge.requirement.value) {
-                    shouldUnlock = true;
-                }
+                if (count >= badge.requirement.value) shouldUnlock = true;
                 break;
 
             case 'perfect_score':
-                // Got 100% on a quiz
-                if (score === total) {
-                    shouldUnlock = true;
-                }
+                if (score === total) shouldUnlock = true;
                 break;
 
             case 'perfect_count':
-                // Got X perfect scores
                 const perfectCount = await getUserPerfectScoreCount();
-                if (perfectCount >= badge.requirement.value) {
-                    shouldUnlock = true;
-                }
+                if (perfectCount >= badge.requirement.value) shouldUnlock = true;
+                break;
+
+            case 'streak':
+                if (currentStreak >= badge.requirement.value) shouldUnlock = true;
+                break;
+
+            case 'night_owl':
+                if (currentHour >= 0 && currentHour < 5) shouldUnlock = true;
+                break;
+
+            case 'early_bird':
+                if (currentHour >= 5 && currentHour < 8) shouldUnlock = true;
+                break;
+
+            case 'perfect_unique_count':
+                // Major de Promo: X constant perfect courses
+                const uniquePerfectCount = await getUserUniquePerfectCourseCount();
+                if (uniquePerfectCount >= badge.requirement.value) shouldUnlock = true;
+                break;
+
+            case 'perfect_streak':
+                // Sans Faute: X consecutive perfect scores
+                if (currentPerfectStreak >= badge.requirement.value) shouldUnlock = true;
+                break;
+
+            case 'course_read':
+                // Érudit: Course must be read before QCM
+                if (courseId && readCourses.includes(courseId)) shouldUnlock = true;
                 break;
         }
 
@@ -263,7 +430,11 @@ export function showBadgeUnlockedPopup(badge) {
         overlay.innerHTML = `
             <div class="badge-popup">
                 <div class="badge-popup-glow"></div>
-                <div class="badge-popup-icon">${badge.icon || '🏆'}</div>
+                <div class="badge-popup-icon">
+                    ${badge.icon && badge.icon.includes('/')
+                ? `<img src="${badge.icon}" alt="${badge.name}">`
+                : (badge.icon || '🏆')}
+                </div>
                 <h3 class="badge-popup-title">Badge Débloqué !</h3>
                 <p class="badge-popup-name">${badge.name}</p>
                 <p class="badge-popup-description">${badge.description || ''}</p>
@@ -300,16 +471,12 @@ export function showBadgeUnlockedPopup(badge) {
 // ============================================
 
 /**
- * Seed default badges if none exist (call from admin panel)
+ * Seed default badges without duplicating or breaking existing progress
  */
 export async function seedDefaultBadges() {
-    const existing = await getAllBadgeDefinitions();
-    if (existing.length > 0) {
-        return { message: 'Badges already exist', count: existing.length };
-    }
-
     const defaultBadges = [
         {
+            id: 'first_steps',
             name: 'Premier Pas',
             description: 'Vous avez complété votre premier QCM !',
             icon: '🎯',
@@ -317,6 +484,7 @@ export async function seedDefaultBadges() {
             requirement: { type: 'first_quiz' }
         },
         {
+            id: 'explorer',
             name: 'Explorateur',
             description: 'Vous avez complété 5 QCM différents.',
             icon: '🧭',
@@ -324,6 +492,7 @@ export async function seedDefaultBadges() {
             requirement: { type: 'quiz_count', value: 5 }
         },
         {
+            id: 'expert',
             name: 'Expert',
             description: 'Vous avez complété 10 QCM différents.',
             icon: '🏅',
@@ -331,6 +500,7 @@ export async function seedDefaultBadges() {
             requirement: { type: 'quiz_count', value: 10 }
         },
         {
+            id: 'perfectionist',
             name: 'Perfectionniste',
             description: 'Vous avez obtenu un score parfait à un QCM.',
             icon: '💎',
@@ -338,17 +508,113 @@ export async function seedDefaultBadges() {
             requirement: { type: 'perfect_score' }
         },
         {
+            id: 'winning_streak',
             name: 'Série Gagnante',
             description: 'Vous avez obtenu 3 scores parfaits.',
             icon: '🔥',
             category: 'excellence',
             requirement: { type: 'perfect_count', value: 3 }
+        },
+        {
+            id: 'assiduous',
+            name: 'Assidu',
+            description: 'Vous avez complété au moins un QCM 3 jours de suite !',
+            icon: '📅',
+            category: 'progression',
+            requirement: { type: 'streak', value: 3 }
+        },
+        {
+            id: 'night_owl',
+            name: 'Oiseau de nuit',
+            description: 'Vous avez complété un QCM entre minuit et 5h du matin.',
+            icon: '🦉',
+            category: 'special',
+            requirement: { type: 'night_owl' }
+        },
+        {
+            id: 'early_bird',
+            name: 'Lève-tôt',
+            description: 'Vous avez complété un QCM entre 5h et 8h du matin.',
+            icon: '🌅',
+            category: 'special',
+            requirement: { type: 'early_bird' }
+        },
+        {
+            id: 'valedictorian',
+            name: 'Major de Promo',
+            description: 'Obtenir un score de 100% sur 5 cours différents.',
+            icon: '🎓',
+            category: 'excellence',
+            requirement: { type: 'perfect_unique_count', value: 5 }
+        },
+        {
+            id: 'flawless',
+            name: 'Sans Faute',
+            description: 'Enchaîner 3 QCM à la suite avec 100% sans aucune erreur.',
+            icon: '⚡',
+            category: 'excellence',
+            requirement: { type: 'perfect_streak', value: 3 }
+        },
+        {
+            id: 'scholar',
+            name: 'Érudit',
+            description: "Avoir lu l'intégralité d'un cours avant de lancer le QCM.",
+            icon: '📖',
+            category: 'excellence',
+            requirement: { type: 'course_read' }
         }
     ];
 
+    let createdCount = 0;
+    let updatedCount = 0;
+
     for (const badge of defaultBadges) {
-        await createBadge(badge);
+        const { id, ...data } = badge;
+        const docRef = doc(db, 'badges', id);
+        const snap = await getDoc(docRef);
+
+        if (!snap.exists()) {
+            await setDoc(docRef, {
+                ...data,
+                createdAt: serverTimestamp()
+            });
+            createdCount++;
+        } else {
+            // Update existing defaults to sync descriptions/requirements
+            await updateDoc(docRef, {
+                ...data,
+                updatedAt: serverTimestamp()
+            });
+            updatedCount++;
+        }
     }
 
-    return { message: 'Default badges created', count: defaultBadges.length };
+    return {
+        message: `${createdCount} badges créés, ${updatedCount} badges mis à jour.`,
+        count: createdCount + updatedCount
+    };
+}
+
+/**
+ * Clean up old duplicate badges (with random IDs) that match default badge names
+ */
+export async function cleanupDuplicateBadges() {
+    const fixedIds = ['first_steps', 'explorer', 'expert', 'perfectionist', 'winning_streak', 'assiduous', 'night_owl', 'early_bird', 'valedictorian', 'flawless', 'scholar'];
+    const defaultNames = ['Premier Pas', 'Explorateur', 'Expert', 'Perfectionniste', 'Série Gagnante', 'Assidu', 'Oiseau de nuit', 'Lève-tôt', 'Major de Promo', 'Sans Faute', 'Érudit'];
+
+    const snapshot = await getDocs(badgesCollection);
+    let deletedCount = 0;
+
+    for (const badgeDoc of snapshot.docs) {
+        const id = badgeDoc.id;
+        const data = badgeDoc.data();
+
+        // If it's a random ID (not in fixedIds) AND the name matches a default
+        if (!fixedIds.includes(id) && defaultNames.includes(data.name)) {
+            await deleteDoc(doc(db, 'badges', id));
+            deletedCount++;
+        }
+    }
+
+    return { message: `${deletedCount} badges en double supprimés.`, count: deletedCount };
 }

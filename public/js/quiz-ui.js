@@ -7,7 +7,7 @@ import {
     submitQuizResult,
     getUserQuizBestScore
 } from './quiz.js';
-import { checkAndUnlockBadges } from './badges.js';
+import { checkAndUnlockBadges, updateStreakData, updatePerfectStreakData } from './badges.js';
 import { notyf, showPage } from './ui.js';
 import { state } from './state.js';
 import { auth } from './firebase.js';
@@ -300,9 +300,12 @@ function renderQuizPlayer() {
 
         // Save result and check for badges
         try {
-            await submitQuizResult(currentQuiz.id, score, currentQuizQuestions.length, userAnswers);
+            await submitQuizResult(currentQuiz.id, currentQuiz.courseId, score, currentQuizQuestions.length, userAnswers);
+            // Update streaks
+            await updateStreakData();
+            await updatePerfectStreakData(score === currentQuizQuestions.length);
             // Check and unlock badges after quiz completion
-            await checkAndUnlockBadges(currentQuiz.id, score, currentQuizQuestions.length, currentQuiz.title);
+            await checkAndUnlockBadges(currentQuiz.id, score, currentQuizQuestions.length, currentQuiz.title, currentQuiz.courseId);
         } catch (e) {
             console.error("Failed to save result", e);
         }

@@ -4297,6 +4297,73 @@ input:checked+.slider:before {
 
 .badge-card:hover {
     border-color: var(--primary-color);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+/* Badge Filters */
+.account-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.badge-filters {
+    display: flex;
+    gap: 0.5rem;
+    background: var(--surface-hover);
+    padding: 0.25rem;
+    border-radius: var(--radius-md);
+}
+
+.filter-btn {
+    padding: 0.5rem 1rem;
+    border: none;
+    background: transparent;
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.filter-btn:hover {
+    color: var(--primary-color);
+}
+
+.filter-btn.active {
+    background: white;
+    color: var(--primary-color);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Badge Progress */
+.badge-progress-container {
+    height: 6px;
+    background: var(--border-color);
+    border-radius: 3px;
+    margin: 0.75rem 0 0.5rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.badge-progress-bar {
+    height: 100%;
+    background: var(--primary-color);
+    border-radius: 3px;
+    transition: width 0.5s ease-out;
+}
+
+.badge-progress-text {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+    margin-bottom: 0.5rem;
 }
 
 /* Unlocked Badge */
@@ -4313,21 +4380,39 @@ input:checked+.slider:before {
 
 /* Locked Badge */
 .badge-card.locked {
-    opacity: 0.6;
-    filter: grayscale(0.5);
+    opacity: 0.8;
 }
 
 .badge-card.locked .badge-icon {
     filter: grayscale(1);
-    opacity: 0.5;
+    opacity: 0.3;
 }
+
+.badge-card.locked .badge-name {
+    color: var(--text-secondary);
+}
+
 
 /* Badge Icon */
 .badge-icon {
+    width: 60px;
+    height: 60px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.3s ease;
+}
+
+.badge-icon img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.badge-icon:not(:has(img)) {
     font-size: 2.5rem;
     line-height: 1;
-    flex-shrink: 0;
-    transition: transform 0.3s ease;
 }
 
 /* Badge Info */
@@ -4441,11 +4526,25 @@ input:checked+.slider:before {
 }
 
 .badge-popup-icon {
-    font-size: 5rem;
-    margin-bottom: 1.5rem;
+    width: 150px;
+    height: 150px;
+    margin: 0 auto 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     position: relative;
     z-index: 1;
     animation: bounce-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both;
+}
+
+.badge-popup-icon img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.badge-popup-icon:not(:has(img)) {
+    font-size: 5rem;
 }
 
 @keyframes bounce-in {
@@ -4781,4 +4880,189 @@ input:checked+.slider:before {
     .account-content {
         padding: 1rem;
     }
+}
+
+/* ============================================
+   COURSE VIEWERS DISPLAY
+   ============================================ */
+
+/* Stacked avatars preview */
+.viewers-avatars {
+    display: flex;
+    align-items: center;
+}
+
+.viewer-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid var(--surface-color);
+    margin-left: -8px;
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.15s ease;
+}
+
+.viewer-avatar:first-child {
+    margin-left: 0;
+}
+
+.viewer-avatar:hover {
+    transform: scale(1.15);
+    z-index: 100 !important;
+}
+
+.viewer-avatar img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+/* Tooltip on hover */
+.viewer-avatar::after {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--text-main);
+    color: var(--text-inverted);
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius-md);
+    font-size: 0.75rem;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s;
+    z-index: 200;
+}
+
+.viewer-avatar:hover::after {
+    opacity: 1;
+}
+
+.viewers-remaining {
+    margin-left: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+/* Course card footer with viewers */
+.course-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: auto;
+    padding-top: 0.75rem;
+}
+
+.course-viewers-preview {
+    flex-shrink: 0;
+}
+
+/* Sidebar viewers section */
+#course-viewers-section {
+    border-top: 1px solid var(--border-color);
+    padding-top: 1rem;
+    margin-top: 0.5rem;
+}
+
+#course-viewers-section h3 {
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+}
+
+#viewers-list-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+/* Full viewers list */
+.viewers-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+}
+
+.viewer-list-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem;
+    background: var(--surface-hover);
+    border-radius: var(--radius-md);
+}
+
+.viewer-list-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.viewer-list-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.viewer-list-name {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-main);
+}
+
+.viewer-list-date {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.viewers-more {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    text-align: center;
+    margin-top: 0.5rem;
+}
+
+.no-viewers {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    text-align: center;
+    padding: 0.5rem;
+}
+
+.btn-show-viewers {
+    background: none;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    padding: 0.4rem 0.75rem;
+    border-radius: var(--radius-md);
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    width: 100%;
+    margin-top: 0.5rem;
+}
+
+.btn-show-viewers:hover {
+    background: var(--surface-hover);
+    color: var(--text-main);
+    border-color: var(--primary-color);
+}
+
+.viewers-full-list {
+    animation: fadeIn 0.2s ease-out;
+}
+
+/* Dark mode adjustments */
+[data-theme="dark"] .viewer-avatar {
+    border-color: var(--surface-color);
+}
+
+[data-theme="dark"] .viewer-list-item {
+    background: rgba(255, 255, 255, 0.05);
 }

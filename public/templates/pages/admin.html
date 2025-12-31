@@ -101,6 +101,10 @@
                 <button id="add-badge-btn" class="btn-view" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
                     ➕ Nouveau Badge
                 </button>
+                <button id="cleanup-badges-btn" class="btn-delete"
+                    style="padding: 0.5rem 1rem; font-size: 0.85rem; border-radius: var(--radius-md); border: none; cursor: pointer;">
+                    🧹 Nettoyer les doublons
+                </button>
             </div>
 
             <!-- Badges Table -->
@@ -266,6 +270,12 @@
                     <option value="quiz_count">Nombre de QCM complétés</option>
                     <option value="perfect_score">Score parfait (100%)</option>
                     <option value="perfect_count">Nombre de scores parfaits</option>
+                    <option value="streak">Série de jours consécutifs</option>
+                    <option value="night_owl">Activité nocturne (0h-5h)</option>
+                    <option value="early_bird">Activité matinale (5h-8h)</option>
+                    <option value="perfect_unique_count">Major de Promo (Perfects uniques)</option>
+                    <option value="perfect_streak">Sans Faute (Série de 100%)</option>
+                    <option value="course_read">Érudit (Lu avant QCM)</option>
                 </select>
             </div>
             <div class="form-group" id="badge-requirement-value-group" style="display: none;">
