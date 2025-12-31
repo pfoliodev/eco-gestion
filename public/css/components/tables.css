@@ -1,0 +1,187 @@
+/* ========================================
+   TABLES
+   ======================================== */
+
+.users-table-container,
+.courses-table-container,
+.bugs-table-container,
+.archived-courses-table-container,
+.archived-users-table-container,
+.badges-table-container,
+.reminders-table-container {
+    overflow-x: auto;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    background: var(--surface-color);
+    margin-bottom: 2rem;
+}
+
+.users-table,
+.courses-table,
+.bugs-table,
+.archived-courses-table,
+.archived-users-table,
+.badges-table,
+.reminders-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.users-table thead,
+.courses-table thead,
+.bugs-table thead,
+.archived-courses-table thead,
+.archived-users-table thead,
+.badges-table thead,
+.reminders-table thead {
+    background-color: var(--surface-hover);
+    border-bottom: 2px solid var(--border-color);
+}
+
+.users-table th,
+.courses-table th,
+.bugs-table th,
+.archived-courses-table th,
+.archived-users-table th,
+.badges-table th,
+.reminders-table th {
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-main);
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.users-table td,
+.courses-table td,
+.bugs-table td,
+.archived-courses-table td,
+.archived-users-table td,
+.badges-table td,
+.reminders-table td {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    vertical-align: middle;
+}
+
+.users-table tbody tr:last-child td,
+.courses-table tbody tr:last-child td,
+.bugs-table tbody tr:last-child td,
+.archived-courses-table tbody tr:last-child td,
+.archived-users-table tbody tr:last-child td,
+.badges-table tbody tr:last-child td,
+.reminders-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.users-table tbody tr:hover,
+.courses-table tbody tr:hover,
+.bugs-table tbody tr:hover,
+.archived-courses-table tbody tr:hover,
+.archived-users-table tbody tr:hover,
+.badges-table tbody tr:hover,
+.reminders-table tbody tr:hover {
+    background-color: var(--surface-hover);
+}
+
+/* Specific Table Layouts */
+.courses-table,
+.bugs-table,
+.archived-courses-table,
+.badges-table {
+    table-layout: fixed;
+}
+
+/* Column widths for courses table */
+.courses-table th:nth-child(1),
+.courses-table td:nth-child(1) {
+    width: 30%;
+}
+
+.courses-table th:nth-child(2),
+.courses-table td:nth-child(2) {
+    width: 20%;
+}
+
+.courses-table th:nth-child(3),
+.courses-table td:nth-child(3) {
+    width: 12%;
+}
+
+.courses-table th:nth-child(4),
+.courses-table td:nth-child(4) {
+    width: 25%;
+}
+
+.courses-table th:nth-child(5),
+.courses-table td:nth-child(5) {
+    width: 13%;
+}
+
+/* Column widths for bugs table */
+.bugs-table th:nth-child(1),
+.bugs-table td:nth-child(1) {
+    width: 20%;
+}
+
+.bugs-table th:nth-child(2),
+.bugs-table td:nth-child(2) {
+    width: 35%;
+}
+
+.bugs-table th:nth-child(3),
+.bugs-table td:nth-child(3) {
+    width: 15%;
+}
+
+.bugs-table th:nth-child(4),
+.bugs-table td:nth-child(4) {
+    width: 12%;
+}
+
+.bugs-table th:nth-child(5),
+.bugs-table td:nth-child(5) {
+    width: 18%;
+}
+
+/* Column widths for badges table */
+.badges-table th:nth-child(1),
+.badges-table td:nth-child(1) {
+    width: 80px;
+}
+
+.badges-table th:nth-child(2),
+.badges-table td:nth-child(2) {
+    width: 15%;
+}
+
+.badges-table th:nth-child(3),
+.badges-table td:nth-child(3) {
+    width: 30%;
+}
+
+.badges-table th:nth-child(4),
+.badges-table td:nth-child(4) {
+    width: 15%;
+}
+
+.badges-table th:nth-child(5),
+.badges-table td:nth-child(5) {
+    width: 20%;
+}
+
+.badges-table th:nth-child(6),
+.badges-table td:nth-child(6) {
+    width: 100px;
+}
+
+/* Table Actions */
+.table-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-start;
+    align-items: center;
+}

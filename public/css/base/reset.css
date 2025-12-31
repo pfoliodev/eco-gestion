@@ -1,0 +1,18 @@
+/* ========================================
+   CSS RESET
+   ======================================== */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-body);
+    line-height: 1.5;
+    color: var(--text-main);
+    background-color: var(--background-color);
+    transition: background-color 0.2s, color 0.2s;
+    -webkit-font-smoothing: antialiased;
+}
