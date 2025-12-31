@@ -721,9 +721,13 @@ function renderBadgesAdmin(badges) {
                 <td><span class="badge-category-tag category-${badge.category}">${categoryLabel}</span></td>
                 <td><code style="font-size: 0.8rem;">${requirementLabel}</code></td>
                 <td>
-                    <div style="display: flex; gap: 0.5rem;">
-                        <button class="btn-edit-badge" data-badge-id="${badge.id}" title="Modifier">✏️</button>
-                        <button class="btn-delete-badge" data-badge-id="${badge.id}" title="Supprimer">🗑️</button>
+                    <div class="table-actions">
+                        <button class="btn-icon-action btn-edit-badge" data-badge-id="${badge.id}" title="Modifier">
+                            ✏️
+                        </button>
+                        <button class="btn-icon-action btn-delete-badge" data-badge-id="${badge.id}" title="Supprimer">
+                            🗑️
+                        </button>
                     </div>
                 </td>
             </tr>`;

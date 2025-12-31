@@ -1,0 +1,317 @@
+/* ========================================
+   CARDS
+   ======================================== */
+
+.stat-card {
+    background: var(--surface-color);
+    padding: 1.5rem;
+    border-radius: var(--radius-lg);
+    text-align: left;
+    border: 1px solid var(--border-color);
+    transition: all 0.2s ease;
+}
+
+.stat-card:hover {
+    border-color: var(--primary-color);
+    background-color: var(--surface-hover);
+    transform: translateY(-2px);
+}
+
+.stat-card h3 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--text-main);
+    line-height: 1;
+    margin-bottom: 0.25rem;
+}
+
+.stat-card p {
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.course-card {
+    background: var(--surface-color);
+    padding: 1.25rem;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    position: relative;
+}
+
+.course-card:hover {
+    border-color: var(--primary-color);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+}
+
+.course-card h3 {
+    color: var(--text-main);
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    line-height: 1.4;
+    padding-right: 2rem;
+}
+
+.course-card-content {
+    margin-bottom: 0.75rem;
+}
+
+.course-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-bottom: 0.75rem;
+}
+
+.course-subject-tag {
+    display: inline-block;
+    background-color: var(--surface-hover);
+    color: var(--text-main);
+    padding: 0.2rem 0.5rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    border: 1px solid var(--border-color);
+    white-space: nowrap;
+}
+
+.course-type-tag {
+    display: inline-block;
+    padding: 0.2rem 0.5rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+}
+
+.course-category-info {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.course-category-info strong {
+    color: var(--primary-color);
+}
+
+.course-metadata {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-top: 0.5rem;
+}
+
+.type-cours {
+    background-color: #dbeafe;
+    color: #1e40af;
+    border: 1px solid #bfdbfe;
+}
+
+.type-exercice {
+    background-color: #dcfce7;
+    color: #166534;
+    border: 1px solid #bbf7d0;
+}
+
+.type-video {
+    background-color: #fae8ff;
+    color: #86198f;
+    border: 1px solid #f5d0fe;
+}
+
+.course-card p {
+    flex-grow: 1;
+    margin-bottom: 1.25rem;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    color: var(--text-secondary);
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    line-clamp: 3;
+    overflow: hidden;
+}
+
+.type-badge {
+    background-color: var(--surface-hover);
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+/* Feature Card (QCM) */
+.feature-card {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    padding: 2rem;
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    margin-bottom: 2rem;
+    transition: transform 0.2s, border-color 0.2s;
+    margin-top: 2rem;
+}
+
+.feature-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--primary-color);
+}
+
+.feature-card-content {
+    flex: 1;
+}
+
+.feature-card-content h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.5rem;
+}
+
+.feature-card-content p {
+    margin: 0 0 1rem 0;
+    line-height: 1.6;
+}
+
+.feature-card .feature-icon {
+    font-size: 5rem;
+    opacity: 0.2;
+    flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+    .feature-card {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .feature-card .feature-icon {
+        font-size: 3rem;
+    }
+}
+
+.feature-card-note {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin: 1rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.feature-card-note .icon {
+    font-size: 1rem;
+}
+
+/* Favorites Section (Account) */
+.favorites-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.favorite-course-card {
+    background: var(--surface-color);
+    padding: 1.25rem;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    transition: all 0.2s;
+}
+
+.favorite-course-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--primary-color);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.favorite-course-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+
+.favorite-course-header h4 {
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.4;
+    font-weight: 700;
+}
+
+.favorite-course-subject {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.favorite-course-actions {
+    margin-top: 0.75rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.empty-favorites {
+    text-align: center;
+    padding: 3rem 1.5rem;
+    background: var(--surface-hover);
+    border-radius: var(--radius-lg);
+    border: 2px dashed var(--border-color);
+    grid-column: 1 / -1;
+}
+
+.empty-favorites h3 {
+    margin: 0.75rem 0 0.5rem;
+}
+
+.empty-favorites p {
+    color: var(--text-secondary);
+    margin-bottom: 1.25rem;
+}
+
+/* Feature Badge */
+.feature-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.feature-badge.purple {
+    background: rgba(var(--primary-rgb), 0.1);
+    color: var(--primary-color);
+}
+
+.feature-card-note {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin: 1rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.feature-card-note .icon {
+    font-size: 1rem;
+}

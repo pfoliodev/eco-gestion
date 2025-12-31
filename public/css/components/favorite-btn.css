@@ -1,0 +1,69 @@
+/* ========================================
+   FAVORITE BUTTON
+   ======================================== */
+
+.btn-favorite {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    z-index: 10;
+}
+
+.btn-favorite svg {
+    width: 20px;
+    height: 20px;
+    stroke: #64748b;
+    fill: none;
+    transition: all 0.3s ease;
+}
+
+.btn-favorite:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn-favorite:hover svg {
+    stroke: #ef4444;
+}
+
+.btn-favorite.active svg {
+    fill: #ef4444;
+    stroke: #ef4444;
+    animation: heartBeat 0.3s ease;
+}
+
+@keyframes heartBeat {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.2);
+    }
+}
+
+@media (max-width: 768px) {
+    .btn-favorite {
+        width: 36px;
+        height: 36px;
+    }
+
+    .btn-favorite svg {
+        width: 18px;
+        height: 18px;
+    }
+}
