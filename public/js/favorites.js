@@ -3,6 +3,7 @@ import { db, auth } from './firebase.js';
 import { doc, getDoc, updateDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js";
 import { notyf } from './ui.js';
 import { state } from './state.js';
+import { checkAndUnlockBadges } from './badges.js';
 
 // Toggle favorite status for a course
 export async function toggleFavorite(courseId) {
@@ -29,6 +30,8 @@ export async function toggleFavorite(courseId) {
                 favorites: arrayUnion(courseId)
             });
             notyf.success('Ajouté aux favoris ⭐');
+            // Trigger check for "Bibliothécaire" badge
+            await checkAndUnlockBadges('favorites', 0, 0, 'Favoris', null, { isFavoriteAction: true });
         }
 
         // Update UI

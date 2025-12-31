@@ -759,6 +759,18 @@ function formatRequirement(requirement) {
             return `${requirement.value}x 100% de suite`;
         case 'course_read':
             return 'Lu avant QCM';
+        case 'favorite_count':
+            return `${requirement.value} favoris`;
+        case 'speed_perfect':
+            return `100% en <${requirement.value}s`;
+        case 'comeback_perfect':
+            return '100% après échec';
+        case 'first_bug':
+            return 'Premier bug';
+        case 'loyalty':
+            return `${requirement.days}j & ${requirement.quizzes} QCM`;
+        case 'sunday_warrior':
+            return `${requirement.value} QCM le dimanche`;
         default:
             return requirement.type;
     }
@@ -810,8 +822,12 @@ function initBadgeAdminListeners() {
         reqTypeSelect._listenerAdded = true;
         reqTypeSelect.addEventListener('change', function () {
             const valueGroup = document.getElementById('badge-requirement-value-group');
-            const needsValue = ['quiz_count', 'perfect_count', 'streak', 'perfect_unique_count', 'perfect_streak'].includes(this.value);
-            valueGroup.style.display = needsValue ? 'block' : 'none';
+            const loyaltyGroup = document.getElementById('badge-requirement-loyalty-group');
+
+            const typesWithValue = ['quiz_count', 'perfect_count', 'streak', 'perfect_unique_count', 'perfect_streak', 'favorite_count', 'speed_perfect', 'sunday_warrior'];
+
+            valueGroup.style.display = typesWithValue.includes(this.value) ? 'block' : 'none';
+            loyaltyGroup.style.display = this.value === 'loyalty' ? 'block' : 'none';
         });
     }
 
@@ -845,19 +861,29 @@ function openBadgeEditor(badge = null) {
         document.getElementById('badge-icon').value = badge.icon || '';
         document.getElementById('badge-description').value = badge.description || '';
         document.getElementById('badge-category').value = badge.category || 'progression';
+        document.getElementById('badge-secret').checked = !!badge.secret;
+        document.getElementById('badge-hint').value = badge.hint || '';
 
         if (badge.requirement) {
-            document.getElementById('badge-requirement-type').value = badge.requirement.type || 'first_quiz';
-            if (badge.requirement.value) {
+            const type = badge.requirement.type || 'first_quiz';
+            document.getElementById('badge-requirement-type').value = type;
+
+            if (badge.requirement.value !== undefined) {
                 document.getElementById('badge-requirement-value').value = badge.requirement.value;
+            }
+            if (type === 'loyalty') {
+                document.getElementById('badge-requirement-days').value = badge.requirement.days || 30;
+                document.getElementById('badge-requirement-quizzes').value = badge.requirement.quizzes || 10;
             }
         }
     }
 
-    // Show/hide value field based on requirement type
+    // Show/hide fields based on requirement type
     const reqType = document.getElementById('badge-requirement-type').value;
-    const needsValue = ['quiz_count', 'perfect_count', 'streak', 'perfect_unique_count', 'perfect_streak'].includes(reqType);
-    document.getElementById('badge-requirement-value-group').style.display = needsValue ? 'block' : 'none';
+    const typesWithValue = ['quiz_count', 'perfect_count', 'streak', 'perfect_unique_count', 'perfect_streak', 'favorite_count', 'speed_perfect', 'sunday_warrior'];
+
+    document.getElementById('badge-requirement-value-group').style.display = typesWithValue.includes(reqType) ? 'block' : 'none';
+    document.getElementById('badge-requirement-loyalty-group').style.display = reqType === 'loyalty' ? 'block' : 'none';
 
     modal.style.display = 'flex';
 }
@@ -875,12 +901,18 @@ async function handleBadgeFormSubmit(e) {
     const icon = document.getElementById('badge-icon').value.trim() || '🏆';
     const description = document.getElementById('badge-description').value.trim();
     const category = document.getElementById('badge-category').value;
+    const secret = document.getElementById('badge-secret').checked;
+    const hint = document.getElementById('badge-hint').value.trim();
     const requirementType = document.getElementById('badge-requirement-type').value;
-    const requirementValue = parseInt(document.getElementById('badge-requirement-value').value) || 1;
 
     const requirement = { type: requirementType };
-    if (['quiz_count', 'perfect_count', 'streak', 'perfect_unique_count', 'perfect_streak'].includes(requirementType)) {
-        requirement.value = requirementValue;
+    const typesWithValue = ['quiz_count', 'perfect_count', 'streak', 'perfect_unique_count', 'perfect_streak', 'favorite_count', 'speed_perfect', 'sunday_warrior'];
+
+    if (typesWithValue.includes(requirementType)) {
+        requirement.value = parseInt(document.getElementById('badge-requirement-value').value) || 1;
+    } else if (requirementType === 'loyalty') {
+        requirement.days = parseInt(document.getElementById('badge-requirement-days').value) || 30;
+        requirement.quizzes = parseInt(document.getElementById('badge-requirement-quizzes').value) || 10;
     }
 
     const badgeData = {
@@ -888,6 +920,8 @@ async function handleBadgeFormSubmit(e) {
         icon,
         description,
         category,
+        secret,
+        hint,
         requirement
     };
 

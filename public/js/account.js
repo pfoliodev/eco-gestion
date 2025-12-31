@@ -249,16 +249,20 @@ function renderBadges() {
 
         const progress = calculateProgress(badge, userStatsCache);
 
+        const isSecret = badge.secret && !isUnlocked;
+        const displayName = isSecret ? '???' : badge.name;
+        const displayDescription = isSecret ? (badge.hint || 'Un badge mystérieux... Continuez à explorer !') : (badge.description || '');
+
         return `
-            <div class="badge-card ${isUnlocked ? 'unlocked' : 'locked'}">
+            <div class="badge-card ${isUnlocked ? 'unlocked' : 'locked'} ${isSecret ? 'secret' : ''}">
                 <div class="badge-icon">
-                    ${badge.icon && badge.icon.includes('/')
+                    ${isSecret ? '❓' : (badge.icon && badge.icon.includes('/')
                 ? `<img src="${badge.icon}" alt="${badge.name}">`
-                : (badge.icon || '🏆')}
+                : (badge.icon || '🏆'))}
                 </div>
                 <div class="badge-info">
-                    <h4 class="badge-name">${badge.name}</h4>
-                    <p class="badge-description">${badge.description || ''}</p>
+                    <h4 class="badge-name">${displayName}</h4>
+                    <p class="badge-description">${displayDescription}</p>
                     
                     ${isUnlocked
                 ? `<span class="badge-date">Débloqué le ${unlockedDate}</span>`
@@ -307,6 +311,24 @@ function calculateProgress(badge, stats) {
             break;
         case 'course_read':
             current = (stats.readCourses && stats.readCourses.length > 0) ? 1 : 0;
+            break;
+        case 'favorite_count':
+            current = stats.favoritesCount || 0;
+            break;
+        case 'loyalty':
+            current = stats.accountAgeDays || 0;
+            target = req.days || 30;
+            break;
+        case 'sunday_warrior':
+            // Today's contribution only if it's Sunday
+            const isSunday = new Date().getDay() === 0;
+            current = isSunday ? 1 : 0; // Simplified for display
+            break;
+        case 'speed_perfect':
+        case 'comeback_perfect':
+        case 'first_bug':
+            current = 0; // Non-trackable progress
+            target = 1;
             break;
         default:
             current = 0;

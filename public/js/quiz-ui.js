@@ -16,7 +16,8 @@ import { auth } from './firebase.js';
 let currentQuiz = null;
 let currentQuizQuestions = [];
 let currentQuestionIndex = 0;
-let userAnswers = {}; // { questionIndex: selectedOptionIndex }
+let userAnswers = {};
+let quizStartTime = null; // { questionIndex: selectedOptionIndex }
 
 // --- Admin: List & Manage Quizzes ---
 
@@ -233,6 +234,7 @@ export async function startQuiz(quizId) {
 
     showPage('quiz-player');
     renderQuizPlayer();
+    quizStartTime = Date.now();
 }
 
 function renderQuizPlayer() {
@@ -307,8 +309,11 @@ function renderQuizPlayer() {
             // Update streaks
             await updateStreakData();
             await updatePerfectStreakData(score === currentQuizQuestions.length);
+
+            const duration = quizStartTime ? Math.floor((Date.now() - quizStartTime) / 1000) : 0;
+
             // Check and unlock badges after quiz completion
-            await checkAndUnlockBadges(currentQuiz.id, score, currentQuizQuestions.length, currentQuiz.title, currentQuiz.courseId);
+            await checkAndUnlockBadges(currentQuiz.id, score, currentQuizQuestions.length, currentQuiz.title, currentQuiz.courseId, { duration });
         } catch (e) {
             console.error("Failed to save result", e);
         }

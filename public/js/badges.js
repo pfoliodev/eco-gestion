@@ -14,6 +14,7 @@ import {
     serverTimestamp
 } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js";
 import { notyf } from './ui.js';
+import { getUserQuizHistory } from './quiz.js';
 
 const badgesCollection = collection(db, 'badges');
 
@@ -314,7 +315,10 @@ export async function getUserBadgeStats() {
         uniquePerfectCourseCount,
         quizStreak: userData.quizStreak || 0,
         perfectStreak: userData.perfectStreak || 0,
-        readCourses: userData.readCourses || []
+        readCourses: userData.readCourses || [],
+        favoritesCount: userData.favorites?.length || 0,
+        accountAgeDays: userData.createdAt ? Math.floor((new Date() - new Date(userData.createdAt.seconds * 1000)) / (1000 * 60 * 60 * 24)) : 0,
+        bugCount: 0 // Will be updated if needed
     };
 }
 
@@ -323,10 +327,11 @@ export async function getUserBadgeStats() {
  * @param {string} quizId - The quiz ID
  * @param {number} score - User's score
  * @param {number} total - Total questions
- * @param {string} quizTitle - Quiz title for metadata
+ * @param {string} quizTitleValue - Quiz title for metadata
  * @param {string} courseId - Course ID
+ * @param {Object} options - Additional data (duration, type, etc.)
  */
-export async function checkAndUnlockBadges(quizId, score, total, quizTitleValue = '', courseId = null) {
+export async function checkAndUnlockBadges(quizId, score, total, quizTitleValue = '', courseId = null, options = {}) {
     if (!auth.currentUser) return [];
 
     const unlockedBadges = [];
@@ -396,6 +401,51 @@ export async function checkAndUnlockBadges(quizId, score, total, quizTitleValue 
             case 'course_read':
                 // Érudit: Course must be read before QCM
                 if (courseId && readCourses.includes(courseId)) shouldUnlock = true;
+                break;
+
+            case 'favorite_count':
+                if (userData.favorites?.length >= badge.requirement.value || options.isFavoriteAction) {
+                    // Re-fetch user data if it's a trigger to be sure
+                    const freshSnapshot = await getDoc(userRef);
+                    const freshData = freshSnapshot.data();
+                    if (freshData.favorites?.length >= badge.requirement.value) shouldUnlock = true;
+                }
+                break;
+
+            case 'speed_perfect':
+                if (score === total && options.duration && options.duration <= badge.requirement.value) shouldUnlock = true;
+                break;
+
+            case 'comeback_perfect':
+                if (score === total) {
+                    const history = await getUserQuizHistory(quizId);
+                    const hadFail = history.some(h => (h.score / h.totalQuestions) < 0.5);
+                    if (hadFail) shouldUnlock = true;
+                }
+                break;
+
+            case 'first_bug':
+                if (options.isBugReport) shouldUnlock = true;
+                break;
+
+            case 'loyalty':
+                const ageDays = userData.createdAt ? Math.floor((new Date() - new Date(userData.createdAt.seconds * 1000)) / (1000 * 60 * 60 * 24)) : 0;
+                const uniqueQuizzes = await getUserUniqueQuizCount();
+                if (ageDays >= badge.requirement.days && uniqueQuizzes >= badge.requirement.quizzes) shouldUnlock = true;
+                break;
+
+            case 'sunday_warrior':
+                if (now.getDay() === 0) {
+                    // Count quizzes completed today
+                    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                    const resultsRef = collection(db, 'quiz_results');
+                    const q = query(resultsRef,
+                        where('userId', '==', auth.currentUser.uid),
+                        where('completedAt', '>=', todayStart)
+                    );
+                    const snap = await getDocs(q);
+                    if (snap.size >= badge.requirement.value) shouldUnlock = true;
+                }
                 break;
         }
 
@@ -562,6 +612,56 @@ export async function seedDefaultBadges() {
             icon: '📖',
             category: 'excellence',
             requirement: { type: 'course_read' }
+        },
+        {
+            id: 'librarian',
+            name: 'Bibliothécaire',
+            description: 'Ajouter 5 cours à ses favoris.',
+            icon: '📚',
+            category: 'special',
+            requirement: { type: 'favorite_count', value: 5 }
+        },
+        {
+            id: 'flash',
+            name: 'Flash',
+            description: 'Réussir un QCM avec 100% en moins de 30 secondes.',
+            icon: '⚡',
+            category: 'special',
+            secret: true,
+            hint: 'Il va falloir être vraiment rapide...',
+            requirement: { type: 'speed_perfect', value: 30 }
+        },
+        {
+            id: 'perseverant',
+            name: 'Le Persévérant',
+            description: 'Obtenir 100% à un QCM après avoir échoué à une tentative précédente.',
+            icon: '🛡️',
+            category: 'excellence',
+            requirement: { type: 'comeback_perfect' }
+        },
+        {
+            id: 'sentinel',
+            name: 'Sentinelle',
+            description: 'Aider à améliorer la plateforme en signalant votre premier bug.',
+            icon: '🐞',
+            category: 'special',
+            requirement: { type: 'first_bug' }
+        },
+        {
+            id: 'pillar',
+            name: 'Pilier',
+            description: 'Être inscrit depuis 30 jours et avoir complété 10 QCM.',
+            icon: '🏛️',
+            category: 'special',
+            requirement: { type: 'loyalty', days: 30, quizzes: 10 }
+        },
+        {
+            id: 'sunday_warrior',
+            name: 'Guerrier du Dimanche',
+            description: 'Compléter 3 QCM un dimanche.',
+            icon: '⚔️',
+            category: 'special',
+            requirement: { type: 'sunday_warrior', value: 3 }
         }
     ];
 

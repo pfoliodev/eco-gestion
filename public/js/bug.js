@@ -1,6 +1,7 @@
 import { auth, bugsCollection } from './firebase.js';
 import { addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js";
 import { notyf } from './ui.js';
+import { checkAndUnlockBadges } from './badges.js';
 
 export function initBugSystem() {
     const fab = document.getElementById('bug-fab');
@@ -41,6 +42,9 @@ export function initBugSystem() {
         try {
             await addDoc(bugsCollection, data);
             notyf.success('Signalement envoyé ! Merci 🙏');
+
+            // Trigger check for "Sentinelle" badge
+            await checkAndUnlockBadges('bug_report', 0, 0, 'Signalement de Bug', null, { isBugReport: true });
             modal.style.display = 'none';
             form.reset();
         } catch (error) {

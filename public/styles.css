@@ -5123,3 +5123,26 @@ input:checked+.slider:before {
 [data-theme="dark"] .viewer-list-item {
     background: rgba(255, 255, 255, 0.05);
 }
+
+/* Secret Badges */
+.badge-card.secret {
+    background: linear-gradient(145deg, var(--surface-hover), var(--surface-color));
+    border-style: dashed;
+    border-color: var(--text-secondary);
+    opacity: 0.8;
+}
+
+.badge-card.secret .badge-icon {
+    font-size: 2.5rem;
+    color: var(--text-secondary);
+    filter: blur(2px);
+    transition: filter 0.3s ease;
+}
+
+.badge-card.secret:hover .badge-icon {
+    filter: blur(0);
+}
+
+.badge-card.secret .badge-name {
+    color: var(--text-secondary);
+}

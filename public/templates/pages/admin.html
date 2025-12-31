@@ -276,11 +276,35 @@
                     <option value="perfect_unique_count">Major de Promo (Perfects uniques)</option>
                     <option value="perfect_streak">Sans Faute (Série de 100%)</option>
                     <option value="course_read">Érudit (Lu avant QCM)</option>
+                    <option value="favorite_count">Bibliothécaire (Favoris)</option>
+                    <option value="speed_perfect">Flash (Vitesse 100%)</option>
+                    <option value="comeback_perfect">Persévérant (Remontada)</option>
+                    <option value="first_bug">Sentinelle (Signalement bug)</option>
+                    <option value="loyalty">Pilier (Ancienneté + QCM)</option>
+                    <option value="sunday_warrior">Guerrier du Dimanche</option>
                 </select>
             </div>
             <div class="form-group" id="badge-requirement-value-group" style="display: none;">
-                <label for="badge-requirement-value">Valeur requise</label>
+                <label for="badge-requirement-value">Valeur requise (Nombre / Secondes)</label>
                 <input type="number" id="badge-requirement-value" min="1" value="1">
+            </div>
+            <div id="badge-requirement-loyalty-group" style="display: none;">
+                <div class="form-group">
+                    <label for="badge-requirement-days">Jours d'ancienneté</label>
+                    <input type="number" id="badge-requirement-days" min="1" value="30">
+                </div>
+                <div class="form-group">
+                    <label for="badge-requirement-quizzes">QCM complétés</label>
+                    <input type="number" id="badge-requirement-quizzes" min="1" value="10">
+                </div>
+            </div>
+            <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem; margin-top: 1rem;">
+                <input type="checkbox" id="badge-secret" style="width: auto;">
+                <label for="badge-secret" style="margin: 0;">Badge Secret (Masqué si verrouillé)</label>
+            </div>
+            <div class="form-group" id="badge-hint-group">
+                <label for="badge-hint">Indice (affiché si secret et verrouillé)</label>
+                <textarea id="badge-hint" rows="1" placeholder="Ex: Il va falloir être rapide..."></textarea>
             </div>
             <div class="form-actions" style="display: flex; gap: 1rem; margin-top: 1.5rem;">
                 <button type="submit" class="btn-primary" style="flex: 1;">Enregistrer</button>
