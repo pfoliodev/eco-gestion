@@ -79,7 +79,6 @@ export function initAuth() {
     const profileBtn = document.getElementById('profile-btn');
     const dropdownMenu = document.getElementById('dropdown-menu');
     const dropdownLogout = document.getElementById('dropdown-logout');
-    const dropdownAddCourse = document.getElementById('dropdown-add-course');
     const dropdownAdmin = document.getElementById('dropdown-admin');
     const dropdownAdminDivider = document.getElementById('dropdown-admin-divider');
     const profileAvatar = document.getElementById('profile-avatar');
@@ -146,14 +145,12 @@ export function initAuth() {
                 if (adminActions) adminActions.style.display = 'flex';
                 if (addCourseBtn) addCourseBtn.style.display = 'inline-flex';
                 // Show admin options in dropdown
-                if (dropdownAddCourse) dropdownAddCourse.style.display = 'flex';
                 if (dropdownAdmin) dropdownAdmin.style.display = 'flex';
                 if (dropdownAdminDivider) dropdownAdminDivider.style.display = 'block';
             } else {
                 if (adminActions) adminActions.style.display = 'none';
                 if (addCourseBtn) addCourseBtn.style.display = 'none';
                 // Hide admin options in dropdown
-                if (dropdownAddCourse) dropdownAddCourse.style.display = 'none';
                 if (dropdownAdmin) dropdownAdmin.style.display = 'none';
                 if (dropdownAdminDivider) dropdownAdminDivider.style.display = 'none';
             }

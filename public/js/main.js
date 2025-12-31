@@ -32,6 +32,7 @@ function initNavigation() {
                 if (auth.currentUser) {
                     document.getElementById('course-author').value = auth.currentUser.displayName || auth.currentUser.email.split('@')[0];
                 }
+                tinymce.get('editor-container')?.setContent('');
                 showPage('ajouter');
             }
             else if (href === '#admin') {
