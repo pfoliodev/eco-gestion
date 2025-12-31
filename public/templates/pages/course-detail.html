@@ -1,42 +1,40 @@
-<section id="course-detail" class="page">
-    <div class="container">
-        <div class="course-detail-header">
-            <button id="back-to-courses-btn" class="btn-back">← Retour aux cours</button>
-            <div id="admin-actions" class="course-actions" style="display: none;">
-                <button id="edit-course-btn" class="btn-edit">✏️ Modifier</button>
-                <button id="delete-course-btn" class="btn-delete">🗑️ Supprimer</button>
-            </div>
-        </div>
-        <div class="course-detail-layout">
-            <aside class="course-sidebar-left">
-                <section class="sidebar-section">
-                    <h3>Cours du même sujet</h3>
-                    <div id="related-courses-list">
-                        <!-- Related courses will be loaded here -->
-                    </div>
-                </section>
-                <section id="exercises-sidebar-section" class="sidebar-section">
-                    <h3>Exercices liés</h3>
-                    <div id="related-exercises-list">
-                        <!-- Related exercises will be loaded here -->
-                    </div>
-                </section>
-                <section id="flashcards-sidebar-section" class="sidebar-section">
-                    <h3>📚 Flashcards</h3>
-                    <div id="course-flashcards-info">
-                        <p class="fc-count-info"><span id="course-fc-count">0</span> flashcards</p>
-                        <button class="btn-primary btn-small" id="study-course-flashcards" style="display: none;">
-                            🎯 Réviser
-                        </button>
-                        <button class="btn-edit btn-small" id="manage-course-flashcards" style="display: none;">
-                            ✏️ Gérer
-                        </button>
-                    </div>
-                </section>
-            </aside>
-            <main class="course-content-main">
-                <div id="course-content" class="course-detail-content"></div>
-            </main>
+<div class="container">
+    <div class="course-detail-header">
+        <button id="back-to-courses-btn" class="btn-back">← Retour aux cours</button>
+        <div id="admin-actions" class="course-actions" style="display: none;">
+            <button id="edit-course-btn" class="btn-edit">✏️ Modifier</button>
+            <button id="delete-course-btn" class="btn-delete">🗑️ Supprimer</button>
         </div>
     </div>
-</section>
+    <div class="course-detail-layout">
+        <aside class="course-sidebar-left">
+            <section class="sidebar-section">
+                <h3>Cours du même sujet</h3>
+                <div id="related-courses-list">
+                    <!-- Related courses will be loaded here -->
+                </div>
+            </section>
+            <section id="exercises-sidebar-section" class="sidebar-section">
+                <h3>Exercices liés</h3>
+                <div id="related-exercises-list">
+                    <!-- Related exercises will be loaded here -->
+                </div>
+            </section>
+            <section id="flashcards-sidebar-section" class="sidebar-section">
+                <h3>📚 Flashcards</h3>
+                <div id="course-flashcards-info">
+                    <p class="fc-count-info"><span id="course-fc-count">0</span> flashcards</p>
+                    <button class="btn-primary btn-small" id="study-course-flashcards" style="display: none;">
+                        🎯 Réviser
+                    </button>
+                    <button class="btn-edit btn-small" id="manage-course-flashcards" style="display: none;">
+                        ✏️ Gérer
+                    </button>
+                </div>
+            </section>
+        </aside>
+        <main class="course-content-main">
+            <div id="course-content" class="course-detail-content"></div>
+        </main>
+    </div>
+</div>

@@ -1,66 +1,64 @@
-<section id="flashcards-study" class="page">
-    <div class="container">
-        <!-- Header with progress -->
-        <div class="study-header">
-            <button class="btn-back" id="exit-study">← Quitter</button>
-            <div class="study-progress">
-                <span id="study-progress-text">0 / 0</span>
-                <div class="progress-bar">
-                    <div class="progress-fill" id="study-progress-bar"></div>
-                </div>
+<div class="container">
+    <!-- Header with progress -->
+    <div class="study-header">
+        <button class="btn-back" id="exit-study">← Quitter</button>
+        <div class="study-progress">
+            <span id="study-progress-text">0 / 0</span>
+            <div class="progress-bar">
+                <div class="progress-fill" id="study-progress-bar"></div>
             </div>
-            <div class="study-subject" id="study-subject-label"></div>
         </div>
+        <div class="study-subject" id="study-subject-label"></div>
+    </div>
 
-        <!-- Flashcard Container -->
-        <div class="flashcard-container">
-            <div class="flashcard" id="flashcard">
-                <div class="flashcard-inner">
-                    <div class="flashcard-front">
-                        <div class="flashcard-label">Question</div>
-                        <div class="flashcard-content" id="flashcard-question">
-                            <!-- Question content -->
-                        </div>
-                        <div class="flashcard-hint">Cliquez pour révéler la réponse</div>
+    <!-- Flashcard Container -->
+    <div class="flashcard-container">
+        <div class="flashcard" id="flashcard">
+            <div class="flashcard-inner">
+                <div class="flashcard-front">
+                    <div class="flashcard-label">Question</div>
+                    <div class="flashcard-content" id="flashcard-question">
+                        <!-- Question content -->
                     </div>
-                    <div class="flashcard-back">
-                        <div class="flashcard-answer-section">
-                            <div class="flashcard-label">Réponse</div>
-                            <div class="flashcard-answer" id="flashcard-answer">
-                                <!-- Answer content -->
-                            </div>
-                        </div>
-                        <div class="flashcard-explanation-section" id="flashcard-explanation-section"
-                            style="display: none;">
-                            <div class="flashcard-label">Explication</div>
-                            <div class="flashcard-explanation" id="flashcard-explanation">
-                                <!-- Explanation content -->
-                            </div>
+                    <div class="flashcard-hint">Cliquez pour révéler la réponse</div>
+                </div>
+                <div class="flashcard-back">
+                    <div class="flashcard-answer-section">
+                        <div class="flashcard-label">Réponse</div>
+                        <div class="flashcard-answer" id="flashcard-answer">
+                            <!-- Answer content -->
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Navigation Buttons (hidden until card is flipped) -->
-        <div class="rating-buttons" id="rating-buttons" style="display: none;">
-            <div class="rating-grid simple-nav">
-                <button class="btn-primary btn-large btn-full-width" id="next-card-btn">
-                    Carte Suivante →
-                </button>
-            </div>
-        </div>
-
-        <!-- Session Complete Modal -->
-        <div class="study-complete" id="study-complete" style="display: none;">
-            <div class="complete-content">
-                <div class="complete-icon">🎉</div>
-                <h2>Session terminée !</h2>
-                <p id="complete-stats">Vous avez révisé X cartes</p>
-                <div class="complete-actions">
-                    <button class="btn-primary" id="back-to-flashcards">Retour aux flashcards</button>
+                    <div class="flashcard-explanation-section" id="flashcard-explanation-section"
+                        style="display: none;">
+                        <div class="flashcard-label">Explication</div>
+                        <div class="flashcard-explanation" id="flashcard-explanation">
+                            <!-- Explanation content -->
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</section>
+
+    <!-- Navigation Buttons (hidden until card is flipped) -->
+    <div class="rating-buttons" id="rating-buttons" style="display: none;">
+        <div class="rating-grid simple-nav">
+            <button class="btn-primary btn-large btn-full-width" id="next-card-btn">
+                Carte Suivante →
+            </button>
+        </div>
+    </div>
+
+    <!-- Session Complete Modal -->
+    <div class="study-complete" id="study-complete" style="display: none;">
+        <div class="complete-content">
+            <div class="complete-icon">🎉</div>
+            <h2>Session terminée !</h2>
+            <p id="complete-stats">Vous avez révisé X cartes</p>
+            <div class="complete-actions">
+                <button class="btn-primary" id="back-to-flashcards">Retour aux flashcards</button>
+            </div>
+        </div>
+    </div>
+</div>

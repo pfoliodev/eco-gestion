@@ -3,6 +3,7 @@ import { getDocs, doc, deleteDoc, updateDoc, addDoc, serverTimestamp } from "htt
 import { state, setCourses, setCurrentCourseId } from './state.js';
 import { notyf, showPage } from './ui.js';
 import { updateCourseFlashcardsSidebar } from './flashcard-ui.js';
+import { renderQuizList, renderQuizAdmin } from './quiz-ui.js';
 
 export async function loadCourses() {
     try {
@@ -138,7 +139,34 @@ export function viewCourse(id) {
                 </div>
             </div>
             ${course.content}
+
+            <!-- Quizzes Section -->
+            <div class="course-quizzes-section">
+                <h3>📝 QCM de révision</h3>
+                <div id="course-quizzes-list">
+                    <!-- Loaded dynamically -->
+                </div>
+            </div>
+
+            ${state.isAdmin ? `
+            <!-- Admin Quiz Management -->
+            <div class="course-admin-section" style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--border-color);">
+                <h3>Administration QCM</h3>
+                <button class="btn-primary btn-small" onclick="openQuizEditor()" style="margin-bottom: 1rem;">+ Nouveau QCM</button>
+                <div id="quiz-admin-list"></div>
+            </div>
+            ` : ''}
         `;
+
+        renderQuizList(id);
+        if (state.isAdmin) {
+            // Expose openQuizEditor globally first or import it dynamically if needed by inline onclick.
+            // Actually, the button onclick="openQuizEditor()" needs it global.
+            import('./quiz-ui.js').then(module => {
+                window.openQuizEditor = module.openQuizEditor;
+                module.renderQuizAdmin(id);
+            });
+        }
 
         renderRelatedCourses(course.subject, id);
         renderRelatedExercises(course.subject, id);
@@ -219,13 +247,18 @@ export function checkSidebarVisibility() {
     const sidebar = document.querySelector('.course-sidebar-left');
     const layout = document.querySelector('.course-detail-layout');
     if (!sidebar || !layout) return;
+
     const visibleSections = sidebar.querySelectorAll('.sidebar-section[style*="display: block"]');
+
+    // Clear legacy inline styles
+    layout.style.gridTemplateColumns = '';
+
     if (visibleSections.length === 0) {
         sidebar.style.display = 'none';
-        layout.style.gridTemplateColumns = '1fr';
+        layout.classList.remove('has-sidebar');
     } else {
         sidebar.style.display = 'flex';
-        layout.style.gridTemplateColumns = '310px 1fr';
+        layout.classList.add('has-sidebar');
     }
 }
 

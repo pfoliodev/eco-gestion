@@ -64,3 +64,30 @@
         </div>
     </div>
 </div>
+
+<!-- Quiz Editor Modal -->
+<div id="quiz-editor-modal" class="modal">
+    <div class="modal-content" style="max-width: 800px;">
+        <h3 style="margin-top: 0;">Éditeur de QCM</h3>
+        <form id="quiz-form">
+            <input type="hidden" id="quiz-id">
+            <div class="form-group">
+                <label>Titre du QCM</label>
+                <input type="text" id="quiz-title" required placeholder="Ex: Révision Chapitre 1">
+            </div>
+
+            <div id="quiz-questions-container"
+                style="max-height: 50vh; overflow-y: auto; margin-bottom: 1rem; padding-right: 0.5rem;">
+                <!-- Questions injected here -->
+            </div>
+
+            <button type="button" class="btn-secondary" id="add-question-btn"
+                style="width: 100%; margin-bottom: 1rem;">+ Ajouter une question</button>
+
+            <div class="form-actions" style="justify-content: flex-end; display: flex; gap: 1rem;">
+                <button type="button" class="btn-cancel" id="cancel-quiz-btn">Annuler</button>
+                <button type="submit" class="btn-primary">Enregistrer</button>
+            </div>
+        </form>
+    </div>
+</div>

@@ -1344,7 +1344,31 @@ p {
 }
 
 
-/* Responsive Design */
+/* Page Navigation Logic */
+.page {
+    display: none;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+}
+
+.page.active {
+    display: block;
+    opacity: 1;
+    animation: fadeIn 0.3s forwards;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 @media (max-width: 1200px) {
     .course-detail-layout {
         grid-template-columns: 1fr;
@@ -3696,4 +3720,554 @@ input:checked+.slider:before {
 
 .courses-table tbody tr:last-child td {
     border-bottom: none;
+}
+
+/* Quiz System Styles */
+
+/* Quiz List on Course Page */
+.course-quizzes-section {
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.quiz-list-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.quiz-card {
+    background: var(--surface-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.quiz-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-color: var(--primary-color);
+}
+
+.quiz-icon {
+    font-size: 1.5rem;
+    background: rgba(var(--primary-rgb), 0.1);
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+}
+
+.quiz-details h4 {
+    margin: 0;
+    font-size: 1rem;
+    color: var(--text-primary);
+}
+
+.quiz-details span {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.quiz-arrow {
+    margin-left: auto;
+    color: var(--text-secondary);
+    font-weight: bold;
+}
+
+/* Quiz Player */
+#quiz-player-container {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+.quiz-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.quiz-progress-bar {
+    height: 6px;
+    background: var(--surface-hover);
+    border-radius: 3px;
+    margin-bottom: 2rem;
+    overflow: hidden;
+}
+
+.quiz-progress-bar .fill {
+    height: 100%;
+    background: var(--primary-color);
+    transition: width 0.3s ease;
+}
+
+.quiz-question-card {
+    background: var(--surface-card);
+    padding: 2rem;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    margin-bottom: 2rem;
+}
+
+.quiz-question-text {
+    font-size: 1.25rem;
+    margin-bottom: 1.5rem;
+    color: var(--text-main);
+}
+
+.quiz-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.quiz-option {
+    padding: 1rem;
+    border: 2px solid var(--border-color);
+    border-radius: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: all 0.2s;
+}
+
+.quiz-option:hover {
+    background: var(--surface-hover);
+}
+
+.quiz-option.selected {
+    border-color: var(--primary-color);
+    background: rgba(var(--primary-rgb), 0.05);
+}
+
+.opt-letter {
+    font-weight: bold;
+    color: var(--text-secondary);
+    background: var(--surface-ground);
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 0.9rem;
+}
+
+.quiz-option.selected .opt-letter {
+    background: var(--primary-color);
+    color: white;
+}
+
+.quiz-controls {
+    display: flex;
+    justify-content: flex-end;
+    /* Align buttons to the right */
+    gap: 1rem;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.quiz-controls button {
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.quiz-controls .btn-secondary {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+}
+
+.quiz-controls .btn-secondary:hover {
+    background: var(--surface-hover);
+    color: var(--text-main);
+    border-color: var(--text-secondary);
+}
+
+.quiz-controls .btn-primary {
+    background: var(--primary-color);
+    color: white;
+    border: 1px solid var(--primary-color);
+    box-shadow: 0 2px 4px rgba(var(--primary-rgb), 0.2);
+}
+
+.quiz-controls .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(var(--primary-rgb), 0.3);
+}
+
+.quiz-controls .btn-success {
+    background: #10b981;
+    color: white;
+    border: 1px solid #10b981;
+    box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+}
+
+.quiz-controls .btn-success:hover {
+    background: #059669;
+    border-color: #059669;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+}
+
+/* Results */
+.quiz-result-card {
+    text-align: center;
+    background: var(--surface-card);
+    padding: 3rem;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    margin-bottom: 2rem;
+}
+
+.score-circle {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    border: 6px solid var(--primary-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    font-weight: bold;
+    margin: 1.5rem auto;
+}
+
+.score-message {
+    font-size: 1.2rem;
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+}
+
+.correction-item {
+    background: var(--surface-card);
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    border-left: 4px solid #ccc;
+}
+
+.correction-item.correct {
+    border-left-color: #10b981;
+}
+
+.correction-item.incorrect {
+    border-left-color: #ef4444;
+}
+
+.explanation {
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    background: var(--surface-hover);
+    padding: 0.5rem;
+    border-radius: 4px;
+}
+
+/* Admin Styles */
+.question-block {
+    background: var(--surface-hover);
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    position: relative;
+    border: 1px solid var(--border-color);
+}
+
+.question-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.options-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.option-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.option-row input[type="radio"] {
+    width: 20px;
+    height: 20px;
+}
+
+.btn-remove-q {
+    background: none;
+    border: none;
+    color: #ef4444;
+    cursor: pointer;
+    font-size: 0.85rem;
+    text-decoration: underline;
+}
+
+/* Quiz Admin List */
+.quiz-item-admin {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--surface-card);
+    border: 1px solid var(--border-color);
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 0.75rem;
+}
+
+.quiz-item-admin h4 {
+    margin: 0 0 0.25rem 0;
+    font-size: 1rem;
+}
+
+.quiz-meta {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.quiz-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn-icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+    background: var(--surface-hover);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+
+/* Responsive Course Detail Layout */
+.course-detail-layout {
+    display: flex;
+    flex-direction: column-reverse;
+    /* Sidebar below content on mobile by default if needed, or check HTML order */
+    gap: 2rem;
+}
+
+/* Ensure sidebar takes full width on mobile */
+.course-sidebar-left {
+    width: 100%;
+}
+
+/* Desktop View */
+@media (min-width: 1024px) {
+    .course-detail-layout {
+        display: grid;
+        grid-template-columns: 1fr;
+        /* Default without sidebar */
+        align-items: start;
+    }
+
+    .course-detail-layout.has-sidebar {
+        grid-template-columns: 310px 1fr;
+        /* Sidebar + Content */
+    }
+
+    /* If sidebar is first in HTML, grid handles placement automatically. 
+       If flex, we might need order. 
+       HTML: sidebar is first child.
+       So in Grid: col1 is sidebar, col2 is main. 
+    */
+
+    .course-sidebar-left {
+        width: auto;
+        /* Reset width */
+    }
+}
+
+/* Tablet / Mobile Adjustments */
+@media (max-width: 1023px) {
+    .course-detail-layout {
+        display: flex;
+        flex-direction: column;
+        /* Stack vertically */
+    }
+
+    /* If we want sidebar at the bottom on mobile, use column-reverse because sidebar is first in DOM */
+    .course-detail-layout {
+        flex-direction: column-reverse;
+    }
+}
+
+/* Features Carousel */
+/* Features Carousel */
+/* Features Carousel */
+/* Features Carousel */
+.features-carousel {
+    position: relative;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    margin-top: 3rem;
+    margin-bottom: 3rem;
+    background: var(--surface-card);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
+}
+
+.carousel-slide {
+    display: none;
+    padding: 2.5rem 3rem;
+    /* Reduced padding */
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+.carousel-slide.active {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 3rem;
+    /* Reduced gap */
+}
+
+/* Slide Content Layout */
+.carousel-slide .feature-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    /* Compact gap */
+    align-items: flex-start;
+    /* Prevents button from stretching */
+}
+
+.carousel-slide .feature-content h3 {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.carousel-slide .feature-content p {
+    margin: 0;
+    line-height: 1.6;
+    color: var(--text-secondary);
+}
+
+.carousel-slide .feature-icon {
+    font-size: 5rem;
+    flex-shrink: 0;
+    margin-left: 1rem;
+    animation: float 3s ease-in-out infinite;
+}
+
+.feature-badge.purple {
+    background: rgba(124, 58, 237, 0.1);
+    color: var(--primary-color);
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.feature-badge.orange {
+    background: rgba(249, 115, 22, 0.1);
+    color: #f97316;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+/* Carousel Controls - DOTS ONLY */
+.carousel-controls {
+    position: absolute;
+    bottom: 1.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    z-index: 20;
+}
+
+.carousel-indicators {
+    display: flex;
+    flex-direction: row;
+    /* Ensure horizontal layout */
+    gap: 0.8rem;
+    align-items: center;
+}
+
+.carousel-dot {
+    width: 12px;
+    height: 12px;
+    display: block;
+    /* Ensure dimensions are respected */
+    background: #94a3b8;
+    /* Visible Slate Gray */
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 0.8;
+    border: 1px solid transparent;
+}
+
+.dark-mode .carousel-dot {
+    background: rgba(255, 255, 255, 0.4);
+}
+
+.carousel-dot.active {
+    background: var(--primary-color);
+    transform: scale(1.3);
+    opacity: 1;
+    border-color: var(--primary-color);
+}
+
+/* Hide Arrows */
+.carousel-nav {
+    display: none !important;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .carousel-slide {
+        padding: 2rem 1.5rem 3.5rem 1.5rem;
+        /* Bottom padding for dots */
+    }
+
+    .carousel-slide.active {
+        flex-direction: column-reverse;
+        flex-direction: column;
+        text-align: center;
+        gap: 1.5rem;
+    }
+
+    .carousel-slide .feature-content {
+        align-items: center;
+        /* Center button on mobile */
+    }
+
+    .carousel-slide .feature-icon {
+        margin: 0;
+        font-size: 4rem;
+    }
+
+    .carousel-controls {
+        bottom: 1rem;
+    }
 }
