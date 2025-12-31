@@ -5146,3 +5146,25 @@ input:checked+.slider:before {
 .badge-card.secret .badge-name {
     color: var(--text-secondary);
 }
+
+/* Rich Text Editor for Flashcards */
+.rt-editor {
+    min-height: 180px;
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    margin-bottom: 1rem;
+}
+
+.tox-tinymce {
+    border-radius: var(--radius-md) !important;
+    border: 1px solid var(--border-color) !important;
+}
+
+.tox .tox-edit-area__iframe {
+    background-color: transparent !important;
+}
+
+[data-theme="dark"] .tox .tox-edit-area__iframe {
+    background-color: #1a1a1a !important;
+}

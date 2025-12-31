@@ -7,20 +7,24 @@ export const notyf = new Notyf({
     ]
 });
 
-export function initTinyMCE() {
+export function initTinyMCE(selector = '#editor-container', options = {}) {
     tinymce.init({
-        selector: '#editor-container',
-        height: 400,
-        menubar: true,
+        selector: selector,
+        height: options.height || 400,
+        menubar: options.menubar !== undefined ? options.menubar : true,
         plugins: [
             'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
             'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
             'insertdatetime', 'media', 'table', 'help', 'wordcount'
         ],
-        toolbar: 'undo redo | blocks | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | code | help',
+        toolbar: options.toolbar || 'undo redo | blocks | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | code | help',
         content_style: 'body { font-family:Inter,sans-serif; font-size:14px }',
         skin: 'oxide',
-        content_css: 'default'
+        content_css: 'default',
+        setup: (editor) => {
+            if (options.setup) options.setup(editor);
+        },
+        ...options
     });
 }
 

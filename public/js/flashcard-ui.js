@@ -11,7 +11,7 @@ import {
     hashContent
 } from './flashcard.js';
 import { state, setCurrentStudySession } from './state.js';
-import { notyf, showPage } from './ui.js';
+import { notyf, showPage, initTinyMCE } from './ui.js';
 
 // ============================================
 // FLASHCARDS HOME PAGE
@@ -227,14 +227,45 @@ async function renderFlashcardsAdmin(courseId) {
 
     // Reset form
     resetFlashcardForm();
+
+    // Initialize editors
+    initFlashcardEditors();
+}
+
+function initFlashcardEditors() {
+    // Remove existing instances if any to avoid duplicates
+    tinymce.remove('#fc-question-editor');
+    tinymce.remove('#fc-answer-editor');
+    tinymce.remove('#fc-explanation-editor');
+
+    initTinyMCE('#fc-question-editor', {
+        height: 180,
+        placeholder: 'Entrez la question...',
+        menubar: false,
+        toolbar: 'undo redo | bold italic | bullist numlist | removeformat'
+    });
+    initTinyMCE('#fc-answer-editor', {
+        height: 180,
+        placeholder: 'La réponse courte...',
+        menubar: false,
+        toolbar: 'undo redo | bold italic | bullist numlist | removeformat'
+    });
+    initTinyMCE('#fc-explanation-editor', {
+        height: 220,
+        placeholder: 'Explication détaillée, exemples, contexte...',
+        menubar: false,
+        toolbar: 'undo redo | bold italic | bullist numlist | removeformat'
+    });
 }
 
 function resetFlashcardForm() {
     editingFlashcardId = null;
     document.getElementById('fc-edit-id').value = '';
-    document.getElementById('fc-question').value = '';
-    document.getElementById('fc-answer').value = '';
-    document.getElementById('fc-explanation').value = '';
+
+    tinymce.get('fc-question-editor')?.setContent('');
+    tinymce.get('fc-answer-editor')?.setContent('');
+    tinymce.get('fc-explanation-editor')?.setContent('');
+
     document.getElementById('fc-form-title').textContent = 'Ajouter une flashcard';
     document.getElementById('fc-submit-btn').textContent = 'Ajouter';
     document.getElementById('fc-cancel-btn').style.display = 'none';
@@ -243,9 +274,11 @@ function resetFlashcardForm() {
 function editFlashcardForm(flashcard) {
     editingFlashcardId = flashcard.id;
     document.getElementById('fc-edit-id').value = flashcard.id;
-    document.getElementById('fc-question').value = flashcard.question;
-    document.getElementById('fc-answer').value = flashcard.answer;
-    document.getElementById('fc-explanation').value = flashcard.explanation || '';
+
+    tinymce.get('fc-question-editor')?.setContent(flashcard.question || '');
+    tinymce.get('fc-answer-editor')?.setContent(flashcard.answer || '');
+    tinymce.get('fc-explanation-editor')?.setContent(flashcard.explanation || '');
+
     document.getElementById('fc-form-title').textContent = 'Modifier la flashcard';
     document.getElementById('fc-submit-btn').textContent = 'Enregistrer';
     document.getElementById('fc-cancel-btn').style.display = 'inline-block';
@@ -362,11 +395,11 @@ function initFlashcardEventListeners() {
         const courseId = state.currentCourseId;
         const course = state.courses.find(c => c.id === courseId);
 
-        const question = document.getElementById('fc-question').value.trim();
-        const answer = document.getElementById('fc-answer').value.trim();
-        const explanation = document.getElementById('fc-explanation').value.trim();
+        const question = tinymce.get('fc-question-editor')?.getContent().trim() || '';
+        const answer = tinymce.get('fc-answer-editor')?.getContent().trim() || '';
+        const explanation = tinymce.get('fc-explanation-editor')?.getContent().trim() || '';
 
-        if (!question || !answer) {
+        if (!question || !answer || question === '<p></p>' || answer === '<p></p>') {
             notyf.error('Veuillez remplir la question et la réponse');
             return;
         }

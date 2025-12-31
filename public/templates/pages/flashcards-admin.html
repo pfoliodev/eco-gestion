@@ -24,16 +24,15 @@
             <input type="hidden" id="fc-edit-id">
             <div class="form-group">
                 <label for="fc-question">Question</label>
-                <textarea id="fc-question" rows="3" placeholder="Entrez la question..." required></textarea>
+                <div id="fc-question-editor" class="rt-editor"></div>
             </div>
             <div class="form-group">
                 <label for="fc-answer">Réponse</label>
-                <textarea id="fc-answer" rows="2" placeholder="La réponse courte..." required></textarea>
+                <div id="fc-answer-editor" class="rt-editor"></div>
             </div>
             <div class="form-group">
                 <label for="fc-explanation">Explication (optionnelle)</label>
-                <textarea id="fc-explanation" rows="3"
-                    placeholder="Explication détaillée, exemples, contexte..."></textarea>
+                <div id="fc-explanation-editor" class="rt-editor"></div>
             </div>
             <div class="form-actions">
                 <button type="submit" class="btn-primary" id="fc-submit-btn">Ajouter</button>
