@@ -1,46 +1,44 @@
-<section id="register" class="page">
-    <div class="container" style="max-width: 500px;">
-        <h2>Créer un compte</h2>
-        <form id="register-form">
-            <div class="form-group">
-                <label for="register-firstname">Prénom</label>
-                <input type="text" id="register-firstname" placeholder="Optionnel">
-            </div>
-            <div class="form-group">
-                <label for="register-lastname">Nom</label>
-                <input type="text" id="register-lastname" placeholder="Optionnel">
-            </div>
-            <div class="form-group">
-                <label for="register-email">Email <span style="color: var(--danger-color);">*</span></label>
-                <input type="email" id="register-email" required>
-            </div>
-            <div class="form-group">
-                <label for="register-password">Mot de passe <span style="color: var(--danger-color);">*</span></label>
-                <input type="password" id="register-password" required minlength="6">
-                <small style="color: var(--text-secondary); display: block; margin-top: 0.5rem;">Minimum 6
-                    caractères</small>
-            </div>
-            <div class="form-group">
-                <label for="register-password-confirm">Confirmer le mot de passe <span
-                        style="color: var(--danger-color);">*</span></label>
-                <input type="password" id="register-password-confirm" required minlength="6">
-            </div>
-            <div class="form-actions">
-                <button type="submit" class="btn-primary">S'inscrire</button>
-                <button type="button" id="google-register-btn" class="btn-google"
-                    style="margin-top: 10px; background-color: #4285F4; color: white;">
-                    S'inscrire avec Google
-                </button>
-            </div>
-        </form>
-        <div
-            style="text-align: center; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
-            <p style="color: var(--text-secondary);">
-                Vous avez déjà un compte ?
-                <a href="#login" style="color: var(--primary-color); text-decoration: none; font-weight: 500;">
-                    Se connecter
-                </a>
-            </p>
+<div class="container" style="max-width: 500px;">
+    <h2>Créer un compte</h2>
+    <form id="register-form">
+        <div class="form-group">
+            <label for="register-firstname">Prénom</label>
+            <input type="text" id="register-firstname" placeholder="Optionnel">
         </div>
+        <div class="form-group">
+            <label for="register-lastname">Nom</label>
+            <input type="text" id="register-lastname" placeholder="Optionnel">
+        </div>
+        <div class="form-group">
+            <label for="register-email">Email <span style="color: var(--danger-color);">*</span></label>
+            <input type="email" id="register-email" required>
+        </div>
+        <div class="form-group">
+            <label for="register-password">Mot de passe <span style="color: var(--danger-color);">*</span></label>
+            <input type="password" id="register-password" required minlength="6">
+            <small style="color: var(--text-secondary); display: block; margin-top: 0.5rem;">Minimum 6
+                caractères</small>
+        </div>
+        <div class="form-group">
+            <label for="register-password-confirm">Confirmer le mot de passe <span
+                    style="color: var(--danger-color);">*</span></label>
+            <input type="password" id="register-password-confirm" required minlength="6">
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn-primary">S'inscrire</button>
+            <button type="button" id="google-register-btn" class="btn-google"
+                style="margin-top: 10px; background-color: #4285F4; color: white;">
+                S'inscrire avec Google
+            </button>
+        </div>
+    </form>
+    <div
+        style="text-align: center; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
+        <p style="color: var(--text-secondary);">
+            Vous avez déjà un compte ?
+            <a href="#login" style="color: var(--primary-color); text-decoration: none; font-weight: 500;">
+                Se connecter
+            </a>
+        </p>
     </div>
-</section>
+</div>

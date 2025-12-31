@@ -10,6 +10,7 @@ import { loadMultipleTemplates } from './template-loader.js';
 import { initGDPR } from './gdpr.js';
 import { loadReminders, loadAdminReminders, initReminderForm } from './reminders.js';
 import { initFlashcards } from './flashcard-ui.js';
+import { initQuizEditor } from './quiz-ui.js';
 
 // Global exports for inline HTML handlers
 window.viewCourse = viewCourse;
@@ -160,6 +161,7 @@ async function initApp() {
             { containerId: 'page-flashcards', path: 'templates/pages/flashcards.html' },
             { containerId: 'page-flashcards-study', path: 'templates/pages/flashcards-study.html' },
             { containerId: 'page-flashcards-admin', path: 'templates/pages/flashcards-admin.html' },
+            { containerId: 'page-quiz-player', path: 'templates/pages/quiz-player.html' },
             { containerId: 'page-login', path: 'templates/pages/login.html' },
             { containerId: 'page-register', path: 'templates/pages/register.html' },
             { containerId: 'page-admin', path: 'templates/pages/admin.html' },
@@ -181,6 +183,13 @@ async function initApp() {
         loadCourses();
         loadReminders();
         initFlashcards();
+        initQuizEditor();
+
+        // Dynamic import for carousel to avoid blocking
+        import('./carousel.js').then(module => {
+            module.initHomeCarousel();
+        });
+
         showPage('accueil');
     } catch (error) {
         console.error('Failed to initialize app:', error);

@@ -28,9 +28,17 @@ export function showPage(pageId) {
     const pages = document.querySelectorAll('.page');
     pages.forEach(page => page.classList.remove('active'));
 
-    const targetPage = document.getElementById(pageId);
+    let targetPage = document.getElementById(pageId);
+    if (!targetPage) {
+        targetPage = document.getElementById(`page-${pageId}`);
+    }
+
     if (targetPage) {
         targetPage.classList.add('active');
+        // If the target is a container wrapping the content, ensure the content is visible
+        // (This is redundant if the CSS handles it, but good for safety)
+    } else {
+        console.warn(`Page not found: ${pageId}`);
     }
 
     // Trigger specific page logic if needed (handled in main/other modules)

@@ -1,198 +1,196 @@
-<section id="admin" class="page">
-    <div class="admin-container">
-        <!-- Sidebar Navigation -->
-        <aside class="admin-sidebar">
-            <div class="sidebar-header">
-                <h2>Administration</h2>
-                <button id="sidebar-toggle" class="sidebar-toggle">☰</button>
-            </div>
-            <nav class="sidebar-nav">
-                <a href="#" class="sidebar-link active" data-section="users">
-                    <span class="sidebar-icon">👥</span>
-                    <span class="sidebar-text">Utilisateurs</span>
-                </a>
-                <a href="#" class="sidebar-link" data-section="courses">
-                    <span class="sidebar-icon">📚</span>
-                    <span class="sidebar-text">Cours</span>
-                </a>
-                <a href="#" class="sidebar-link" data-section="reminders">
-                    <span class="sidebar-icon">⏰</span>
-                    <span class="sidebar-text">Rappels d'Éval</span>
-                </a>
-                <a href="#" class="sidebar-link" data-section="bugs">
-                    <span class="sidebar-icon">🐞</span>
-                    <span class="sidebar-text">Signalements</span>
-                </a>
-                <a href="#" class="sidebar-link" data-section="archived-courses">
-                    <span class="sidebar-icon">📦</span>
-                    <span class="sidebar-text">Cours Archivés</span>
-                </a>
-                <a href="#" class="sidebar-link" data-section="archived-users">
-                    <span class="sidebar-icon">👤</span>
-                    <span class="sidebar-text">Utilisateurs Archivés</span>
-                </a>
-            </nav>
-        </aside>
+<div class="admin-container">
+    <!-- Sidebar Navigation -->
+    <aside class="admin-sidebar">
+        <div class="sidebar-header">
+            <h2>Administration</h2>
+            <button id="sidebar-toggle" class="sidebar-toggle">☰</button>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="#" class="sidebar-link active" data-section="users">
+                <span class="sidebar-icon">👥</span>
+                <span class="sidebar-text">Utilisateurs</span>
+            </a>
+            <a href="#" class="sidebar-link" data-section="courses">
+                <span class="sidebar-icon">📚</span>
+                <span class="sidebar-text">Cours</span>
+            </a>
+            <a href="#" class="sidebar-link" data-section="reminders">
+                <span class="sidebar-icon">⏰</span>
+                <span class="sidebar-text">Rappels d'Éval</span>
+            </a>
+            <a href="#" class="sidebar-link" data-section="bugs">
+                <span class="sidebar-icon">🐞</span>
+                <span class="sidebar-text">Signalements</span>
+            </a>
+            <a href="#" class="sidebar-link" data-section="archived-courses">
+                <span class="sidebar-icon">📦</span>
+                <span class="sidebar-text">Cours Archivés</span>
+            </a>
+            <a href="#" class="sidebar-link" data-section="archived-users">
+                <span class="sidebar-icon">👤</span>
+                <span class="sidebar-text">Utilisateurs Archivés</span>
+            </a>
+        </nav>
+    </aside>
 
-        <!-- Main Content -->
-        <main class="admin-content">
-            <!-- Users Section -->
-            <div id="admin-section-users" class="admin-section active">
-                <h2>Gestion des Utilisateurs</h2>
-                <div class="users-table-container">
-                    <table class="users-table">
-                        <thead>
-                            <tr>
-                                <th>Email</th>
-                                <th>Prénom</th>
-                                <th>Nom</th>
-                                <th>Rôle</th>
-                                <th>Date de création</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="users-table-body">
-                            <!-- Users will be loaded here -->
-                        </tbody>
-                    </table>
+    <!-- Main Content -->
+    <main class="admin-content">
+        <!-- Users Section -->
+        <div id="admin-section-users" class="admin-section active">
+            <h2>Gestion des Utilisateurs</h2>
+            <div class="users-table-container">
+                <table class="users-table">
+                    <thead>
+                        <tr>
+                            <th>Email</th>
+                            <th>Prénom</th>
+                            <th>Nom</th>
+                            <th>Rôle</th>
+                            <th>Date de création</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="users-table-body">
+                        <!-- Users will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Courses Section -->
+        <div id="admin-section-courses" class="admin-section">
+            <h2>Gestion des Cours</h2>
+            <div class="courses-table-container">
+                <table class="courses-table">
+                    <thead>
+                        <tr>
+                            <th>Titre</th>
+                            <th>Sujet</th>
+                            <th>Type</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="courses-table-body">
+                        <!-- Courses will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Exercise Linking Section -->
+            <div id="course-exercises-section" class="exercise-linking-section" style="display: none;">
+                <h3 id="linking-course-title">Lier des exercices au cours</h3>
+                <div id="available-exercises-list" class="exercises-checklist">
+                    <!-- Exercises checkboxes will be loaded here -->
                 </div>
             </div>
+        </div>
 
-            <!-- Courses Section -->
-            <div id="admin-section-courses" class="admin-section">
-                <h2>Gestion des Cours</h2>
-                <div class="courses-table-container">
-                    <table class="courses-table">
-                        <thead>
-                            <tr>
-                                <th>Titre</th>
-                                <th>Sujet</th>
-                                <th>Type</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="courses-table-body">
-                            <!-- Courses will be loaded here -->
-                        </tbody>
-                    </table>
-                </div>
+        <!-- Reminders Section -->
+        <div id="admin-section-reminders" class="admin-section">
+            <h2>Rappels d'Évaluations</h2>
 
-                <!-- Exercise Linking Section -->
-                <div id="course-exercises-section" class="exercise-linking-section" style="display: none;">
-                    <h3 id="linking-course-title">Lier des exercices au cours</h3>
-                    <div id="available-exercises-list" class="exercises-checklist">
-                        <!-- Exercises checkboxes will be loaded here -->
+            <!-- Create Reminder Form -->
+            <div class="reminder-form-container">
+                <h3>Créer un rappel</h3>
+                <form id="reminder-form" class="reminder-form">
+                    <div class="form-group">
+                        <label for="reminder-title">Titre de l'évaluation *</label>
+                        <input type="text" id="reminder-title" placeholder="Ex: Évaluation Microéconomie" required>
                     </div>
-                </div>
+                    <div class="form-group">
+                        <label for="reminder-date">Date de l'évaluation *</label>
+                        <input type="date" id="reminder-date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="reminder-description">Description</label>
+                        <textarea id="reminder-description" rows="3"
+                            placeholder="Chapitres concernés, conseils de révision..."></textarea>
+                    </div>
+                    <button type="submit" class="btn-primary">Créer le rappel</button>
+                </form>
             </div>
 
-            <!-- Reminders Section -->
-            <div id="admin-section-reminders" class="admin-section">
-                <h2>Rappels d'Évaluations</h2>
-
-                <!-- Create Reminder Form -->
-                <div class="reminder-form-container">
-                    <h3>Créer un rappel</h3>
-                    <form id="reminder-form" class="reminder-form">
-                        <div class="form-group">
-                            <label for="reminder-title">Titre de l'évaluation *</label>
-                            <input type="text" id="reminder-title" placeholder="Ex: Évaluation Microéconomie" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="reminder-date">Date de l'évaluation *</label>
-                            <input type="date" id="reminder-date" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="reminder-description">Description</label>
-                            <textarea id="reminder-description" rows="3"
-                                placeholder="Chapitres concernés, conseils de révision..."></textarea>
-                        </div>
-                        <button type="submit" class="btn-primary">Créer le rappel</button>
-                    </form>
-                </div>
-
-                <!-- Reminders List -->
-                <div class="reminders-table-container">
-                    <h3>Rappels existants</h3>
-                    <table class="reminders-table">
-                        <thead>
-                            <tr>
-                                <th>Titre</th>
-                                <th>Date</th>
-                                <th>Dans</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="reminders-table-body">
-                            <!-- Reminders will be loaded here -->
-                        </tbody>
-                    </table>
-                </div>
+            <!-- Reminders List -->
+            <div class="reminders-table-container">
+                <h3>Rappels existants</h3>
+                <table class="reminders-table">
+                    <thead>
+                        <tr>
+                            <th>Titre</th>
+                            <th>Date</th>
+                            <th>Dans</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reminders-table-body">
+                        <!-- Reminders will be loaded here -->
+                    </tbody>
+                </table>
             </div>
+        </div>
 
-            <!-- Bugs Section -->
-            <div id="admin-section-bugs" class="admin-section">
-                <h2>Signalements de Bugs</h2>
-                <div class="bugs-table-container">
-                    <table class="bugs-table">
-                        <thead>
-                            <tr>
-                                <th>Utilisateur</th>
-                                <th>Description</th>
-                                <th>Date</th>
-                                <th>Statut</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="bugs-table-body">
-                            <!-- Bugs will be loaded here -->
-                        </tbody>
-                    </table>
-                </div>
+        <!-- Bugs Section -->
+        <div id="admin-section-bugs" class="admin-section">
+            <h2>Signalements de Bugs</h2>
+            <div class="bugs-table-container">
+                <table class="bugs-table">
+                    <thead>
+                        <tr>
+                            <th>Utilisateur</th>
+                            <th>Description</th>
+                            <th>Date</th>
+                            <th>Statut</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bugs-table-body">
+                        <!-- Bugs will be loaded here -->
+                    </tbody>
+                </table>
             </div>
+        </div>
 
-            <!-- Archived Courses Section -->
-            <div id="admin-section-archived-courses" class="admin-section">
-                <h2>Cours Archivés</h2>
-                <div class="archived-courses-table-container">
-                    <table class="archived-courses-table">
-                        <thead>
-                            <tr>
-                                <th>Titre</th>
-                                <th>Sujet</th>
-                                <th>Type</th>
-                                <th>Archivé le</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="archived-courses-table-body">
-                            <!-- Archived courses will be loaded here -->
-                        </tbody>
-                    </table>
-                </div>
+        <!-- Archived Courses Section -->
+        <div id="admin-section-archived-courses" class="admin-section">
+            <h2>Cours Archivés</h2>
+            <div class="archived-courses-table-container">
+                <table class="archived-courses-table">
+                    <thead>
+                        <tr>
+                            <th>Titre</th>
+                            <th>Sujet</th>
+                            <th>Type</th>
+                            <th>Archivé le</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="archived-courses-table-body">
+                        <!-- Archived courses will be loaded here -->
+                    </tbody>
+                </table>
             </div>
+        </div>
 
-            <!-- Archived Users Section -->
-            <div id="admin-section-archived-users" class="admin-section">
-                <h2>Utilisateurs Archivés</h2>
-                <div class="users-table-container">
-                    <table class="users-table">
-                        <thead>
-                            <tr>
-                                <th>Email</th>
-                                <th>Prénom</th>
-                                <th>Nom</th>
-                                <th>Rôle</th>
-                                <th>Archivé le</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="archived-users-table-body">
-                            <!-- Archived users will be loaded here -->
-                        </tbody>
-                    </table>
-                </div>
+        <!-- Archived Users Section -->
+        <div id="admin-section-archived-users" class="admin-section">
+            <h2>Utilisateurs Archivés</h2>
+            <div class="users-table-container">
+                <table class="users-table">
+                    <thead>
+                        <tr>
+                            <th>Email</th>
+                            <th>Prénom</th>
+                            <th>Nom</th>
+                            <th>Rôle</th>
+                            <th>Archivé le</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="archived-users-table-body">
+                        <!-- Archived users will be loaded here -->
+                    </tbody>
+                </table>
             </div>
-        </main>
-    </div>
-</section>
+        </div>
+    </main>
+</div>
