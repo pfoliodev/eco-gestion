@@ -3,6 +3,7 @@ import { getDocs, doc, updateDoc, deleteDoc, query, orderBy, where, serverTimest
 import { state } from './state.js';
 import { auth } from './firebase.js';
 import { notyf } from './ui.js';
+import { getAllBadgeDefinitions, createBadge, updateBadge, deleteBadge, seedDefaultBadges } from './badges.js';
 
 export async function loadUsers() {
     if (!state.isAdmin) return;
@@ -159,6 +160,7 @@ export function initAdminSidebar() {
             // Load data for section
             if (section === 'courses') loadCourseManagement();
             if (section === 'bugs') loadBugs();
+            if (section === 'badges') loadBadgesAdmin();
             if (section === 'archived-courses') loadArchivedCourses();
             if (section === 'archived-users') loadArchivedUsers();
             if (section === 'reminders') {
@@ -652,3 +654,229 @@ export async function restoreUser(userId) {
 }
 
 window.restoreUser = restoreUser;
+
+// ============================================
+// BADGES ADMIN MANAGEMENT
+// ============================================
+
+let currentEditingBadgeId = null;
+
+export async function loadBadgesAdmin() {
+    if (!state.isAdmin) return;
+
+    try {
+        const badges = await getAllBadgeDefinitions();
+        renderBadgesAdmin(badges);
+        initBadgeAdminListeners();
+    } catch (error) {
+        console.error("Error loading badges:", error);
+        notyf.error("Erreur de chargement des badges.");
+    }
+}
+
+function renderBadgesAdmin(badges) {
+    const tbody = document.getElementById('badges-table-body');
+    if (!tbody) return;
+
+    if (badges.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem;">Aucun badge créé. Cliquez sur "Initialiser les badges par défaut" pour commencer.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = badges.map(badge => {
+        const categoryLabel = {
+            'progression': 'Progression',
+            'excellence': 'Excellence',
+            'special': 'Spécial'
+        }[badge.category] || badge.category;
+
+        const requirementLabel = formatRequirement(badge.requirement);
+
+        return `
+            <tr>
+                <td style="font-size: 2rem;">${badge.icon || '🏆'}</td>
+                <td><strong>${badge.name}</strong></td>
+                <td style="max-width: 200px; color: var(--text-secondary);">${badge.description || '-'}</td>
+                <td><span class="badge-category-tag category-${badge.category}">${categoryLabel}</span></td>
+                <td><code style="font-size: 0.8rem;">${requirementLabel}</code></td>
+                <td>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="btn-edit-badge" data-badge-id="${badge.id}" title="Modifier">✏️</button>
+                        <button class="btn-delete-badge" data-badge-id="${badge.id}" title="Supprimer">🗑️</button>
+                    </div>
+                </td>
+            </tr>`;
+    }).join('');
+
+    // Add event listeners
+    requestAnimationFrame(() => {
+        tbody.querySelectorAll('.btn-edit-badge').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const badgeId = this.dataset.badgeId;
+                const badge = badges.find(b => b.id === badgeId);
+                openBadgeEditor(badge);
+            });
+        });
+
+        tbody.querySelectorAll('.btn-delete-badge').forEach(btn => {
+            btn.addEventListener('click', async function () {
+                const badgeId = this.dataset.badgeId;
+                if (confirm('Supprimer ce badge ?')) {
+                    try {
+                        await deleteBadge(badgeId);
+                        notyf.success('Badge supprimé');
+                        loadBadgesAdmin();
+                    } catch (error) {
+                        notyf.error('Erreur de suppression');
+                    }
+                }
+            });
+        });
+    });
+}
+
+function formatRequirement(requirement) {
+    if (!requirement) return 'N/A';
+
+    switch (requirement.type) {
+        case 'first_quiz':
+            return 'Premier QCM';
+        case 'quiz_count':
+            return `${requirement.value} QCM`;
+        case 'perfect_score':
+            return 'Score 100%';
+        case 'perfect_count':
+            return `${requirement.value}x 100%`;
+        default:
+            return requirement.type;
+    }
+}
+
+function initBadgeAdminListeners() {
+    // Seed badges button
+    const seedBtn = document.getElementById('seed-badges-btn');
+    if (seedBtn && !seedBtn._listenerAdded) {
+        seedBtn._listenerAdded = true;
+        seedBtn.addEventListener('click', async () => {
+            try {
+                const result = await seedDefaultBadges();
+                notyf.success(result.message);
+                loadBadgesAdmin();
+            } catch (error) {
+                notyf.error('Erreur lors de l\'initialisation');
+            }
+        });
+    }
+
+    // Add badge button
+    const addBtn = document.getElementById('add-badge-btn');
+    if (addBtn && !addBtn._listenerAdded) {
+        addBtn._listenerAdded = true;
+        addBtn.addEventListener('click', () => openBadgeEditor(null));
+    }
+
+    // Requirement type change
+    const reqTypeSelect = document.getElementById('badge-requirement-type');
+    if (reqTypeSelect && !reqTypeSelect._listenerAdded) {
+        reqTypeSelect._listenerAdded = true;
+        reqTypeSelect.addEventListener('change', function () {
+            const valueGroup = document.getElementById('badge-requirement-value-group');
+            const needsValue = ['quiz_count', 'perfect_count'].includes(this.value);
+            valueGroup.style.display = needsValue ? 'block' : 'none';
+        });
+    }
+
+    // Badge form submit
+    const form = document.getElementById('badge-form');
+    if (form && !form._listenerAdded) {
+        form._listenerAdded = true;
+        form.addEventListener('submit', handleBadgeFormSubmit);
+    }
+
+    // Cancel button
+    const cancelBtn = document.getElementById('cancel-badge-btn');
+    if (cancelBtn && !cancelBtn._listenerAdded) {
+        cancelBtn._listenerAdded = true;
+        cancelBtn.addEventListener('click', closeBadgeEditor);
+    }
+}
+
+function openBadgeEditor(badge = null) {
+    const modal = document.getElementById('badge-editor-modal');
+    const title = document.getElementById('badge-modal-title');
+    const form = document.getElementById('badge-form');
+
+    currentEditingBadgeId = badge ? badge.id : null;
+    title.textContent = badge ? 'Modifier le Badge' : 'Nouveau Badge';
+    form.reset();
+
+    if (badge) {
+        document.getElementById('badge-id').value = badge.id;
+        document.getElementById('badge-name').value = badge.name || '';
+        document.getElementById('badge-icon').value = badge.icon || '';
+        document.getElementById('badge-description').value = badge.description || '';
+        document.getElementById('badge-category').value = badge.category || 'progression';
+
+        if (badge.requirement) {
+            document.getElementById('badge-requirement-type').value = badge.requirement.type || 'first_quiz';
+            if (badge.requirement.value) {
+                document.getElementById('badge-requirement-value').value = badge.requirement.value;
+            }
+        }
+    }
+
+    // Show/hide value field based on requirement type
+    const reqType = document.getElementById('badge-requirement-type').value;
+    const needsValue = ['quiz_count', 'perfect_count'].includes(reqType);
+    document.getElementById('badge-requirement-value-group').style.display = needsValue ? 'block' : 'none';
+
+    modal.style.display = 'flex';
+}
+
+function closeBadgeEditor() {
+    const modal = document.getElementById('badge-editor-modal');
+    if (modal) modal.style.display = 'none';
+    currentEditingBadgeId = null;
+}
+
+async function handleBadgeFormSubmit(e) {
+    e.preventDefault();
+
+    const name = document.getElementById('badge-name').value.trim();
+    const icon = document.getElementById('badge-icon').value.trim() || '🏆';
+    const description = document.getElementById('badge-description').value.trim();
+    const category = document.getElementById('badge-category').value;
+    const requirementType = document.getElementById('badge-requirement-type').value;
+    const requirementValue = parseInt(document.getElementById('badge-requirement-value').value) || 1;
+
+    const requirement = { type: requirementType };
+    if (['quiz_count', 'perfect_count'].includes(requirementType)) {
+        requirement.value = requirementValue;
+    }
+
+    const badgeData = {
+        name,
+        icon,
+        description,
+        category,
+        requirement
+    };
+
+    try {
+        if (currentEditingBadgeId) {
+            await updateBadge(currentEditingBadgeId, badgeData);
+            notyf.success('Badge mis à jour');
+        } else {
+            await createBadge(badgeData);
+            notyf.success('Badge créé');
+        }
+
+        closeBadgeEditor();
+        loadBadgesAdmin();
+    } catch (error) {
+        console.error('Badge save error:', error);
+        notyf.error('Erreur lors de l\'enregistrement');
+    }
+}
+
+window.loadBadgesAdmin = loadBadgesAdmin;

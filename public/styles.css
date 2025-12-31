@@ -4271,3 +4271,514 @@ input:checked+.slider:before {
         bottom: 1rem;
     }
 }
+
+/* ============================================
+   BADGES SYSTEM
+   ============================================ */
+
+/* Badge Grid */
+.badges-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+}
+
+/* Badge Card */
+.badge-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1.25rem;
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    transition: all 0.2s ease;
+}
+
+.badge-card:hover {
+    border-color: var(--primary-color);
+}
+
+/* Unlocked Badge */
+.badge-card.unlocked {
+    background: linear-gradient(135deg,
+            rgba(79, 70, 229, 0.05) 0%,
+            rgba(99, 102, 241, 0.02) 100%);
+    border-color: rgba(79, 70, 229, 0.3);
+}
+
+.badge-card.unlocked .badge-icon {
+    transform: scale(1.1);
+}
+
+/* Locked Badge */
+.badge-card.locked {
+    opacity: 0.6;
+    filter: grayscale(0.5);
+}
+
+.badge-card.locked .badge-icon {
+    filter: grayscale(1);
+    opacity: 0.5;
+}
+
+/* Badge Icon */
+.badge-icon {
+    font-size: 2.5rem;
+    line-height: 1;
+    flex-shrink: 0;
+    transition: transform 0.3s ease;
+}
+
+/* Badge Info */
+.badge-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.badge-name {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin: 0 0 0.25rem 0;
+}
+
+.badge-description {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin: 0 0 0.5rem 0;
+    line-height: 1.4;
+}
+
+.badge-date {
+    font-size: 0.75rem;
+    color: var(--primary-color);
+    font-weight: 500;
+}
+
+.badge-locked-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+/* Empty state for badges */
+.empty-badges {
+    text-align: center;
+    padding: 3rem;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+/* ============================================
+   BADGE UNLOCKED POPUP
+   ============================================ */
+
+.badge-popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.badge-popup-overlay.visible {
+    opacity: 1;
+}
+
+.badge-popup {
+    position: relative;
+    background: var(--surface-color);
+    border-radius: 1rem;
+    padding: 3rem 2.5rem;
+    text-align: center;
+    max-width: 400px;
+    width: 90%;
+    transform: scale(0.8) translateY(20px);
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    overflow: hidden;
+}
+
+.badge-popup-overlay.visible .badge-popup {
+    transform: scale(1) translateY(0);
+}
+
+/* Glow effect behind badge */
+.badge-popup-glow {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle,
+            rgba(79, 70, 229, 0.3) 0%,
+            rgba(79, 70, 229, 0) 70%);
+    transform: translate(-50%, -60%);
+    animation: pulse-glow 2s ease-in-out infinite;
+    pointer-events: none;
+}
+
+@keyframes pulse-glow {
+
+    0%,
+    100% {
+        transform: translate(-50%, -60%) scale(1);
+        opacity: 0.6;
+    }
+
+    50% {
+        transform: translate(-50%, -60%) scale(1.2);
+        opacity: 1;
+    }
+}
+
+.badge-popup-icon {
+    font-size: 5rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+    z-index: 1;
+    animation: bounce-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both;
+}
+
+@keyframes bounce-in {
+    0% {
+        transform: scale(0);
+        opacity: 0;
+    }
+
+    50% {
+        transform: scale(1.2);
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.badge-popup-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin: 0 0 0.5rem 0;
+    animation: fade-up 0.4s ease 0.3s both;
+}
+
+.badge-popup-name {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin: 0 0 0.5rem 0;
+    animation: fade-up 0.4s ease 0.4s both;
+}
+
+.badge-popup-description {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    margin: 0 0 2rem 0;
+    line-height: 1.5;
+    animation: fade-up 0.4s ease 0.5s both;
+}
+
+@keyframes fade-up {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.badge-popup-close {
+    animation: fade-up 0.4s ease 0.6s both;
+    padding: 0.75rem 2rem;
+    font-size: 1rem;
+}
+
+/* Dark mode adjustments */
+.dark-mode .badge-card.unlocked {
+    background: linear-gradient(135deg,
+            rgba(99, 102, 241, 0.15) 0%,
+            rgba(99, 102, 241, 0.05) 100%);
+}
+
+.dark-mode .badge-popup {
+    border: 1px solid var(--border-color);
+}
+
+.dark-mode .badge-popup-glow {
+    background: radial-gradient(circle,
+            rgba(99, 102, 241, 0.4) 0%,
+            rgba(99, 102, 241, 0) 70%);
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .badges-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .badge-popup {
+        padding: 2rem 1.5rem;
+    }
+
+    .badge-popup-icon {
+        font-size: 4rem;
+    }
+
+    .badge-popup-title {
+        font-size: 1.25rem;
+    }
+}
+
+/* Badge Admin Category Tags */
+.badge-category-tag {
+    display: inline-block;
+    padding: 0.25rem 0.6rem;
+    border-radius: var(--radius-md);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.category-progression {
+    background-color: #dbeafe;
+    color: #1e40af;
+    border: 1px solid #bfdbfe;
+}
+
+.category-excellence {
+    background-color: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fde68a;
+}
+
+.category-special {
+    background-color: #fae8ff;
+    color: #86198f;
+    border: 1px solid #f5d0fe;
+}
+
+.dark-mode .category-progression {
+    background-color: rgba(59, 130, 246, 0.2);
+    color: #93c5fd;
+    border-color: rgba(59, 130, 246, 0.3);
+}
+
+.dark-mode .category-excellence {
+    background-color: rgba(245, 158, 11, 0.2);
+    color: #fcd34d;
+    border-color: rgba(245, 158, 11, 0.3);
+}
+
+.dark-mode .category-special {
+    background-color: rgba(192, 38, 211, 0.2);
+    color: #f0abfc;
+    border-color: rgba(192, 38, 211, 0.3);
+}
+
+/* Badge Admin Table Buttons */
+.btn-edit-badge,
+.btn-delete-badge {
+    padding: 0.4rem 0.6rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--surface-color);
+    cursor: pointer;
+    transition: all 0.15s;
+    font-size: 1rem;
+}
+
+.btn-edit-badge:hover {
+    border-color: var(--primary-color);
+    background-color: var(--surface-hover);
+}
+
+.btn-delete-badge:hover {
+    border-color: #ef4444;
+    background-color: rgba(239, 68, 68, 0.1);
+}
+
+/* Badges Table Container */
+.badges-table-container {
+    overflow-x: auto;
+}
+
+.badges-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.badges-table th,
+.badges-table td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.badges-table th {
+    font-weight: 600;
+    color: var(--text-main);
+    background-color: var(--surface-hover);
+}
+
+/* ============================================
+   ACCOUNT PAGE - ADMIN STYLE LAYOUT
+   ============================================ */
+
+.account-layout {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    min-height: calc(100vh - 64px);
+}
+
+.account-sidebar-nav {
+    background: var(--surface-color);
+    border-right: 1px solid var(--border-color);
+    padding: 1.5rem 0;
+    position: sticky;
+    top: 64px;
+    height: calc(100vh - 64px);
+    overflow-y: auto;
+}
+
+.account-sidebar-nav .sidebar-header {
+    padding: 0 1.5rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 1rem;
+}
+
+.account-sidebar-nav .sidebar-header h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-main);
+    margin: 0;
+    border: none;
+    padding: 0;
+}
+
+.account-sidebar-nav .sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0 0.75rem;
+}
+
+.account-sidebar-nav .sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    color: var(--text-secondary);
+    text-decoration: none;
+    border-radius: var(--radius-md);
+    transition: all 0.15s;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.account-sidebar-nav .sidebar-link:hover {
+    background-color: var(--surface-hover);
+    color: var(--text-main);
+}
+
+.account-sidebar-nav .sidebar-link.active {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.account-sidebar-nav .sidebar-icon {
+    font-size: 1.1rem;
+    width: 24px;
+    text-align: center;
+}
+
+.account-content {
+    padding: 2rem;
+    max-width: 1000px;
+}
+
+.account-content .account-section {
+    display: none;
+}
+
+.account-content .account-section.active {
+    display: block;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.account-content h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.profile-form-container {
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.profile-form-container h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0 0 1.5rem 0;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .account-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .account-sidebar-nav {
+        position: static;
+        height: auto;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+        padding: 1rem 0;
+    }
+
+    .account-sidebar-nav .sidebar-header {
+        display: none;
+    }
+
+    .account-sidebar-nav .sidebar-nav {
+        flex-direction: row;
+        overflow-x: auto;
+        padding: 0 1rem;
+        gap: 0.5rem;
+    }
+
+    .account-sidebar-nav .sidebar-link {
+        white-space: nowrap;
+        padding: 0.5rem 0.75rem;
+    }
+
+    .account-sidebar-nav .sidebar-text {
+        display: none;
+    }
+
+    .account-sidebar-nav .sidebar-icon {
+        width: auto;
+    }
+
+    .account-content {
+        padding: 1rem;
+    }
+}

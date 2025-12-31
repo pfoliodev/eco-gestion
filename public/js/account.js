@@ -4,6 +4,7 @@ import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/fireba
 import { state } from './state.js';
 import { notyf } from './ui.js';
 import { loadUserFavorites } from './favorites.js';
+import { getAllBadgeDefinitions, getUserBadges } from './badges.js';
 
 export async function loadAccount() {
     if (!auth.currentUser) return;
@@ -42,7 +43,32 @@ export async function loadAccount() {
 
     await loadUserBugs();
     await loadUserFavorites();
+    await loadUserBadges();
     initProfileForm();
+    initAccountSidebar();
+}
+
+// Initialize account sidebar navigation
+function initAccountSidebar() {
+    const sidebarLinks = document.querySelectorAll('.account-sidebar-nav .sidebar-link');
+
+    sidebarLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const section = link.dataset.accountSection;
+
+            // Update active link
+            sidebarLinks.forEach(l => l.classList.remove('active'));
+            link.classList.add('active');
+
+            // Update active section
+            document.querySelectorAll('.account-content .account-section').forEach(s => s.classList.remove('active'));
+            const targetSection = document.getElementById(`account-section-${section}`);
+            if (targetSection) {
+                targetSection.classList.add('active');
+            }
+        });
+    });
 }
 
 function initProfileForm() {
@@ -148,3 +174,64 @@ function renderUserBugs(bugs) {
         `;
     }).join('');
 }
+
+// ============================================
+// BADGES SECTION
+// ============================================
+
+async function loadUserBadges() {
+    const container = document.getElementById('badges-container');
+    if (!container) return;
+
+    try {
+        // Get all badge definitions and user's unlocked badges
+        const [allBadges, userBadges] = await Promise.all([
+            getAllBadgeDefinitions(),
+            getUserBadges()
+        ]);
+
+        // Create a set of unlocked badge IDs for quick lookup
+        const unlockedBadgeIds = new Set(userBadges.map(ub => ub.badgeId));
+
+        if (allBadges.length === 0) {
+            container.innerHTML = '<div class="empty-badges">Aucun badge disponible pour le moment.</div>';
+            return;
+        }
+
+        // Sort badges: unlocked first, then locked
+        const sortedBadges = [...allBadges].sort((a, b) => {
+            const aUnlocked = unlockedBadgeIds.has(a.id);
+            const bUnlocked = unlockedBadgeIds.has(b.id);
+            if (aUnlocked && !bUnlocked) return -1;
+            if (!aUnlocked && bUnlocked) return 1;
+            return 0;
+        });
+
+        container.innerHTML = sortedBadges.map(badge => {
+            const isUnlocked = unlockedBadgeIds.has(badge.id);
+            const userBadge = userBadges.find(ub => ub.badgeId === badge.id);
+            const unlockedDate = userBadge?.unlockedAt
+                ? new Date(userBadge.unlockedAt.seconds * 1000).toLocaleDateString('fr-FR')
+                : null;
+
+            return `
+                <div class="badge-card ${isUnlocked ? 'unlocked' : 'locked'}">
+                    <div class="badge-icon">${badge.icon || '🏆'}</div>
+                    <div class="badge-info">
+                        <h4 class="badge-name">${badge.name}</h4>
+                        <p class="badge-description">${badge.description || ''}</p>
+                        ${isUnlocked
+                    ? `<span class="badge-date">Débloqué le ${unlockedDate}</span>`
+                    : '<span class="badge-locked-label">🔒 Verrouillé</span>'
+                }
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+    } catch (error) {
+        console.error("Error loading badges:", error);
+        container.innerHTML = '<div class="error-msg">Erreur de chargement des badges.</div>';
+    }
+}
+

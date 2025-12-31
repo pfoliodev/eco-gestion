@@ -1,45 +1,75 @@
-<div class="container" style="max-width: 1000px;">
-    <div class="account-header">
-        <div class="avatar-container">
-            <img id="account-avatar" src="https://ui-avatars.com/api/?name=User&background=6366f1&color=fff"
-                alt="Avatar">
+<div class="account-layout">
+    <!-- Sidebar Navigation -->
+    <aside class="account-sidebar-nav">
+        <div class="sidebar-header">
+            <h2>Mon Compte</h2>
         </div>
-        <div class="user-info-header">
-            <h2 id="user-display-name">Mon Compte</h2>
-            <p id="user-display-email" style="color: var(--text-secondary); margin-top: 0.25rem;"></p>
-        </div>
-        <div class="role-badge-container">
-            <span class="user-badge" id="user-role-badge">Utilisateur</span>
-        </div>
-    </div>
+        <nav class="sidebar-nav">
+            <a href="#" class="sidebar-link active" data-account-section="profile">
+                <span class="sidebar-icon">⚙️</span>
+                <span class="sidebar-text">Profil</span>
+            </a>
+            <a href="#" class="sidebar-link" data-account-section="reports">
+                <span class="sidebar-icon">🐞</span>
+                <span class="sidebar-text">Mes Signalements</span>
+            </a>
+            <a href="#" class="sidebar-link" data-account-section="badges">
+                <span class="sidebar-icon">🏆</span>
+                <span class="sidebar-text">Mes Badges</span>
+            </a>
+            <a href="#" class="sidebar-link" data-account-section="favorites">
+                <span class="sidebar-icon">⭐</span>
+                <span class="sidebar-text">Cours Favoris</span>
+            </a>
+        </nav>
+    </aside>
 
-    <div class="account-grid">
-        <!-- LEFT: Settings -->
-        <div class="account-section">
-            <h3 style="margin-bottom: 1.5rem;">⚙️ Paramètres du Profil</h3>
-            <form id="profile-form">
-                <div class="form-group">
-                    <label for="profile-firstname">Prénom</label>
-                    <input type="text" id="profile-firstname" placeholder="Ex: Jean">
+    <!-- Main Content -->
+    <main class="account-content">
+        <!-- Profile Section -->
+        <div id="account-section-profile" class="account-section active">
+            <div class="account-header">
+                <div class="avatar-container">
+                    <img id="account-avatar" src="https://ui-avatars.com/api/?name=User&background=6366f1&color=fff"
+                        alt="Avatar">
                 </div>
-                <div class="form-group">
-                    <label for="profile-lastname">Nom</label>
-                    <input type="text" id="profile-lastname" placeholder="Ex: Dupont">
+                <div class="user-info-header">
+                    <h2 id="user-display-name">Mon Compte</h2>
+                    <p id="user-display-email" style="color: var(--text-secondary); margin-top: 0.25rem;"></p>
                 </div>
-                <div class="form-group">
-                    <label for="profile-pic-url">Photo de profil (URL)</label>
-                    <input type="url" id="profile-pic-url" placeholder="https://exemple.com/image.jpg">
-                    <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem;">Collez
-                        le lien d'une image (ex: Google Images)</p>
+                <div class="role-badge-container">
+                    <span class="user-badge" id="user-role-badge">Utilisateur</span>
                 </div>
-                <button type="submit" class="btn-primary" style="width: 100%; margin-top: 1rem;">Enregistrer
-                    les modifications</button>
-            </form>
+            </div>
+
+            <div class="profile-form-container">
+                <h3>Paramètres du Profil</h3>
+                <form id="profile-form">
+                    <div class="form-group">
+                        <label for="profile-firstname">Prénom</label>
+                        <input type="text" id="profile-firstname" placeholder="Ex: Jean">
+                    </div>
+                    <div class="form-group">
+                        <label for="profile-lastname">Nom</label>
+                        <input type="text" id="profile-lastname" placeholder="Ex: Dupont">
+                    </div>
+                    <div class="form-group">
+                        <label for="profile-pic-url">Photo de profil (URL)</label>
+                        <input type="url" id="profile-pic-url" placeholder="https://exemple.com/image.jpg">
+                        <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem;">
+                            Collez le lien d'une image (ex: Google Images)
+                        </p>
+                    </div>
+                    <button type="submit" class="btn-primary" style="width: 100%; margin-top: 1rem;">
+                        Enregistrer les modifications
+                    </button>
+                </form>
+            </div>
         </div>
 
-        <!-- RIGHT: Bug reports -->
-        <div class="account-section">
-            <h3 style="margin-bottom: 1.5rem;">🐞 Mes Signalements</h3>
+        <!-- Reports Section -->
+        <div id="account-section-reports" class="account-section">
+            <h2>🐞 Mes Signalements</h2>
             <div class="users-table-container">
                 <table class="users-table">
                     <thead>
@@ -58,12 +88,20 @@
             </div>
         </div>
 
-        <!-- Favorites Section (Full Width) -->
-        <div class="account-section" style="grid-column: 1 / -1;">
-            <h3 style="margin-bottom: 1.5rem;">⭐ Mes Cours Favoris</h3>
+        <!-- Badges Section -->
+        <div id="account-section-badges" class="account-section">
+            <h2>🏆 Mes Badges</h2>
+            <div id="badges-container" class="badges-grid">
+                <div style="text-align: center; padding: 2rem; color: var(--text-secondary);">Chargement...</div>
+            </div>
+        </div>
+
+        <!-- Favorites Section -->
+        <div id="account-section-favorites" class="account-section">
+            <h2>⭐ Mes Cours Favoris</h2>
             <div id="favorites-list" class="favorites-grid">
                 <div style="text-align: center; padding: 2rem;">Chargement...</div>
             </div>
         </div>
-    </div>
+    </main>
 </div>
