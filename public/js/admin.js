@@ -139,7 +139,7 @@ window.changeUserRole = changeUserRole;
 window.deleteUser = deleteUser;
 
 export function initAdminSidebar() {
-    const sidebarLinks = document.querySelectorAll('.sidebar-link');
+    const sidebarLinks = document.querySelectorAll('.admin-sidebar .sidebar-link');
     const sidebarToggle = document.getElementById('sidebar-toggle');
     const sidebar = document.querySelector('.admin-sidebar');
 
@@ -148,6 +148,10 @@ export function initAdminSidebar() {
         link.addEventListener('click', (e) => {
             e.preventDefault();
             const section = link.dataset.section;
+            if (!section) return;
+
+            const targetSection = document.getElementById(`admin-section-${section}`);
+            if (!targetSection) return;
 
             // Update active link
             sidebarLinks.forEach(l => l.classList.remove('active'));
@@ -155,7 +159,7 @@ export function initAdminSidebar() {
 
             // Update active section
             document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
-            document.getElementById(`admin-section-${section}`).classList.add('active');
+            targetSection.classList.add('active');
 
             // Load data for section
             if (section === 'courses') loadCourseManagement();
@@ -694,7 +698,11 @@ function renderBadgesAdmin(badges) {
 
         return `
             <tr>
-                <td style="font-size: 2rem;">${badge.icon || '🏆'}</td>
+                <td style="width: 60px; text-align: center;">
+                    ${badge.icon && badge.icon.includes('/')
+                ? `<img src="${badge.icon}" alt="${badge.name}" style="width: 40px; height: 40px; object-fit: contain; display: block; margin: 0 auto;">`
+                : `<span style="font-size: 2rem; display: block;">${badge.icon || '🏆'}</span>`}
+                </td>
                 <td><strong>${badge.name}</strong></td>
                 <td style="max-width: 200px; color: var(--text-secondary);">${badge.description || '-'}</td>
                 <td><span class="badge-category-tag category-${badge.category}">${categoryLabel}</span></td>

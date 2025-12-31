@@ -216,7 +216,11 @@ async function loadUserBadges() {
 
             return `
                 <div class="badge-card ${isUnlocked ? 'unlocked' : 'locked'}">
-                    <div class="badge-icon">${badge.icon || '🏆'}</div>
+                    <div class="badge-icon">
+                        ${badge.icon && badge.icon.includes('/')
+                    ? `<img src="${badge.icon}" alt="${badge.name}">`
+                    : (badge.icon || '🏆')}
+                    </div>
                     <div class="badge-info">
                         <h4 class="badge-name">${badge.name}</h4>
                         <p class="badge-description">${badge.description || ''}</p>

@@ -263,7 +263,11 @@ export function showBadgeUnlockedPopup(badge) {
         overlay.innerHTML = `
             <div class="badge-popup">
                 <div class="badge-popup-glow"></div>
-                <div class="badge-popup-icon">${badge.icon || '🏆'}</div>
+                <div class="badge-popup-icon">
+                    ${badge.icon && badge.icon.includes('/')
+                ? `<img src="${badge.icon}" alt="${badge.name}">`
+                : (badge.icon || '🏆')}
+                </div>
                 <h3 class="badge-popup-title">Badge Débloqué !</h3>
                 <p class="badge-popup-name">${badge.name}</p>
                 <p class="badge-popup-description">${badge.description || ''}</p>

@@ -115,5 +115,18 @@ service cloud.firestore {
       
       // No updates or deletes allowed (badges are permanent)
     }
+
+    // Course Views collection (tracking who viewed courses)
+    match /courseViews/{viewId} {
+      // Only authenticated users can read course views
+      allow read: if request.auth != null;
+      
+      // Users can create/update their own views
+      allow create: if request.auth != null && 
+        request.resource.data.userId == request.auth.uid;
+      
+      allow update: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+    }
   }
 }
