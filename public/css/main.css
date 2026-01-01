@@ -35,6 +35,3 @@
 
 /* Utilities */
 @import './utilities/helpers.css';
-
-/* Fallback for anything not yet moved (should eventually be empty or removed) */
-@import '../styles.css';

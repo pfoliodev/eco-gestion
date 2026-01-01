@@ -145,6 +145,7 @@ window.deleteUser = deleteUser;
 export function initAdminSidebar() {
     const sidebarLinks = document.querySelectorAll('.admin-sidebar .sidebar-link');
     const sidebarToggle = document.getElementById('sidebar-toggle');
+
     const sidebar = document.querySelector('.admin-sidebar');
 
     // Sidebar navigation

@@ -23,7 +23,6 @@ export async function loadCourses() {
 
                     try {
                         await updateDoc(doc(db, 'courses', course.id), updates);
-                        console.log(`Migrated course: ${course.id}`);
                     } catch (e) {
                         console.error("Migration error:", e);
                     }

@@ -1,5 +1,5 @@
 import { initTinyMCE, showPage, notyf } from './ui.js';
-import { auth } from './firebase.js';
+import { db, auth } from './firebase.js';
 import { initAuth } from './auth.js';
 import { initForm, loadCourses, renderCourses, updateFilters, viewCourse, editCourse, deleteCourse, loadRecentCourses } from './course.js';
 import { initAdminSidebar, loadUsers } from './admin.js';
@@ -228,3 +228,48 @@ document.addEventListener('pageChange', (e) => {
         updateFilters();
     }
 });
+
+// ============================================
+// THE DRAGON EGG 🐉 (Easter Egg)
+// ============================================
+window.revealDragon = async () => {
+    const dragon = `
+   ___====-_  _-====___
+          _--^^^#####//      \\\\\\\\#####^^^--_
+       _-^##########// (    ) \\\\\\\\##########^-_
+      -############//  |\\\\^^/|  \\\\\\\\############-
+    _/############//   (@::@)   \\\\\\\\############\\\\_
+   /#############((     \\\\\\\\//     ))#############\\\\
+   -###############\\\\\\\\    (oo)    //###############-
+   -#################\\\\\\\\  / VV \\\\  //#################-
+   -###################\\\\\\\\/      \\\\//###################-
+   _#/|##########/\\\\\\\\######(   /\\\\\\\\   )######/\\\\\\\\##########|\\\\\\#_
+   |/ |# /\\# /\\# /\\/  \\# /\\##\\  |  |  /# /\\#/  \\/\\# /\\# /\\# | \\|
+   \`  |/  V  V  \`   V  \\# \\ |  | / #/  V   '  V  V  \\|  '
+      \`   \`  \`      \`   /  /    \\  \\   '      '  '   '
+                       /  /      \\  \\
+                      /_ /        \\ _\\`;
+
+    console.log("%c🐲 VOUS AVEZ RÉVEILLÉ LE DRAGON ! 🐲", "color: #4f46e5; font-size: 20px; font-weight: bold;");
+    console.log("%c" + dragon, "color: #4f46e5; font-family: monospace; font-weight: bold;");
+
+    if (!auth.currentUser) {
+        console.log("%cConnectez-vous pour réclamer ce badge !", "color: #ef4444; font-weight: bold;");
+        return;
+    }
+
+    try {
+        const res = await unlockBadge('code_guardian');
+        if (res && !res.alreadyUnlocked) {
+            console.log("%c✨ NOUVEAU BADGE DÉBLOQUÉ ! ✨", "color: #10b981; font-weight: bold;");
+            notyf.success("Badge 'Gardien du Code' débloqué ! 🐉");
+        } else {
+            console.log("%cVous possédez déjà ce badge.", "color: #64748b; font-style: italic;");
+        }
+    } catch (error) {
+        console.error("Erreur lors du déblocage du badge du dragon:", error);
+    }
+};
+
+// Hint for the curious
+console.log("%cLa curiosité est récompensée... Essaye de taper revealDragon()", "color: transparent;");

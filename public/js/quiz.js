@@ -49,9 +49,16 @@ export async function deleteQuiz(quizId) {
 
 // Fetch quizzes for a specific course
 export async function getQuizzesByCourse(courseId) {
-    const q = query(quizzesCollection, where("courseId", "==", courseId), orderBy("createdAt", "asc"));
+    const q = query(quizzesCollection, where("courseId", "==", courseId));
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    return snapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .sort((a, b) => {
+            const dateA = a.createdAt?.seconds || 0;
+            const dateB = b.createdAt?.seconds || 0;
+            return dateA - dateB;
+        });
 }
 
 // Get a single quiz by ID
@@ -85,29 +92,28 @@ export async function submitQuizResult(quizId, courseId, score, totalQuestions, 
 export async function getUserQuizBestScore(quizId) {
     if (!auth.currentUser) return null;
 
-    const q = query(
-        resultsCollection,
-        where("quizId", "==", quizId),
-        where("userId", "==", auth.currentUser.uid),
-        orderBy("score", "desc") // Get highest score
-    );
-
+    // Fetch all user results for this quiz indirectly by fetching all results for user
+    // or just fetch by userId and filter by quizId in JS to avoid composite index
+    const q = query(resultsCollection, where("userId", "==", auth.currentUser.uid));
     const snapshot = await getDocs(q);
-    if (snapshot.empty) return null;
-    return snapshot.docs[0].data();
+
+    const results = snapshot.docs
+        .map(doc => doc.data())
+        .filter(r => r.quizId === quizId)
+        .sort((a, b) => (b.score / b.totalQuestions) - (a.score / a.totalQuestions));
+
+    return results.length > 0 ? results[0] : null;
 }
 
 // Get all previous attempts for a user on a quiz
 export async function getUserQuizHistory(quizId) {
     if (!auth.currentUser) return [];
 
-    const q = query(
-        resultsCollection,
-        where("quizId", "==", quizId),
-        where("userId", "==", auth.currentUser.uid),
-        orderBy("completedAt", "desc")
-    );
-
+    const q = query(resultsCollection, where("userId", "==", auth.currentUser.uid));
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    return snapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .filter(r => r.quizId === quizId)
+        .sort((a, b) => (b.completedAt?.seconds || 0) - (a.completedAt?.seconds || 0));
 }

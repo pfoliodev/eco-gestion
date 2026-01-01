@@ -31,8 +31,6 @@ export async function initFeatures() {
 export function applyFeatureFlags() {
     const { features } = state;
 
-    console.log('🔧 Applying feature flags:', features); // Debug log
-
     // 1. Navigation links in Header
     toggleElementBySelector('a[href="#flashcards"]', features.flashcards);
 
@@ -94,8 +92,6 @@ function reinitializeCarousel() {
     const visibleSlides = Array.from(allSlides)
         .filter(slide => slide.style.display !== 'none');
 
-    console.log('🎠 Carousel reinit:', visibleSlides.length, 'visible slides');
-
     // If no slides are visible, hide the entire carousel
     if (visibleSlides.length === 0) {
         carousel.style.display = 'none';
@@ -113,7 +109,6 @@ function reinitializeCarousel() {
     // Add active class ONLY to the first VISIBLE slide
     if (visibleSlides.length > 0) {
         visibleSlides[0].classList.add('active');
-        console.log('✅ Active slide:', visibleSlides[0].id);
     }
 
     // Update carousel indicators
@@ -132,6 +127,5 @@ function reinitializeCarousel() {
 
 function toggleElementById(id, isVisible) {
     const el = document.getElementById(id);
-    console.log(`🔍 Toggle ${id}:`, el ? 'found' : 'NOT FOUND', '| visible:', isVisible);
     if (el) el.style.display = isVisible ? '' : 'none';
 }

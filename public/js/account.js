@@ -4,7 +4,7 @@ import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/fireba
 import { state } from './state.js';
 import { notyf } from './ui.js';
 import { loadUserFavorites } from './favorites.js';
-import { getAllBadgeDefinitions, getUserBadges, getUserBadgeStats } from './badges.js';
+import { getUserBadges, getAllBadgeDefinitions, getUserBadgeStats, unlockBadge, removeUserBadge, showBadgeUnlockedPopup, getBadgeById } from './badges.js';
 
 let allBadgesCache = [];
 let userBadgesCache = [];
@@ -72,10 +72,79 @@ function initAccountSidebar() {
             const targetSection = document.getElementById(`account-section-${section}`);
             if (targetSection) {
                 targetSection.classList.add('active');
+
+                // Dragon Egg Discovery! 🐉
+                if (section === 'badges') {
+                    showDragonInConsole();
+                }
             }
         });
     });
 }
+
+function showDragonInConsole() {
+    const dragon = `
+   ___====-_  _-====___
+          _--^^^#####//      \\\\\\\\#####^^^--_
+       _-^##########// (    ) \\\\\\\\##########^-_
+      -############//  |\\\\^^/|  \\\\\\\\############-
+    _/############//   (@::@)   \\\\\\\\############\\\\_
+   /#############((     \\\\\\\\//     ))#############\\\\
+   -###############\\\\\\\\    (oo)    //###############-
+   -#################\\\\\\\\  / VV \\\\  //#################-
+   -###################\\\\\\\\/      \\\\//###################-
+   _#/|##########/\\\\\\\\######(   /\\\\\\\\   )######/\\\\\\\\##########|\\\\\\#_
+   |/ |# /\\# /\\# /\\/  \\# /\\##\\  |  |  /# /\\#/  \\/\\# /\\# /\\# | \\|
+   \`  |/  V  V  \`   V  \\# \\ |  | / #/  V   '  V  V  \\|  '
+      \`   \`  \`      \`   /  /    \\  \\   '      '  '   '
+                       /  /      \\  \\
+                      /_ /        \\ _\\`;
+
+    console.log("%c🐲 VOUS AVEZ RÉVEILLÉ LE DRAGON ! 🐲", "color: #4f46e5; font-size: 20px; font-weight: bold;");
+    console.log("%c" + dragon, "color: #4f46e5; font-family: monospace; font-weight: bold;");
+    console.log("%cUn secret est tapi ici... Appuie sur F12 pour sceller le pacte.", "color: #64748b; font-style: italic;");
+}
+
+// F12 Listener for the Dragon Badge
+document.addEventListener('keydown', async (e) => {
+    // We check if we are on the account page AND in the badges section
+    const accountPage = document.getElementById('page-mon-compte');
+    const badgesSection = document.getElementById('account-section-badges');
+
+    const isVisible = accountPage && accountPage.classList.contains('active') &&
+        badgesSection && badgesSection.classList.contains('active');
+
+    if (e.key === 'F12' && isVisible) {
+        if (!auth.currentUser) return;
+
+        try {
+            const res = await unlockBadge('code_guardian');
+            if (res && !res.alreadyUnlocked) {
+                console.log("%c✨ LE PACTE EST SCELLÉ ! ✨", "color: #10b981; font-weight: bold;");
+
+                // Show standard celebratory popup
+                const badge = await getBadgeById('code_guardian');
+                if (badge) {
+                    showBadgeUnlockedPopup(badge);
+                }
+
+                notyf.success("Badge 'Gardien du Code' débloqué ! 🐉");
+                // Refresh badges display
+                allBadgesCache = []; // Force refresh
+                await loadUserBadges();
+            }
+        } catch (error) {
+            console.error("Erreur lors du déblocage f12:", error);
+        }
+    }
+});
+
+// Refresh badges when navigating to account page
+document.addEventListener('pageChange', (e) => {
+    if (e.detail.pageId === 'mon-compte' || e.detail.pageId === 'page-mon-compte') {
+        loadUserBadges(true); // Force refresh
+    }
+});
 
 function initProfileForm() {
     const form = document.getElementById('profile-form');
@@ -185,18 +254,22 @@ function renderUserBugs(bugs) {
 // BADGES SECTION
 // ============================================
 
-async function loadUserBadges() {
+async function loadUserBadges(forceRefresh = false) {
     const container = document.getElementById('badges-container');
     if (!container) return;
 
     try {
-        if (allBadgesCache.length === 0 || !userStatsCache) {
-            const [allBadges, userBadges, stats] = await Promise.all([
-                getAllBadgeDefinitions(),
+        // Load badge definitions only once (cache them)
+        if (!allBadgesCache || allBadgesCache.length === 0) {
+            allBadgesCache = await getAllBadgeDefinitions();
+        }
+
+        // Always fetch fresh user data if forceRefresh is true or if not yet loaded
+        if (forceRefresh || !userStatsCache || userBadgesCache.length === 0) {
+            const [userBadges, stats] = await Promise.all([
                 getUserBadges(),
                 getUserBadgeStats()
             ]);
-            allBadgesCache = allBadges;
             userBadgesCache = userBadges;
             userStatsCache = stats;
         }
@@ -308,6 +381,9 @@ function calculateProgress(badge, stats) {
             break;
         case 'perfect_streak':
             current = stats.perfectStreak;
+            break;
+        case 'console_found':
+            current = 0; // It's a secret, so it's always "0" until it's "1"
             break;
         case 'course_read':
             current = (stats.readCourses && stats.readCourses.length > 0) ? 1 : 0;

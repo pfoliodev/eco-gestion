@@ -119,6 +119,20 @@ export async function unlockBadge(badgeId, metadata = {}) {
 }
 
 /**
+ * Remove a badge for the current user (Debug/Test only)
+ */
+export async function removeUserBadge(badgeId) {
+    if (!auth.currentUser) throw new Error("User must be logged in");
+    const docRef = doc(db, 'users', auth.currentUser.uid, 'userBadges', badgeId);
+    await deleteDoc(docRef);
+    return { success: true };
+}
+
+// Expose tools to console for testing
+window.removeUserBadge = removeUserBadge;
+window.unlockBadge = unlockBadge;
+
+/**
  * Get user's quiz completion count (unique quizzes)
  */
 export async function getUserUniqueQuizCount() {
@@ -165,15 +179,13 @@ async function isFirstAttempt(quizId) {
     if (!auth.currentUser) return false;
 
     const resultsRef = collection(db, 'quiz_results');
-    const q = query(
-        resultsRef,
-        where('userId', '==', auth.currentUser.uid),
-        where('quizId', '==', quizId)
-    );
+    const q = query(resultsRef, where('userId', '==', auth.currentUser.uid));
     const snapshot = await getDocs(q);
 
+    const attempts = snapshot.docs.filter(doc => doc.data().quizId === quizId);
+
     // If only 1 result exists, this is the first (just submitted)
-    return snapshot.docs.length === 1;
+    return attempts.length === 1;
 }
 
 /**
@@ -367,7 +379,7 @@ export async function checkAndUnlockBadges(quizId, score, total, quizTitleValue 
                 break;
 
             case 'perfect_score':
-                if (score === total) shouldUnlock = true;
+                if (total > 0 && score === total) shouldUnlock = true;
                 break;
 
             case 'perfect_count':
@@ -395,12 +407,14 @@ export async function checkAndUnlockBadges(quizId, score, total, quizTitleValue 
 
             case 'perfect_streak':
                 // Sans Faute: X consecutive perfect scores
-                if (currentPerfectStreak >= badge.requirement.value) shouldUnlock = true;
+                const streakVal = userData.perfectStreak || 0;
+                if (streakVal >= badge.requirement.value) shouldUnlock = true;
                 break;
 
             case 'course_read':
                 // Érudit: Course must be read before QCM
-                if (courseId && readCourses.includes(courseId)) shouldUnlock = true;
+                const isRead = courseId && readCourses.includes(courseId);
+                if (isRead) shouldUnlock = true;
                 break;
 
             case 'favorite_count':
@@ -417,7 +431,7 @@ export async function checkAndUnlockBadges(quizId, score, total, quizTitleValue 
                 break;
 
             case 'comeback_perfect':
-                if (score === total) {
+                if (total > 0 && score === total) {
                     const history = await getUserQuizHistory(quizId);
                     const hadFail = history.some(h => (h.score / h.totalQuestions) < 0.5);
                     if (hadFail) shouldUnlock = true;
@@ -437,14 +451,17 @@ export async function checkAndUnlockBadges(quizId, score, total, quizTitleValue 
             case 'sunday_warrior':
                 if (now.getDay() === 0) {
                     // Count quizzes completed today
-                    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
                     const resultsRef = collection(db, 'quiz_results');
-                    const q = query(resultsRef,
-                        where('userId', '==', auth.currentUser.uid),
-                        where('completedAt', '>=', todayStart)
-                    );
+                    const q = query(resultsRef, where('userId', '==', auth.currentUser.uid));
                     const snap = await getDocs(q);
-                    if (snap.size >= badge.requirement.value) shouldUnlock = true;
+
+                    const todayQuizzes = snap.docs.filter(doc => {
+                        const compAt = doc.data().completedAt;
+                        return compAt && (compAt.seconds * 1000) >= todayStart;
+                    });
+
+                    if (todayQuizzes.length >= badge.requirement.value) shouldUnlock = true;
                 }
                 break;
         }
@@ -662,6 +679,16 @@ export async function seedDefaultBadges() {
             icon: '⚔️',
             category: 'special',
             requirement: { type: 'sunday_warrior', value: 3 }
+        },
+        {
+            id: 'code_guardian',
+            name: 'Gardien du Code',
+            description: 'Vous avez découvert le dragon secret tapi au cœur du code.',
+            icon: '🐉',
+            category: 'special',
+            secret: true,
+            hint: "La console est ton amie... revealDragon() pourrait t'aider.",
+            requirement: { type: 'console_found' }
         }
     ];
 

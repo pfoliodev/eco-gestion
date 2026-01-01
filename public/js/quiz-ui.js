@@ -325,56 +325,98 @@ function renderQuizPlayer() {
 async function showQuizResults(score, total) {
     const container = document.getElementById('quiz-player-container');
     const percentage = Math.round((score / total) * 100);
+
+    // SVG Progress logic
+    const radius = 70;
+    const circumference = 2 * Math.PI * radius;
+    const offset = circumference - (percentage / 100) * circumference;
+
     let message = '';
-    if (percentage === 100) message = "Parfait ! 🏆";
-    else if (percentage >= 80) message = "Excellent ! 🌟";
-    else if (percentage >= 50) message = "Bien joué ! 👍";
-    else message = "Continue à réviser ! 💪";
+    let emoji = '';
+    if (percentage === 100) { message = "Parfait !"; emoji = "🏆"; }
+    else if (percentage >= 80) { message = "Excellent !"; emoji = "🌟"; }
+    else if (percentage >= 50) { message = "Bien joué !"; emoji = "👍"; }
+    else { message = "Continue à réviser !"; emoji = "💪"; }
 
     // Check for next quiz
     let nextQuizBtn = '';
     try {
         const quizzes = await getQuizzesByCourse(currentQuiz.courseId);
-        // Assuming quizzes are sorted by createdAt ASC
         const currentIndex = quizzes.findIndex(q => q.id === currentQuiz.id);
         if (currentIndex !== -1 && currentIndex < quizzes.length - 1) {
             const nextQuiz = quizzes[currentIndex + 1];
-            nextQuizBtn = `<button class="btn-success" onclick="startQuiz('${nextQuiz.id}')">Suite : ${nextQuiz.title} →</button>`;
+            nextQuizBtn = `<button class="btn-success" onclick="startQuiz('${nextQuiz.id}')">QCM Suivant →</button>`;
         }
     } catch (e) {
         console.error("Error finding next quiz", e);
     }
 
     container.innerHTML = `
-        <div class="quiz-result-card">
-            <h3>Résultat</h3>
-            <div class="score-circle">
-                <span>${score}/${total}</span>
+        <div class="quiz-result-card animate__animated animate__fadeInUp">
+            <h3>${currentQuiz.title}</h3>
+            
+            <div class="score-circle-container">
+                <svg class="score-circle-svg" width="160" height="160">
+                    <circle class="score-circle-bg" cx="80" cy="80" r="${radius}"></circle>
+                    <circle class="score-circle-bar" cx="80" cy="80" r="${radius}" 
+                            style="stroke-dasharray: ${circumference}; stroke-dashoffset: ${circumference};"></circle>
+                </svg>
+                <div class="score-circle-text">
+                    <span class="score-value-major">${score}</span>
+                    <span class="score-value-total">sur ${total}</span>
+                </div>
             </div>
-            <p class="score-message">${message}</p>
-            <div class="quiz-result-actions" style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+
+            <p class="score-message">${message} ${emoji}</p>
+            
+            <div class="quiz-result-actions">
                 ${nextQuizBtn}
-                <button class="btn-secondary" onclick="startQuiz('${currentQuiz.id}')">Recommencer</button>
-                <button class="btn-primary" onclick="showPage('course-detail')">Retour au cours</button>
+                <button class="btn-secondary" onclick="startQuiz('${currentQuiz.id}')">🔄 Recommencer</button>
+                <button class="btn-primary" onclick="showPage('course-detail')">🏠 Retour au cours</button>
             </div>
         </div>
 
         <div class="quiz-correction">
-            <h4>Correction</h4>
-            ${currentQuizQuestions.map((q, i) => {
+            <h4>Correction détaillée</h4>
+            <div class="correction-grid">
+                ${currentQuizQuestions.map((q, i) => {
         const isCorrect = userAnswers[i] === q.correctIndex;
         const userAnswerTxt = q.options[userAnswers[i]] || "Aucune réponse";
         const correctTxt = q.options[q.correctIndex];
 
         return `
-                <div class="correction-item ${isCorrect ? 'correct' : 'incorrect'}">
-                    <p class="q-title"><strong>Q${i + 1}:</strong> ${q.text}</p>
-                    <p class="user-ans">Votre réponse : ${userAnswerTxt} ${isCorrect ? '✅' : '❌'}</p>
-                    ${!isCorrect ? `<p class="correct-ans">Bonne réponse : ${correctTxt}</p>` : ''}
-                    ${q.explanation ? `<p class="explanation">💡 ${q.explanation}</p>` : ''}
-                </div>
-                `;
+                        <div class="correction-item ${isCorrect ? 'correct' : 'incorrect'} animate__animated animate__fadeInUp" style="animation-delay: ${i * 0.1}s">
+                            <p class="q-title">Question ${i + 1}: ${q.text}</p>
+                            
+                            <div class="user-ans">
+                                <strong>Ta réponse :</strong> ${userAnswerTxt} ${isCorrect ? '✅' : '❌'}
+                            </div>
+                            
+                            ${!isCorrect ? `
+                            <div class="correct-ans">
+                                <strong>Bonne réponse :</strong> ${correctTxt}
+                            </div>
+                            ` : ''}
+                            
+                            ${q.explanation ? `
+                            <div class="explanation">
+                                💡 ${q.explanation}
+                            </div>
+                            ` : ''}
+                        </div>
+                    `;
     }).join('')}
+            </div>
         </div>
     `;
+
+    // Trigger score circle animation after rendering
+    setTimeout(() => {
+        const bar = container.querySelector('.score-circle-bar');
+        if (bar) {
+            bar.style.strokeDashoffset = offset;
+        }
+    }, 100);
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }

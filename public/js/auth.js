@@ -1,4 +1,5 @@
 import { auth, db } from './firebase.js';
+import { seedDefaultBadges } from './badges.js';
 import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js";
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-auth.js";
 import { setIsAdmin, setUser, state } from './state.js';
@@ -127,6 +128,10 @@ export function initAuth() {
             const userRole = await getUserRole(user.uid);
             setIsAdmin(userRole === 'admin');
             setUser(user); // Set user in state
+
+            if (userRole === 'admin') {
+                seedDefaultBadges().catch(err => console.error("Error seeding badges:", err));
+            }
 
             loginNavLink.style.display = 'none';
             if (profileDropdown) profileDropdown.style.display = 'block';

@@ -18,12 +18,10 @@ export function initCourseReadingTracker(courseId) {
         const rect = content.getBoundingClientRect();
         const winHeight = window.innerHeight;
 
-        // If the bottom of the content is above the bottom of the viewport (with a margin)
         if (rect.bottom <= winHeight + 100) {
             hasReachedBottom = true;
             markCourseAsRead(courseId);
             window.removeEventListener('scroll', checkScroll);
-            console.log(`Course ${courseId} marked as read`);
         }
     };
 
