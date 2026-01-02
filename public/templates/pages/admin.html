@@ -10,6 +10,10 @@
                 <span class="sidebar-icon">👥</span>
                 <span class="sidebar-text">Utilisateurs</span>
             </a>
+            <a href="#" class="sidebar-link" data-section="stats">
+                <span class="sidebar-icon">📊</span>
+                <span class="sidebar-text">Statistiques</span>
+            </a>
             <a href="#" class="sidebar-link" data-section="courses">
                 <span class="sidebar-icon">📚</span>
                 <span class="sidebar-text">Cours</span>
@@ -62,6 +66,112 @@
                         <!-- Users will be loaded here -->
                     </tbody>
                 </table>
+            </div>
+        </div>
+
+        <!-- Statistics Section -->
+        <div id="admin-section-stats" class="admin-section">
+            <h2>📊 Statistiques</h2>
+            <button id="refresh-stats-btn" class="btn-view" style="margin-bottom: 1.5rem; padding: 0.5rem 1rem;">
+                🔄 Actualiser
+            </button>
+
+            <!-- Overview Cards -->
+            <div class="stats-overview-grid">
+                <div class="stat-card stat-card-views">
+                    <div class="stat-icon">👁️</div>
+                    <div class="stat-content">
+                        <span class="stat-value" id="stat-total-views">-</span>
+                        <span class="stat-label">Vues totales</span>
+                    </div>
+                </div>
+                <div class="stat-card stat-card-unique">
+                    <div class="stat-icon">👤</div>
+                    <div class="stat-content">
+                        <span class="stat-value" id="stat-unique-views">-</span>
+                        <span class="stat-label">Visiteurs uniques</span>
+                    </div>
+                </div>
+                <div class="stat-card stat-card-quiz">
+                    <div class="stat-icon">📝</div>
+                    <div class="stat-content">
+                        <span class="stat-value" id="stat-quiz-attempts">-</span>
+                        <span class="stat-label">QCM complétés</span>
+                    </div>
+                </div>
+                <div class="stat-card stat-card-score">
+                    <div class="stat-icon">🎯</div>
+                    <div class="stat-content">
+                        <span class="stat-value" id="stat-avg-score">-</span>
+                        <span class="stat-label">Score moyen</span>
+                    </div>
+                </div>
+                <div class="stat-card stat-card-users">
+                    <div class="stat-icon">👥</div>
+                    <div class="stat-content">
+                        <span class="stat-value" id="stat-total-users">-</span>
+                        <span class="stat-label">Utilisateurs</span>
+                    </div>
+                </div>
+                <div class="stat-card stat-card-active">
+                    <div class="stat-icon">🔥</div>
+                    <div class="stat-content">
+                        <span class="stat-value" id="stat-active-week">-</span>
+                        <span class="stat-label">Actifs (7j)</span>
+                    </div>
+                </div>
+                <div class="stat-card stat-card-time">
+                    <div class="stat-icon">⏱️</div>
+                    <div class="stat-content">
+                        <span class="stat-value" id="stat-avg-duration">-</span>
+                        <span class="stat-label">Temps moyen</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Course Stats Table -->
+            <div class="stats-section">
+                <h3>📚 Statistiques par cours</h3>
+                <div class="stats-table-container">
+                    <table class="stats-table">
+                        <thead>
+                            <tr>
+                                <th>Cours</th>
+                                <th>Sujet</th>
+                                <th>Vues uniques</th>
+                                <th>Vues totales</th>
+                                <th>QCM passés</th>
+                                <th>Score moyen</th>
+                                <th>Temps moyen</th>
+                            </tr>
+                        </thead>
+                        <tbody id="course-stats-table-body">
+                            <!-- Course stats will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Top Users -->
+            <div class="stats-section">
+                <h3>🏆 Top utilisateurs</h3>
+                <div class="stats-table-container">
+                    <table class="stats-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Utilisateur</th>
+                                <th>QCM complétés</th>
+                                <th>Score moyen</th>
+                                <th>Scores parfaits</th>
+                                <th>Série actuelle</th>
+                            </tr>
+                        </thead>
+                        <tbody id="top-users-table-body">
+                            <!-- Top users will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 

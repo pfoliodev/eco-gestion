@@ -6,6 +6,7 @@ import { notyf } from './ui.js';
 import { getAllBadgeDefinitions, createBadge, updateBadge, deleteBadge, seedDefaultBadges, cleanupDuplicateBadges } from './badges.js';
 import { updateFeatureFlag } from './features.js';
 import { escapeHtml, sanitizeAttribute } from './security.js';
+import { getOverviewStats, getAllCourseStats, getTopUsers } from './stats.js';
 
 export async function loadUsers() {
     if (!state.isAdmin) return;
@@ -179,6 +180,9 @@ export function initAdminSidebar() {
             }
             if (section === 'config') {
                 loadConfig();
+            }
+            if (section === 'stats') {
+                loadAdminStats();
             }
 
             // Close sidebar on mobile after selection
@@ -999,3 +1003,123 @@ function initConfigListeners() {
         }
     });
 }
+
+// ============================================
+// STATISTICS DASHBOARD
+// ============================================
+
+export async function loadAdminStats() {
+    if (!state.isAdmin) return;
+
+    try {
+        // Show loading state
+        document.getElementById('stat-total-views').textContent = '...';
+        document.getElementById('stat-unique-views').textContent = '...';
+        document.getElementById('stat-quiz-attempts').textContent = '...';
+        document.getElementById('stat-avg-score').textContent = '...';
+        document.getElementById('stat-total-users').textContent = '...';
+        document.getElementById('stat-active-week').textContent = '...';
+
+        // Fetch all stats in parallel
+        const [overview, courseStats, topUsers] = await Promise.all([
+            getOverviewStats(),
+            getAllCourseStats(),
+            getTopUsers(10)
+        ]);
+
+        renderOverviewStats(overview);
+        renderCourseStats(courseStats);
+        renderTopUsers(topUsers);
+
+        // Setup refresh button
+        const refreshBtn = document.getElementById('refresh-stats-btn');
+        if (refreshBtn && !refreshBtn._listenerAdded) {
+            refreshBtn.addEventListener('click', () => loadAdminStats());
+            refreshBtn._listenerAdded = true;
+        }
+    } catch (error) {
+        console.error('Error loading admin stats:', error);
+        notyf.error("Erreur de chargement des statistiques.");
+    }
+}
+
+function renderOverviewStats(overview) {
+    if (!overview) return;
+
+    document.getElementById('stat-total-views').textContent = overview.totalViews.toLocaleString('fr-FR');
+    document.getElementById('stat-unique-views').textContent = overview.totalUniqueViews.toLocaleString('fr-FR');
+    document.getElementById('stat-quiz-attempts').textContent = overview.totalQuizAttempts.toLocaleString('fr-FR');
+    document.getElementById('stat-avg-score').textContent = overview.avgQuizScore + '%';
+    document.getElementById('stat-total-users').textContent = overview.totalUsers.toLocaleString('fr-FR');
+    document.getElementById('stat-active-week').textContent = overview.activeWeek.toLocaleString('fr-FR');
+    document.getElementById('stat-avg-duration').textContent = overview.avgDuration ? formatDuration(overview.avgDuration) : '-';
+}
+
+function formatDuration(seconds) {
+    if (!seconds || seconds <= 0) return '-';
+    if (seconds < 60) return `${seconds}s`;
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return secs > 0 ? `${mins}m ${secs}s` : `${mins}m`;
+}
+
+function renderCourseStats(courses) {
+    const tbody = document.getElementById('course-stats-table-body');
+    if (!tbody) return;
+
+    if (!courses || courses.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 2rem;">Aucune donnée disponible.</td></tr>';
+        return;
+    }
+
+    // Sort by total views descending
+    const sorted = [...courses].sort((a, b) => b.totalViews - a.totalViews);
+
+    tbody.innerHTML = sorted.map(course => {
+        const scoreClass = course.avgScore >= 80 ? 'excellent' : course.avgScore >= 50 ? 'good' : 'average';
+        const scoreDisplay = course.avgScore !== null ? `<span class="score-badge ${scoreClass}">${course.avgScore}%</span>` : '-';
+        const durationDisplay = course.avgDuration ? formatDuration(course.avgDuration) : '-';
+
+        return `
+            <tr>
+                <td><strong>${escapeHtml(course.title)}</strong></td>
+                <td>${escapeHtml(course.subject)}</td>
+                <td>${course.uniqueViews}</td>
+                <td>${course.totalViews}</td>
+                <td>${course.quizAttempts}</td>
+                <td>${scoreDisplay}</td>
+                <td>${durationDisplay}</td>
+            </tr>`;
+    }).join('');
+}
+
+function renderTopUsers(users) {
+    const tbody = document.getElementById('top-users-table-body');
+    if (!tbody) return;
+
+    if (!users || users.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem;">Aucun utilisateur avec activité.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = users.map((user, index) => {
+        const rank = index + 1;
+        const rankClass = rank === 1 ? 'gold' : rank === 2 ? 'silver' : rank === 3 ? 'bronze' : 'default';
+        const displayName = user.firstname && user.lastname
+            ? `${user.firstname} ${user.lastname}`
+            : user.email?.split('@')[0] || 'Anonyme';
+        const scoreClass = user.avgScore >= 80 ? 'excellent' : user.avgScore >= 50 ? 'good' : 'average';
+
+        return `
+            <tr>
+                <td><span class="rank-badge ${rankClass}">${rank}</span></td>
+                <td><strong>${escapeHtml(displayName)}</strong></td>
+                <td>${user.quizCount}</td>
+                <td><span class="score-badge ${scoreClass}">${user.avgScore}%</span></td>
+                <td>${user.perfectCount}</td>
+                <td>${user.quizStreak} jours</td>
+            </tr>`;
+    }).join('');
+}
+
+window.loadAdminStats = loadAdminStats;
