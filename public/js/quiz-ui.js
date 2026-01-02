@@ -303,14 +303,15 @@ function renderQuizPlayer() {
             }
         });
 
+        // Calculate duration in seconds
+        const duration = quizStartTime ? Math.floor((Date.now() - quizStartTime) / 1000) : null;
+
         // Save result and check for badges
         try {
-            await submitQuizResult(currentQuiz.id, currentQuiz.courseId, score, currentQuizQuestions.length, userAnswers);
+            await submitQuizResult(currentQuiz.id, currentQuiz.courseId, score, currentQuizQuestions.length, userAnswers, duration);
             // Update streaks
             await updateStreakData();
             await updatePerfectStreakData(score === currentQuizQuestions.length);
-
-            const duration = quizStartTime ? Math.floor((Date.now() - quizStartTime) / 1000) : 0;
 
             // Check and unlock badges after quiz completion
             await checkAndUnlockBadges(currentQuiz.id, score, currentQuizQuestions.length, currentQuiz.title, currentQuiz.courseId, { duration });

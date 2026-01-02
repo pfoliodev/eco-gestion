@@ -72,7 +72,7 @@ export async function getQuizById(quizId) {
 // --- Results Handling ---
 
 // Submit a quiz result
-export async function submitQuizResult(quizId, courseId, score, totalQuestions, answers) {
+export async function submitQuizResult(quizId, courseId, score, totalQuestions, answers, duration = null) {
     if (!auth.currentUser) throw new Error("User must be logged in");
 
     const resultData = {
@@ -82,6 +82,7 @@ export async function submitQuizResult(quizId, courseId, score, totalQuestions, 
         score,
         totalQuestions,
         answers, // Optional: store individual answers for review
+        duration, // Time in seconds to complete the quiz
         completedAt: serverTimestamp()
     };
 
