@@ -12,6 +12,7 @@ import { loadReminders, loadAdminReminders, initReminderForm } from './reminders
 import { initFlashcards } from './flashcard-ui.js';
 import { initQuizEditor } from './quiz-ui.js';
 import { initFeatures, applyFeatureFlags } from './features.js';
+import { downloadCourseAsPdf } from './pdf-export.js';
 
 // Global exports for inline HTML handlers
 window.viewCourse = viewCourse;
@@ -89,6 +90,16 @@ function initEventListeners() {
     document.getElementById('profile-btn')?.addEventListener('click', () => {
         loadAccount();
         showPage('mon-compte');
+    });
+
+    // PDF Download button - use event delegation for dynamically loaded content
+    document.addEventListener('click', (e) => {
+        if (e.target.closest('#download-pdf-btn')) {
+            e.preventDefault();
+            if (state.currentCourseId) {
+                downloadCourseAsPdf(state.currentCourseId);
+            }
+        }
     });
 }
 

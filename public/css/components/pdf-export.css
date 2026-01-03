@@ -1,0 +1,102 @@
+/* ========================================
+   PDF EXPORT STYLES
+   ======================================== */
+
+/* Download PDF Button */
+.btn-download-pdf {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1.25rem;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.25);
+}
+
+.btn-download-pdf:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+}
+
+.btn-download-pdf:active {
+    transform: translateY(0);
+}
+
+.btn-download-pdf:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Header actions container */
+.course-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+/* Spinner animation for loading state */
+.pdf-spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: white;
+    animation: pdf-spin 0.8s linear infinite;
+}
+
+@keyframes pdf-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* PDF Export Container styles are applied inline in JS */
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .btn-download-pdf {
+        padding: 0.5rem 1rem;
+        font-size: 0.85rem;
+    }
+
+    .btn-download-pdf span:last-child {
+        display: none;
+    }
+
+    .course-header-actions {
+        flex-wrap: wrap;
+    }
+}
+
+/* Print styles - hide unnecessary elements when printing */
+@media print {
+
+    .btn-download-pdf,
+    .course-sidebar-left,
+    .course-detail-header,
+    .course-quizzes-section,
+    .course-admin-section,
+    #header-container,
+    #footer-container,
+    #bug-fab {
+        display: none !important;
+    }
+
+    .course-detail-layout {
+        display: block !important;
+    }
+
+    .course-detail-content {
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+    }
+}
