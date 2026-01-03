@@ -24,6 +24,7 @@
 @import './components/cookie-banner.css';
 @import './components/pdf-export.css';
 @import './components/footer.css';
+@import './components/coins.css';
 
 /* Pages */
 @import './pages/home.css';
@@ -33,6 +34,7 @@
 @import './pages/privacy.css';
 @import './pages/flashcards.css';
 @import './pages/quiz.css';
+@import './pages/shop.css';
 
 /* Utilities */
 @import './utilities/helpers.css';

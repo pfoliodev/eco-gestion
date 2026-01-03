@@ -5,6 +5,8 @@ import { state } from './state.js';
 import { notyf } from './ui.js';
 import { loadUserFavorites } from './favorites.js';
 import { getUserBadges, getAllBadgeDefinitions, getUserBadgeStats, unlockBadge, removeUserBadge, showBadgeUnlockedPopup, getBadgeById } from './badges.js';
+import { getUserInventory, equipItem, unequipItem } from './shop.js';
+import { getUserBalance, formatCoins, getTransactionHistory } from './coins.js';
 
 let allBadgesCache = [];
 let userBadgesCache = [];
@@ -50,6 +52,7 @@ export async function loadAccount() {
     await loadUserFavorites();
     await loadUserBadges();
     await loadUserStats();
+    await loadInventory();
     initProfileForm();
     initAccountSidebar();
     initBadgeFilters();
@@ -587,4 +590,196 @@ function initBadgeFilters() {
             renderBadges();
         };
     });
+}
+
+// ============================================
+// INVENTORY SECTION
+// ============================================
+
+let currentInventoryFilter = 'all';
+
+async function loadInventory() {
+    if (!auth.currentUser) return;
+
+    try {
+        // Load balance
+        const balance = await getUserBalance();
+        const balanceEl = document.getElementById('account-balance-value');
+        if (balanceEl) {
+            balanceEl.textContent = formatCoins(balance);
+        }
+
+        // Load inventory items
+        const inventory = await getUserInventory();
+        renderInventoryItems(inventory);
+
+        // Initialize inventory filters
+        initInventoryFilters(inventory);
+
+        // Initialize transactions button
+        initTransactionsButton();
+
+    } catch (error) {
+        console.error('Error loading inventory:', error);
+    }
+}
+
+function renderInventoryItems(items) {
+    const grid = document.getElementById('inventory-items-grid');
+    if (!grid) return;
+
+    // Filter items based on current filter
+    const filteredItems = currentInventoryFilter === 'all'
+        ? items
+        : items.filter(item => item.category === currentInventoryFilter);
+
+    if (filteredItems.length === 0) {
+        grid.innerHTML = `
+            <div style="text-align: center; padding: 2rem; color: var(--text-secondary); grid-column: 1 / -1;">
+                ${currentInventoryFilter === 'all'
+                ? 'Votre inventaire est vide. <a href="#shop" style="color: var(--primary-color);">Visitez la boutique</a>'
+                : 'Aucun article dans cette catégorie.'}
+            </div>
+        `;
+        return;
+    }
+
+    grid.innerHTML = filteredItems.map(item => `
+        <div class="inventory-item-card" data-item-id="${item.id}">
+            <div class="inventory-item-icon">${item.icon || '🎁'}</div>
+            <div class="inventory-item-info">
+                <div class="inventory-item-name">${item.name}</div>
+                <div class="inventory-item-category">${getCategoryLabel(item.category)}</div>
+            </div>
+            ${item.category !== 'boost' ? `
+                <button class="btn-equip ${item.equipped ? 'equipped' : ''}" data-item-id="${item.id}">
+                    ${item.equipped ? '✓ Équipé' : 'Équiper'}
+                </button>
+            ` : ''}
+        </div>
+    `).join('');
+
+    // Add equip listeners
+    grid.querySelectorAll('.btn-equip').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const itemId = btn.dataset.itemId;
+            const item = items.find(i => i.id === itemId);
+
+            try {
+                if (item.equipped) {
+                    await unequipItem(itemId);
+                    notyf.success('Article déséquipé');
+                } else {
+                    await equipItem(itemId);
+                    notyf.success('Article équipé !');
+                }
+                // Reload inventory
+                const updatedInventory = await getUserInventory();
+                renderInventoryItems(updatedInventory);
+            } catch (error) {
+                notyf.error('Erreur lors de l\'équipement');
+            }
+        });
+    });
+}
+
+function getCategoryLabel(category) {
+    const labels = {
+        'theme': '🎨 Thème',
+        'frame': '🖼️ Cadre',
+        'badge': '🏅 Badge',
+        'boost': '⚡ Boost'
+    };
+    return labels[category] || category;
+}
+
+function initInventoryFilters(inventory) {
+    const filters = document.querySelectorAll('[data-inventory-filter]');
+
+    filters.forEach(btn => {
+        btn.onclick = () => {
+            filters.forEach(f => f.classList.remove('active'));
+            btn.classList.add('active');
+            currentInventoryFilter = btn.dataset.inventoryFilter;
+            renderInventoryItems(inventory);
+        };
+    });
+}
+
+function initTransactionsButton() {
+    const btn = document.getElementById('show-transactions-btn');
+    const section = document.getElementById('transactions-section');
+
+    if (btn && section) {
+        btn.onclick = async () => {
+            if (section.style.display === 'none') {
+                section.style.display = 'block';
+                btn.innerHTML = '<span>📜</span> Masquer';
+
+                // Load transactions
+                const transactions = await getTransactionHistory(20);
+                renderTransactions(transactions);
+            } else {
+                section.style.display = 'none';
+                btn.innerHTML = '<span>📜</span> Historique';
+            }
+        };
+    }
+}
+
+function renderTransactions(transactions) {
+    const list = document.getElementById('transactions-list');
+    if (!list) return;
+
+    if (transactions.length === 0) {
+        list.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--text-secondary);">Aucune transaction.</div>';
+        return;
+    }
+
+    const reasonLabels = {
+        'shop_purchase': '🛒 Achat boutique',
+        'admin_gift': '🎁 Cadeau admin',
+        'quiz_complete': '📝 Quiz terminé',
+        'badge_unlock': '🏆 Badge débloqué',
+        'first_login': '🌟 Bonus de bienvenue',
+        'daily_bonus': '📅 Bonus quotidien',
+        'trade_transfer': '📤 Échange envoyé',
+        'trade_received': '📥 Échange reçu'
+    };
+
+    list.innerHTML = transactions.map(tx => {
+        const isPositive = tx.amount > 0;
+        const date = tx.createdAt?.toDate ? tx.createdAt.toDate().toLocaleDateString('fr-FR') : 'N/A';
+
+        // Build transaction label
+        let label;
+
+        // Check if reason is a known code or an item name
+        if (reasonLabels[tx.reason]) {
+            // It's a known reason code
+            label = reasonLabels[tx.reason];
+            // Add item name from metadata if available
+            if (tx.metadata?.itemName) {
+                label = `🛒 ${tx.metadata.itemName}`;
+            }
+        } else if (tx.reason && tx.reason !== tx.type) {
+            // Reason is likely an item name (new format)
+            label = isPositive ? `📥 ${tx.reason}` : `🛒 ${tx.reason}`;
+        } else {
+            // Fallback to type icon
+            label = isPositive ? '📥 Gain' : '📤 Dépense';
+        }
+
+        return `
+            <div class="transaction-item ${isPositive ? 'positive' : 'negative'}">
+                <div class="transaction-info">
+                    <div class="transaction-type">${label}</div>
+                    <div class="transaction-date">${date}</div>
+                </div>
+                <div class="transaction-amount ${isPositive ? 'positive' : 'negative'}">
+                    ${isPositive ? '+' : ''}${tx.amount} 🪙
+                </div>
+            </div>
+        `;
+    }).join('');
 }

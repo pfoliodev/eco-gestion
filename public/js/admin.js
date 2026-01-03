@@ -7,6 +7,8 @@ import { getAllBadgeDefinitions, createBadge, updateBadge, deleteBadge, seedDefa
 import { updateFeatureFlag } from './features.js';
 import { escapeHtml, sanitizeAttribute } from './security.js';
 import { getOverviewStats, getAllCourseStats, getTopUsers } from './stats.js';
+import { getShopItems, createShopItem, updateShopItem, deleteShopItem, seedDefaultShopItems } from './shop.js';
+import { adminGiftCoins } from './coins.js';
 
 export async function loadUsers() {
     if (!state.isAdmin) return;
@@ -47,7 +49,10 @@ export function renderUsers(users) {
                 <td><span class="role-badge ${role}">${role === 'admin' ? 'Administrateur' : 'Étudiant'}</span></td>
                 <td>${date}</td>
                 <td>
-                    <div style="display: flex; gap: 0.5rem;">
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        <button class="btn-gift-coins" data-user-id="${safeUserId}" data-user-name="${firstname}" title="Offrir des IFH Coins">
+                            🪙
+                        </button>
                         <button class="btn-change-role" data-user-id="${safeUserId}" data-new-role="${role === 'admin' ? 'student' : 'admin'}" ${isCurrentUser ? 'disabled' : ''}>
                             ${role === 'admin' ? 'Rétrograder' : 'Promouvoir'}
                         </button>
@@ -63,6 +68,14 @@ export function renderUsers(users) {
     requestAnimationFrame(() => {
         const usersTableBody = document.getElementById('users-table-body');
         if (!usersTableBody) return;
+
+        usersTableBody.querySelectorAll('.btn-gift-coins').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const userId = this.dataset.userId;
+                const userName = this.dataset.userName;
+                openGiftCoinsModal(userId, userName);
+            });
+        });
 
         usersTableBody.querySelectorAll('.btn-change-role').forEach(btn => {
             btn.addEventListener('click', function () {
@@ -143,6 +156,91 @@ export async function deleteUser(userId) {
 window.changeUserRole = changeUserRole;
 window.deleteUser = deleteUser;
 
+// ============================================
+// GIFT IFH COINS 
+// ============================================
+
+let giftCoinsTargetUserId = null;
+
+function openGiftCoinsModal(userId, userName) {
+    giftCoinsTargetUserId = userId;
+
+    // Create modal if it doesn't exist
+    let modal = document.getElementById('gift-coins-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'gift-coins-modal';
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 400px;">
+                <h3>🪙 Offrir des IFH Coins</h3>
+                <p id="gift-coins-user" style="color: var(--text-secondary); margin-bottom: 1.5rem;"></p>
+                <form id="gift-coins-form">
+                    <div class="form-group">
+                        <label for="gift-coins-amount">Montant *</label>
+                        <input type="number" id="gift-coins-amount" min="1" max="100000" placeholder="100" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="gift-coins-reason">Raison</label>
+                        <input type="text" id="gift-coins-reason" placeholder="Ex: Récompense événement">
+                    </div>
+                    <div class="form-actions" style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                        <button type="submit" class="btn-primary" style="flex: 1;">Envoyer</button>
+                        <button type="button" id="cancel-gift-coins" class="btn-cancel">Annuler</button>
+                    </div>
+                </form>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        // Event listeners
+        document.getElementById('cancel-gift-coins').addEventListener('click', closeGiftCoinsModal);
+        document.getElementById('gift-coins-form').addEventListener('submit', handleGiftCoins);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeGiftCoinsModal();
+        });
+    }
+
+    // Update user name
+    document.getElementById('gift-coins-user').textContent = `Destinataire: ${userName || userId}`;
+    document.getElementById('gift-coins-amount').value = '';
+    document.getElementById('gift-coins-reason').value = '';
+
+    modal.style.display = 'flex';
+}
+
+function closeGiftCoinsModal() {
+    const modal = document.getElementById('gift-coins-modal');
+    if (modal) modal.style.display = 'none';
+    giftCoinsTargetUserId = null;
+}
+
+async function handleGiftCoins(e) {
+    e.preventDefault();
+
+    if (!giftCoinsTargetUserId || !state.isAdmin) {
+        notyf.error('Action non autorisée');
+        return;
+    }
+
+    const amount = parseInt(document.getElementById('gift-coins-amount').value, 10);
+    const reason = document.getElementById('gift-coins-reason').value.trim() || 'Cadeau admin';
+
+    if (!amount || amount <= 0) {
+        notyf.error('Montant invalide');
+        return;
+    }
+
+    try {
+        await adminGiftCoins(giftCoinsTargetUserId, amount, reason);
+        notyf.success(`🪙 ${amount} IFH offerts avec succès !`);
+        closeGiftCoinsModal();
+    } catch (error) {
+        console.error('Error gifting coins:', error);
+        notyf.error('Erreur lors de l\'envoi des coins');
+    }
+}
+
 export function initAdminSidebar() {
     const sidebarLinks = document.querySelectorAll('.admin-sidebar .sidebar-link');
     const sidebarToggle = document.getElementById('sidebar-toggle');
@@ -183,6 +281,9 @@ export function initAdminSidebar() {
             }
             if (section === 'stats') {
                 loadAdminStats();
+            }
+            if (section === 'shop') {
+                loadShopAdmin();
             }
 
             // Close sidebar on mobile after selection
@@ -1123,3 +1224,254 @@ function renderTopUsers(users) {
 }
 
 window.loadAdminStats = loadAdminStats;
+
+// ============================================
+// SHOP ADMIN MANAGEMENT
+// ============================================
+
+let currentEditingShopItemId = null;
+
+export async function loadShopAdmin() {
+    if (!state.isAdmin) return;
+
+    try {
+        const items = await getShopItems('all');
+        renderShopItemsAdmin(items);
+        initShopAdminListeners();
+    } catch (error) {
+        console.error("Error loading shop items:", error);
+        notyf.error("Erreur de chargement des articles.");
+    }
+}
+
+function renderShopItemsAdmin(items) {
+    const tbody = document.getElementById('shop-items-table-body');
+    if (!tbody) return;
+
+    // Update stats
+    const activeItems = items.filter(i => i.active !== false);
+    document.getElementById('stat-total-shop-items').textContent = activeItems.length;
+
+    if (items.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem;">Aucun article. Cliquez sur "Initialiser les articles par défaut" pour commencer.</td></tr>';
+        return;
+    }
+
+    const categoryLabels = {
+        'theme': '🎨 Thème',
+        'frame': '🖼️ Cadre',
+        'badge': '🏅 Badge',
+        'boost': '⚡ Boost'
+    };
+
+    tbody.innerHTML = items.map(item => {
+        const isActive = item.active !== false;
+        const stockText = item.stock === undefined || item.stock === null ? 'Illimité' : item.stock;
+        const stockClass = item.stock !== undefined && item.stock !== null && item.stock <= 5 ? 'low-stock' : '';
+
+        return `
+            <tr class="${!isActive ? 'inactive-row' : ''}">
+                <td>
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <span style="font-size: 1.75rem;">${item.icon || '🎁'}</span>
+                        <div>
+                            <strong>${escapeHtml(item.name)}</strong>
+                            ${item.isLimited ? '<span class="badge-limited" style="margin-left: 0.5rem; font-size: 0.7rem; background: #ef4444; color: white; padding: 0.15rem 0.4rem; border-radius: 4px;">Limité</span>' : ''}
+                        </div>
+                    </div>
+                </td>
+                <td>${categoryLabels[item.category] || item.category}</td>
+                <td><strong style="color: #fbbf24;">🪙 ${item.price}</strong></td>
+                <td class="${stockClass}">${stockText}</td>
+                <td>
+                    <span class="bug-status ${isActive ? 'status-resolved' : 'status-new'}">
+                        ${isActive ? 'Actif' : 'Inactif'}
+                    </span>
+                </td>
+                <td>
+                    <div class="table-actions">
+                        <button class="btn-icon-action btn-edit-shop-item" data-item-id="${item.id}" title="Modifier">
+                            ✏️
+                        </button>
+                        <button class="btn-icon-action btn-toggle-shop-item" data-item-id="${item.id}" data-active="${isActive}" title="${isActive ? 'Désactiver' : 'Activer'}">
+                            ${isActive ? '🔒' : '🔓'}
+                        </button>
+                        <button class="btn-icon-action btn-delete-shop-item" data-item-id="${item.id}" title="Supprimer">
+                            🗑️
+                        </button>
+                    </div>
+                </td>
+            </tr>`;
+    }).join('');
+
+    // Add event listeners
+    requestAnimationFrame(() => {
+        tbody.querySelectorAll('.btn-edit-shop-item').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const itemId = this.dataset.itemId;
+                const item = items.find(i => i.id === itemId);
+                openShopItemEditor(item);
+            });
+        });
+
+        tbody.querySelectorAll('.btn-toggle-shop-item').forEach(btn => {
+            btn.addEventListener('click', async function () {
+                const itemId = this.dataset.itemId;
+                const isActive = this.dataset.active === 'true';
+                try {
+                    await updateShopItem(itemId, { active: !isActive });
+                    notyf.success(isActive ? 'Article désactivé' : 'Article activé');
+                    loadShopAdmin();
+                } catch (error) {
+                    notyf.error('Erreur de mise à jour');
+                }
+            });
+        });
+
+        tbody.querySelectorAll('.btn-delete-shop-item').forEach(btn => {
+            btn.addEventListener('click', async function () {
+                const itemId = this.dataset.itemId;
+                if (confirm('Supprimer cet article définitivement ?')) {
+                    try {
+                        await deleteShopItem(itemId);
+                        notyf.success('Article supprimé');
+                        loadShopAdmin();
+                    } catch (error) {
+                        notyf.error('Erreur de suppression');
+                    }
+                }
+            });
+        });
+    });
+}
+
+function initShopAdminListeners() {
+    // Seed default items button
+    const seedBtn = document.getElementById('seed-shop-btn');
+    if (seedBtn && !seedBtn.dataset.listenerAdded) {
+        seedBtn.dataset.listenerAdded = 'true';
+        seedBtn.addEventListener('click', async () => {
+            if (confirm('Cela va créer les articles par défaut. Continuer ?')) {
+                try {
+                    await seedDefaultShopItems();
+                    notyf.success('Articles par défaut créés !');
+                    loadShopAdmin();
+                } catch (error) {
+                    notyf.error('Erreur lors de la création');
+                }
+            }
+        });
+    }
+
+    // Add new item button
+    const addBtn = document.getElementById('add-shop-item-btn');
+    if (addBtn && !addBtn.dataset.listenerAdded) {
+        addBtn.dataset.listenerAdded = 'true';
+        addBtn.addEventListener('click', () => openShopItemEditor());
+    }
+
+    // Cancel button in modal
+    const cancelBtn = document.getElementById('cancel-shop-item-btn');
+    if (cancelBtn && !cancelBtn.dataset.listenerAdded) {
+        cancelBtn.dataset.listenerAdded = 'true';
+        cancelBtn.addEventListener('click', closeShopItemEditor);
+    }
+
+    // Form submission
+    const form = document.getElementById('shop-item-form');
+    if (form && !form.dataset.listenerAdded) {
+        form.dataset.listenerAdded = 'true';
+        form.addEventListener('submit', handleShopItemFormSubmit);
+    }
+
+    // Close modal on click outside
+    const modal = document.getElementById('shop-item-editor-modal');
+    if (modal && !modal.dataset.listenerAdded) {
+        modal.dataset.listenerAdded = 'true';
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeShopItemEditor();
+        });
+    }
+}
+
+function openShopItemEditor(item = null) {
+    const modal = document.getElementById('shop-item-editor-modal');
+    const title = document.getElementById('shop-item-modal-title');
+    const form = document.getElementById('shop-item-form');
+
+    if (!modal || !form) return;
+
+    currentEditingShopItemId = item?.id || null;
+    title.textContent = item ? 'Modifier l\'article' : 'Nouvel Article';
+
+    // Fill form
+    document.getElementById('shop-item-id').value = item?.id || '';
+    document.getElementById('shop-item-name').value = item?.name || '';
+    document.getElementById('shop-item-icon').value = item?.icon || '';
+    document.getElementById('shop-item-description').value = item?.description || '';
+    document.getElementById('shop-item-category').value = item?.category || 'theme';
+    document.getElementById('shop-item-price').value = item?.price || '';
+    document.getElementById('shop-item-stock').value = item?.stock ?? '';
+    document.getElementById('shop-item-active').checked = item?.active !== false;
+    document.getElementById('shop-item-limited').checked = item?.isLimited || false;
+
+    // Handle expiry date
+    const expiryInput = document.getElementById('shop-item-expiry');
+    if (item?.availableUntil) {
+        const date = item.availableUntil.toDate ? item.availableUntil.toDate() : new Date(item.availableUntil);
+        expiryInput.value = date.toISOString().split('T')[0];
+    } else {
+        expiryInput.value = '';
+    }
+
+    modal.style.display = 'flex';
+}
+
+function closeShopItemEditor() {
+    const modal = document.getElementById('shop-item-editor-modal');
+    if (modal) modal.style.display = 'none';
+    currentEditingShopItemId = null;
+}
+
+async function handleShopItemFormSubmit(e) {
+    e.preventDefault();
+
+    const itemData = {
+        name: document.getElementById('shop-item-name').value.trim(),
+        icon: document.getElementById('shop-item-icon').value.trim() || '🎁',
+        description: document.getElementById('shop-item-description').value.trim(),
+        category: document.getElementById('shop-item-category').value,
+        price: parseInt(document.getElementById('shop-item-price').value, 10),
+        active: document.getElementById('shop-item-active').checked,
+        isLimited: document.getElementById('shop-item-limited').checked
+    };
+
+    // Handle optional stock
+    const stockValue = document.getElementById('shop-item-stock').value;
+    if (stockValue !== '') {
+        itemData.stock = parseInt(stockValue, 10);
+    }
+
+    // Handle optional expiry date
+    const expiryValue = document.getElementById('shop-item-expiry').value;
+    if (expiryValue) {
+        itemData.availableUntil = new Date(expiryValue);
+    }
+
+    try {
+        if (currentEditingShopItemId) {
+            await updateShopItem(currentEditingShopItemId, itemData);
+            notyf.success('Article mis à jour !');
+        } else {
+            await createShopItem(itemData);
+            notyf.success('Article créé !');
+        }
+        closeShopItemEditor();
+        loadShopAdmin();
+    } catch (error) {
+        console.error('Error saving shop item:', error);
+        notyf.error('Erreur lors de l\'enregistrement');
+    }
+}
+
+window.loadShopAdmin = loadShopAdmin;

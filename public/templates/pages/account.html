@@ -42,6 +42,10 @@ _#/|##########/\######(   /\   )######/\##########|\#_
                 <span class="sidebar-icon">⭐</span>
                 <span class="sidebar-text">Cours Favoris</span>
             </a>
+            <a href="#" class="sidebar-link" data-account-section="inventory">
+                <span class="sidebar-icon">🪙</span>
+                <span class="sidebar-text">Inventaire</span>
+            </a>
         </nav>
     </aside>
 
@@ -191,6 +195,64 @@ _#/|##########/\######(   /\   )######/\##########|\#_
             <h2>⭐ Mes Cours Favoris</h2>
             <div id="favorites-list" class="favorites-grid">
                 <div style="text-align: center; padding: 2rem;">Chargement...</div>
+            </div>
+        </div>
+
+        <!-- Inventory Section -->
+        <div id="account-section-inventory" class="account-section">
+            <h2>🪙 Mon Inventaire</h2>
+
+            <!-- Balance Card -->
+            <div class="account-balance-card">
+                <div class="account-balance-header">
+                    <div class="account-balance-title">
+                        <span class="coin-icon">🪙</span>
+                        <span>Mon Solde IFH</span>
+                    </div>
+                    <div class="account-balance-value" id="account-balance-value">0</div>
+                </div>
+                <div class="account-balance-actions">
+                    <a href="#shop" class="btn-shop">
+                        <span>🛍️</span> Aller à la boutique
+                    </a>
+                    <button class="btn-transactions" id="show-transactions-btn">
+                        <span>📜</span> Historique
+                    </button>
+                </div>
+            </div>
+
+            <!-- Equipped Items -->
+            <div class="inventory-equipped-section">
+                <h3>Articles équipés</h3>
+                <div id="equipped-items-grid" class="inventory-grid">
+                    <div style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+                        Aucun article équipé. Visitez la boutique pour personnaliser votre expérience !
+                    </div>
+                </div>
+            </div>
+
+            <!-- Owned Items -->
+            <div class="inventory-owned-section">
+                <h3>Mes Articles</h3>
+                <div class="inventory-tabs">
+                    <button class="filter-btn active" data-inventory-filter="all">Tout</button>
+                    <button class="filter-btn" data-inventory-filter="theme">Thèmes</button>
+                    <button class="filter-btn" data-inventory-filter="frame">Cadres</button>
+                    <button class="filter-btn" data-inventory-filter="badge">Badges</button>
+                </div>
+                <div id="inventory-items-grid" class="inventory-grid">
+                    <div style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+                        Votre inventaire est vide.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transaction History (Hidden by default) -->
+            <div id="transactions-section" class="transactions-section" style="display: none;">
+                <h3>📜 Historique des transactions</h3>
+                <div id="transactions-list" class="transactions-list">
+                    <div style="text-align: center; padding: 2rem;">Chargement...</div>
+                </div>
             </div>
         </div>
     </main>
