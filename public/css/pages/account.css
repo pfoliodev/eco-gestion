@@ -100,6 +100,90 @@
     object-fit: cover;
 }
 
+/* ========================================
+   USER STATISTICS
+   ======================================== */
+
+.user-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.user-stat-card {
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem;
+    text-align: center;
+    transition: all 0.2s ease;
+}
+
+.user-stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border-color: var(--primary-color);
+}
+
+.user-stat-card .stat-icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.user-stat-card .stat-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    line-height: 1.2;
+}
+
+.user-stat-card .stat-label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-top: 0.25rem;
+    font-weight: 500;
+}
+
+.stats-section-block {
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.stats-section-block h3 {
+    margin: 0 0 1rem 0;
+    font-size: 1.1rem;
+    color: var(--text-main);
+}
+
+/* Quiz score colors */
+.quiz-score {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.quiz-score.score-high {
+    background: rgba(16, 185, 129, 0.15);
+    color: #059669;
+}
+
+.quiz-score.score-medium {
+    background: rgba(245, 158, 11, 0.15);
+    color: #d97706;
+}
+
+.quiz-score.score-low {
+    background: rgba(239, 68, 68, 0.15);
+    color: #dc2626;
+}
+
+/* Mobile responsive */
 @media (max-width: 768px) {
     .account-layout {
         grid-template-columns: 1fr;
@@ -120,5 +204,13 @@
 
     .sidebar-link .sidebar-text {
         display: none;
+    }
+
+    .user-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .user-stat-card .stat-value {
+        font-size: 1.5rem;
     }
 }
