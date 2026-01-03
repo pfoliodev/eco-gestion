@@ -30,7 +30,6 @@ Une application web moderne pour gérer, réviser et partager des cours d'écono
 - **Badges automatiques** débloqués selon l'activité :
   - 🌟 Premier Pas - Premier quiz complété
   - 🎯 Expert - Score parfait sur un quiz
-  - ⚡ Flash - Quiz complété en moins de 60 secondes
   - 📚 Érudit - 5 cours lus entièrement
   - 🔥 Assidu - 7 jours consécutifs connecté
   - Et bien d'autres...
