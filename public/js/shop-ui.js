@@ -53,7 +53,7 @@ function renderLoginRequired() {
             <div class="shop-login-required">
                 <div class="icon">🔒</div>
                 <h3>Connexion requise</h3>
-                <p>Connectez-vous pour accéder à la boutique et dépenser vos IFH Coins.</p>
+                <p>Connectez-vous pour accéder à la boutique et dépenser vos Coins.</p>
                 <a href="#login" class="btn-primary">Se connecter</a>
             </div>
         `;
@@ -273,7 +273,7 @@ async function openPurchaseModal(itemId) {
 
     // Update price and after balance
     priceEl.textContent = item.price;
-    afterBalanceEl.textContent = `${formatCoins(balance - item.price)} IFH`;
+    afterBalanceEl.textContent = `${formatCoins(balance - item.price)} Coins`;
 
     // Show modal
     modal.style.display = 'flex';
