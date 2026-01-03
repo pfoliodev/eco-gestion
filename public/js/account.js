@@ -5,8 +5,9 @@ import { state } from './state.js';
 import { notyf } from './ui.js';
 import { loadUserFavorites } from './favorites.js';
 import { getUserBadges, getAllBadgeDefinitions, getUserBadgeStats, unlockBadge, removeUserBadge, showBadgeUnlockedPopup, getBadgeById } from './badges.js';
-import { getUserInventory, equipItem, unequipItem } from './shop.js';
+import { getUserInventory, equipItem, unequipItem, useConsumable } from './shop.js';
 import { getUserBalance, formatCoins, getTransactionHistory } from './coins.js';
+import { STARTER_PETS } from './config/pets.js';
 
 let allBadgesCache = [];
 let userBadgesCache = [];
@@ -52,7 +53,9 @@ export async function loadAccount() {
     await loadUserFavorites();
     await loadUserBadges();
     await loadUserStats();
+    await loadUserStats();
     await loadInventory();
+    await loadUserPet();
     initProfileForm();
     initAccountSidebar();
     initBadgeFilters();
@@ -593,6 +596,237 @@ function initBadgeFilters() {
 }
 
 // ============================================
+// PET SECTION
+// ============================================
+
+export async function loadUserPet() {
+    if (!auth.currentUser) return;
+
+    const container = document.getElementById('pet-dashboard-content');
+    if (!container) return;
+
+    try {
+        const userRef = doc(db, 'users', auth.currentUser.uid);
+        const userSnap = await getDoc(userRef);
+        const userData = userSnap.data();
+
+        if (userData && userData.pet) {
+            await renderPetDashboard(userData.pet);
+        } else {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 2rem;">
+                    <p style="margin-bottom: 1rem; color: var(--text-secondary);">Vous n'avez pas encore de compagnon.</p>
+                    <button class="btn-primary" onclick="window.location.reload()">Rencontrer le Professeur</button>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error("Error loading pet:", error);
+        container.innerHTML = '<div class="error-msg">Erreur de chargement du compagnon.</div>';
+    }
+}
+
+async function renderPetDashboard(petData) {
+    const container = document.getElementById('pet-dashboard-content');
+    if (!container) return;
+
+    // 1. Get all owned companions
+    let ownedCompanions = [];
+    try {
+        const inventory = await getUserInventory('companion');
+        ownedCompanions = inventory;
+    } catch (err) {
+        console.error("Error fetching companions:", err);
+    }
+
+    // Hydrate current pet data (fix for existing users)
+    let currentPet = { ...petData };
+    if (!currentPet.image || !currentPet.type) {
+        const configPet = STARTER_PETS.find(p => p.id === currentPet.id);
+        if (configPet) {
+            currentPet.image = currentPet.image || configPet.image;
+            currentPet.type = currentPet.type || configPet.type;
+            currentPet.color = currentPet.color || configPet.color;
+        }
+    }
+
+    // Calculate level progress
+    const xpNeeded = currentPet.level * 100;
+    const progressPercent = Math.min(100, Math.floor((currentPet.xp / xpNeeded) * 100));
+
+    // Lookup personalized flavor text
+    let flavorText = `${currentPet.nickname || currentPet.name} vous regarde avec attention. Il semble prêt à apprendre !`;
+    const configPetForFlavor = STARTER_PETS.find(p => p.id === currentPet.id);
+    if (configPetForFlavor && configPetForFlavor.flavorText) {
+        flavorText = configPetForFlavor.flavorText;
+    }
+
+    // Render Hero Section (Active Pet)
+    let html = `
+        <div class="pet-profile-card pet-theme-${currentPet.id}" style="border-top: 3px solid ${currentPet.color || 'var(--primary-color)'}">
+            <div class="pet-header">
+                <div class="pet-visual-container">
+                    <div class="pet-avatar-large">
+                        <img src="${currentPet.image}" alt="${currentPet.name}" class="pet-image-anim">
+                    </div>
+                    <!-- Effect Particles -->
+                    <div class="effect-particle p1"></div>
+                    <div class="effect-particle p2"></div>
+                    <div class="effect-particle p3"></div>
+                    
+                    <div class="pet-shadow"></div>
+                </div>
+                <div class="pet-identity">
+                    <h3 class="pet-name-large">${currentPet.name}</h3>
+                    <div class="pet-badges">
+                        <span class="pet-type-badge">${currentPet.type || 'Compagnon'}</span>
+                        <span class="pet-level-badge">Niveau ${currentPet.level}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pet-stats-container">
+                <div class="pet-progress-section">
+                    <div class="progress-label">
+                        <span>Expérience</span>
+                        <span>${currentPet.xp} / ${xpNeeded} XP</span>
+                    </div>
+                    <div class="pet-xp-bar">
+                        <div class="pet-xp-fill" style="width: ${progressPercent}%"></div>
+                    </div>
+                </div>
+
+                <div class="pet-attributes-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                    <h4 style="margin:0; color:var(--text-secondary);">Statistiques</h4>
+                    <button class="pet-info-btn" onclick="document.getElementById('stats-info-modal').style.display='flex'" title="Plus d'infos">i</button>
+                </div>
+
+                <div class="pet-attributes-grid">
+                    <div class="pet-stat-item" title="Augmente l'XP gagnée dans les quiz">
+                        <div class="stat-icon">🧠</div>
+                        <div class="stat-name">Intelligence</div>
+                        <div class="stat-value">${currentPet.stats?.intelligence || 0}</div>
+                        <div class="stat-effect">+${(currentPet.stats?.intelligence || 0)}% XP Quiz</div>
+                    </div>
+                    <div class="pet-stat-item" title="Augmente la chance de trouver des pièces">
+                        <div class="stat-icon">🎨</div>
+                        <div class="stat-name">Créativité</div>
+                        <div class="stat-value">${currentPet.stats?.creativity || 0}</div>
+                        <div class="stat-effect">+${(currentPet.stats?.creativity || 0)}% Chance Coins</div>
+                    </div>
+                    <div class="pet-stat-item" title="Augmente le bonus de connexion quotidienne">
+                        <div class="stat-icon">🤝</div>
+                        <div class="stat-name">Social</div>
+                        <div class="stat-value">${currentPet.stats?.social || 0}</div>
+                        <div class="stat-effect">+${(currentPet.stats?.social || 0) * 2}% Bonus Jour</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="pet-flavor-text">
+                <p>"${flavorText}"</p>
+            </div>
+        </div>
+
+        <!-- STATS INFO MODAL -->
+        <div id="stats-info-modal" class="modal-overlay" style="display:none;" onclick="if(event.target===this)this.style.display='none'">
+            <div class="modal-content" style="max-width: 500px;">
+                <h3 style="margin-top:0;">Comprendre les Stats de votre Compagnon</h3>
+                <div class="stats-explanation-list">
+                    <div class="stat-explain-item" style="margin-bottom: 1rem; display: flex; gap: 0.8rem; align-items: flex-start;">
+                        <span style="font-size: 1.5rem;">🧠</span>
+                        <div>
+                            <strong>Intelligence</strong>
+                            <p style="margin:0.2rem 0 0; font-size: 0.9rem; color: var(--text-secondary);">Augmente l'expérience (XP) gagnée par votre compagnon à chaque bon quiz. Plus il est intelligent, plus il évolue vite !</p>
+                        </div>
+                    </div>
+                    <div class="stat-explain-item" style="margin-bottom: 1rem; display: flex; gap: 0.8rem; align-items: flex-start;">
+                        <span style="font-size: 1.5rem;">🎨</span>
+                        <div>
+                            <strong>Créativité</strong>
+                            <p style="margin:0.2rem 0 0; font-size: 0.9rem; color: var(--text-secondary);">Augmente la chance de trouver des pièces (Coins) bonus aléatoires en naviguant sur le site.</p>
+                        </div>
+                    </div>
+                    <div class="stat-explain-item" style="margin-bottom: 1rem; display: flex; gap: 0.8rem; align-items: flex-start;">
+                        <span style="font-size: 1.5rem;">🤝</span>
+                        <div>
+                            <strong>Social</strong>
+                            <p style="margin:0.2rem 0 0; font-size: 0.9rem; color: var(--text-secondary);">Multiplie votre bonus de connexion quotidien. Un compagnon sociable vous rapporte plus de pièces chaque jour !</p>
+                        </div>
+                    </div>
+                </div>
+                <button class="btn-primary" onclick="document.getElementById('stats-info-modal').style.display='none'" style="width:100%; margin-top:1rem;">Compris !</button>
+            </div>
+        </div>
+    `;
+
+    // 3. Render Other Companions Grid
+    if (ownedCompanions.length > 1) { // More than just the active one (which is simulated in inventory)
+        html += `
+            <div class="other-pets-section">
+                <h3>Mes Compagnons</h3>
+                <div class="pets-grid">
+                    ${ownedCompanions.map(p => {
+            const isEquipped = p.id === `pet_${currentPet.id}` || (p.itemName === currentPet.name && !p.id.startsWith('pet_'));
+            // Simplified check: usually ID is pet_X. Active pet might not match exactly if starter.
+            // Robust check: 
+            const isCurrent = p.itemId === `pet_${currentPet.id}` || p.id === `pet_${currentPet.id}`;
+
+            if (isCurrent) return ''; // Skip active pet
+
+            // We need the image. Inventory item might not have it if it's minimal.
+            // We rely on shop item data or a known path. 
+            // Hack: construct path from ID or use icon if available.
+            // Ideally inventory items should have 'image' or 'icon' preserved.
+            // shop.js/getUserInventory adds 'icon' from shop item if available? No, it fetched data.
+            // Let's assume shop.js seed puts image in shop item, and purchase puts it in inventory?
+            // purchaseItem puts 'itemName', 'category'. It doesn't put image.
+            // BUT getUserInventory returns data from doc.
+            // Let's try to infer image from ID if missing.
+
+            let petImage = p.image;
+            if (!petImage && p.id.startsWith('pet_')) {
+                petImage = `/images/pets/${p.id.replace('pet_', '')}.png`;
+            }
+
+            return `
+                        <div class="pet-card-small" onclick="switchPet('${p.id}')">
+                            <div class="pet-card-icon">
+                                ${petImage ? `<img src="${petImage}" alt="${p.itemName}">` : (p.icon || '🐾')}
+                            </div>
+                            <div class="pet-card-info">
+                                <h4>${p.itemName || p.name}</h4>
+                            </div>
+                            <button class="btn-switch">Choisir</button>
+                        </div>
+                        `;
+        }).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    container.innerHTML = html;
+
+    // Attach switch handler to window for onclick access (simplest path)
+    window.switchPet = async (petId) => {
+        try {
+            const res = await equipItem(petId);
+            if (res.success) {
+                notyf.success("Compagnon changé !");
+                // Reload dashboard
+                loadUserPet();
+            } else {
+                notyf.error(res.error || "Erreur lors du changement.");
+            }
+        } catch (e) {
+            console.error(e);
+            notyf.error("Erreur technique.");
+        }
+    };
+}
+
+// ============================================
 // INVENTORY SECTION
 // ============================================
 
@@ -611,6 +845,31 @@ async function loadInventory() {
 
         // Load inventory items
         const inventory = await getUserInventory();
+
+        // [HOTFIX] Fetch shop items to ensure images are up to date even if not saved in inventory
+        // (Fixes display for items bought before the image patch)
+        try {
+            const shopItemsRef = collection(db, 'shopItems');
+            const shopSnapshot = await getDocs(shopItemsRef);
+            const shopImageMap = new Map();
+
+            shopSnapshot.forEach(doc => {
+                const data = doc.data();
+                if (data.image) {
+                    shopImageMap.set(doc.id, data.image);
+                }
+            });
+
+            // Enrich inventory items
+            inventory.forEach(item => {
+                if (!item.image && shopImageMap.has(item.itemId)) {
+                    item.image = shopImageMap.get(item.itemId);
+                }
+            });
+        } catch (e) {
+            console.warn("Could not fetch shop images for enrichment:", e);
+        }
+
         renderInventoryItems(inventory);
 
         // Initialize inventory filters
@@ -644,43 +903,161 @@ function renderInventoryItems(items) {
         return;
     }
 
-    grid.innerHTML = filteredItems.map(item => `
-        <div class="inventory-item-card" data-item-id="${item.id}">
-            <div class="inventory-item-icon">${item.icon || '🎁'}</div>
+    grid.innerHTML = filteredItems.map(item => {
+        let actionBtn = '';
+        if (item.category === 'consumable') {
+            const sName = (item.itemName || 'Objet').replace(/'/g, "\\'");
+            const sImage = (item.image || '').replace(/'/g, "\\'");
+            actionBtn = `<button class="btn-primary" onclick="window.confirmUse('${item.id}', '${sName}', ${item.quantity || 1}, '${sImage}')" style="width:100%; margin-top:0.5rem; padding:0.4rem; font-size:0.9rem;">Utiliser</button>`;
+        }
+
+        // Quantity badge
+        const qtyBadge = item.quantity && item.quantity > 1
+            ? `<div style="position:absolute; top:5px; right:5px; background:var(--primary-color); color:white; border-radius:12px; padding:2px 8px; font-size:0.8rem; font-weight:bold; box-shadow:0 2px 5px rgba(0,0,0,0.2);">x${item.quantity}</div>`
+            : '';
+
+        return `
+        <div class="inventory-item-card" style="position:relative;">
+            ${qtyBadge}
+            <div class="inventory-item-icon ${item.category === 'consumable' ? 'consumable-icon' : ''}">
+                ${item.image ? `<img src="${item.image}" alt="${item.itemName}" style="width:100%; height:100%; object-fit:contain;">` : (item.icon || '🎁')}
+            </div>
             <div class="inventory-item-info">
                 <div class="inventory-item-name">${item.itemName || item.name || 'Article'}</div>
                 <div class="inventory-item-category">${getCategoryLabel(item.category)}</div>
+                ${actionBtn}
             </div>
-            ${item.category !== 'boost' ? `
-                <button class="btn-equip ${item.equipped ? 'equipped' : ''}" data-item-id="${item.id}">
-                    ${item.equipped ? '✓ Équipé' : 'Équiper'}
-                </button>
-            ` : ''}
         </div>
-    `).join('');
+        `;
+    }).join('');
 
-    // Add equip listeners
-    grid.querySelectorAll('.btn-equip').forEach(btn => {
-        btn.addEventListener('click', async () => {
-            const itemId = btn.dataset.itemId;
-            const item = items.find(i => i.id === itemId);
+    // ============================================
+    // CUSTOM CONSUME MODAL LOGIC
+    // ============================================
 
-            try {
-                if (item.equipped) {
-                    await unequipItem(itemId);
-                    notyf.success('Article déséquipé');
-                } else {
-                    await equipItem(itemId);
-                    notyf.success('Article équipé !');
+    let consumeState = { itemId: null, itemName: null, maxQty: 1, currentQty: 1 };
+
+    window.openConsumeModal = (itemId, itemName, maxQty, imageUrl) => {
+        const modal = document.getElementById('consume-modal');
+        if (!modal) {
+            // Fallback to legacy if modal missing
+            window.confirmUseLegacy(itemId, itemName, maxQty);
+            return;
+        }
+
+        consumeState = { itemId, itemName, maxQty, currentQty: 1 };
+
+        document.getElementById('consume-item-name').textContent = itemName;
+        document.getElementById('consume-qty-display').textContent = '1';
+
+        // Preview image
+        const previewContainer = document.getElementById('consume-item-preview');
+        if (imageUrl) {
+            previewContainer.innerHTML = `<div class="consumable-icon" style="width:100px;height:100px;display:flex;align-items:center;justify-content:center;overflow:hidden;"><img src="${imageUrl}" style="width:100%;height:100%;object-fit:contain;transform:scale(3.5);"></div>`;
+        } else {
+            previewContainer.innerHTML = `<div style="font-size:3rem;">🎁</div>`;
+        }
+
+        modal.style.display = 'flex';
+    };
+
+    window.closeConsumeModal = () => {
+        const modal = document.getElementById('consume-modal');
+        if (modal) modal.style.display = 'none';
+    };
+
+    window.adjustConsumeQty = (delta) => {
+        let newQty = consumeState.currentQty + delta;
+        newQty = Math.max(1, Math.min(newQty, consumeState.maxQty));
+
+        consumeState.currentQty = newQty;
+        document.getElementById('consume-qty-display').textContent = newQty;
+    };
+
+    const attachConsumeListener = () => {
+        const btn = document.getElementById('btn-confirm-consume');
+        if (btn) {
+            btn.onclick = async () => {
+                const btnRef = document.getElementById('btn-confirm-consume');
+                btnRef.disabled = true;
+                btnRef.textContent = '...';
+                try {
+                    const res = await useConsumable(consumeState.itemId, consumeState.currentQty);
+                    if (res.success) {
+                        notyf.success(res.message);
+                        loadInventory();
+                        if (typeof loadUserPet === 'function') loadUserPet();
+                        window.closeConsumeModal();
+                    } else {
+                        notyf.error(res.error);
+                    }
+                } catch (e) {
+                    console.error(e);
+                    notyf.error("Erreur.");
+                } finally {
+                    btnRef.disabled = false;
+                    btnRef.textContent = 'Confirmer';
                 }
-                // Reload inventory
-                const updatedInventory = await getUserInventory();
-                renderInventoryItems(updatedInventory);
-            } catch (error) {
-                notyf.error('Erreur lors de l\'équipement');
+            };
+        }
+    };
+    setTimeout(attachConsumeListener, 100);
+
+    window.confirmUse = (itemId, itemName, maxQty = 1, imageUrl = '') => {
+        if (maxQty > 1) {
+            window.openConsumeModal(itemId, itemName, maxQty, imageUrl);
+            attachConsumeListener();
+        } else {
+            if (confirm(`Utiliser ${itemName} ?`)) {
+                useConsumable(itemId, 1).then(res => {
+                    if (res.success) {
+                        notyf.success(res.message);
+                        loadInventory();
+                        if (typeof loadUserPet === 'function') loadUserPet();
+                    } else {
+                        notyf.error(res.error);
+                    }
+                });
             }
-        });
-    });
+        }
+    };
+
+    // Legacy Handler (renamed)
+    window.confirmUseLegacy = async (itemId, itemName, maxQty = 1) => {
+        let qtyToUse = 1;
+
+        if (maxQty > 1) {
+            const input = prompt(`Combien de "${itemName}" voulez-vous utiliser ? (Max: ${maxQty})`, "1");
+            if (input === null) return; // Cancelled
+
+            qtyToUse = parseInt(input);
+            if (isNaN(qtyToUse) || qtyToUse < 1) {
+                notyf.error("Quantité invalide.");
+                return;
+            }
+            if (qtyToUse > maxQty) {
+                notyf.error(`Vous n'en avez que ${maxQty}.`);
+                return;
+            }
+        } else {
+            if (!confirm(`Voulez-vous utiliser ${itemName} ?`)) return;
+        }
+
+        try {
+            const res = await useConsumable(itemId, qtyToUse);
+            if (res.success) {
+                notyf.success(res.message || "Objet utilisé !");
+                loadInventory(); // Reload inventory
+                // Refresh pet stats visually if possible (requires page reload or re-fetching stats)
+                if (typeof loadUserPet === 'function') loadUserPet();
+            } else {
+                notyf.error(res.error || "Erreur lors de l'utilisation.");
+            }
+        } catch (e) {
+            console.error(e);
+            notyf.error("Erreur technique.");
+        }
+    };
 }
 
 function getCategoryLabel(category) {
@@ -688,7 +1065,9 @@ function getCategoryLabel(category) {
         'theme': '🎨 Thème',
         'frame': '🖼️ Cadre',
         'badge': '🏅 Badge',
-        'boost': '⚡ Boost'
+        'boost': '⚡ Boost',
+        'consumable': '🍬 Consommable',
+        'companion': '🐾 Compagnon'
     };
     return labels[category] || category;
 }

@@ -204,6 +204,13 @@ export function viewCourse(id) {
         showPage('course-detail');
         applyFeatureFlags(); // Apply feature visibility after page load
         window.scrollTo(0, 0);
+
+        // Creativity Bonus Check (Random coin drop)
+        if (state.user) {
+            import('./gamification.js').then(module => {
+                module.triggerCreativeDiscovery(state.user);
+            });
+        }
     }
 }
 

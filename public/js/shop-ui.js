@@ -151,8 +151,11 @@ function renderItemCard(item, isOwned, userBalance) {
     const canAfford = userBalance >= item.price;
     const isOutOfStock = item.stock !== undefined && item.stock !== null && item.stock <= 0;
 
+    // Consumables are never "fully owned" in a way that blocks purchase
+    const showAsOwned = isOwned && item.category !== 'consumable';
+
     let badgeHtml = '';
-    if (isOwned) {
+    if (showAsOwned) {
         badgeHtml = '<span class="item-badge owned">Possédé</span>';
     } else if (isOutOfStock) {
         badgeHtml = '<span class="item-badge out-of-stock">Rupture</span>';
@@ -164,14 +167,14 @@ function renderItemCard(item, isOwned, userBalance) {
 
     // Stock display
     let stockHtml = '';
-    if (item.stock !== undefined && item.stock !== null && !isOwned) {
+    if (item.stock !== undefined && item.stock !== null && !showAsOwned) {
         const stockClass = item.stock <= 10 ? 'low' : '';
         stockHtml = `<span class="item-stock ${stockClass}">${item.stock} restant${item.stock > 1 ? 's' : ''}</span>`;
     }
 
     // Button state
     let buttonHtml = '';
-    if (isOwned) {
+    if (showAsOwned) {
         buttonHtml = `<button class="btn-buy owned" disabled>✓ Possédé</button>`;
     } else if (!available) {
         buttonHtml = `<button class="btn-buy" disabled>Non disponible</button>`;
@@ -189,8 +192,8 @@ function renderItemCard(item, isOwned, userBalance) {
     return `
         <div class="shop-item-card ${isOwned ? 'owned' : ''} ${!available ? 'out-of-stock' : ''}" data-item-id="${item.id}">
             ${badgeHtml}
-            <div class="item-preview ${item.category === 'theme' ? 'theme-preview' : ''}" ${previewStyle}>
-                ${item.icon || '🎁'}
+            <div class="item-preview ${item.category === 'theme' ? 'theme-preview' : ''} ${item.category === 'consumable' ? 'consumable-preview' : ''}" ${previewStyle}>
+                ${item.image ? `<img src="${item.image}" alt="${item.name}">` : (item.icon || '🎁')}
             </div>
             <div class="item-info">
                 <h4 class="item-name">${item.name}</h4>
@@ -267,13 +270,68 @@ async function openPurchaseModal(itemId) {
 
     // Update preview
     preview.innerHTML = `
-        <div class="item-icon">${item.icon || '🎁'}</div>
-        <div class="item-name">${item.name}</div>
+        <div class="item-preview ${item.category === 'theme' ? 'theme-preview' : ''} ${item.category === 'consumable' ? 'consumable-preview' : ''}" style="width:100px; height:100px; margin:0 auto 1rem;">
+             ${item.image ? `<img src="${item.image}" alt="${item.name}">` : (item.icon || '🎁')}
+        </div>
+        <div class="item-name" style="font-size:1.2rem;">${item.name}</div>
     `;
 
-    // Update price and after balance
-    priceEl.textContent = item.price;
-    afterBalanceEl.textContent = `${formatCoins(balance - item.price)} Coins`;
+    // Quantity Input Logic
+    const existingQtyRow = document.getElementById('purchase-qty-row');
+    if (existingQtyRow) existingQtyRow.remove();
+
+    let quantity = 1;
+
+    // Helper to update totals
+    const updateTotals = () => {
+        const total = item.price * quantity;
+        priceEl.textContent = total;
+
+        const after = balance - total;
+        afterBalanceEl.textContent = `${formatCoins(after)} Coins`;
+
+        const confirmBtn = document.getElementById('purchase-confirm');
+        if (after < 0) {
+            afterBalanceEl.style.color = 'red';
+            confirmBtn.disabled = true;
+        } else {
+            afterBalanceEl.style.color = '';
+            confirmBtn.disabled = false;
+        }
+    };
+
+    if (item.category === 'consumable') {
+        const qtyRow = document.createElement('div');
+        qtyRow.id = 'purchase-qty-row';
+        qtyRow.className = 'detail-row';
+        qtyRow.style.display = 'flex';
+        qtyRow.style.justifyContent = 'space-between';
+        qtyRow.style.alignItems = 'center';
+        qtyRow.style.marginBottom = '1rem';
+        qtyRow.innerHTML = `
+            <span style="font-weight:600;">Quantité</span>
+            <input type="number" id="purchase-qty-input" value="1" min="1" max="99" style="width: 60px; padding: 5px; border-radius: 8px; border: 1px solid var(--border-color); text-align: center; font-weight: bold;">
+        `;
+
+        // Insert before the price details row (which usually contains #purchase-price)
+        const priceContainer = priceEl.parentElement; // .detail-row
+        if (priceContainer && priceContainer.parentElement) {
+            priceContainer.parentElement.insertBefore(qtyRow, priceContainer);
+        }
+
+        const qtyInput = document.getElementById('purchase-qty-input');
+        if (qtyInput) {
+            qtyInput.addEventListener('input', (e) => {
+                let val = parseInt(e.target.value);
+                if (isNaN(val) || val < 1) val = 1;
+                if (val > 99) val = 99;
+                quantity = val;
+                updateTotals();
+            });
+        }
+    }
+
+    updateTotals(); // Initial calc
 
     // Show modal
     modal.style.display = 'flex';
@@ -291,6 +349,8 @@ function closePurchaseModal() {
         }, 300);
     }
     currentItemToPurchase = null;
+    const qtyRow = document.getElementById('purchase-qty-row');
+    if (qtyRow) qtyRow.remove();
 }
 
 async function handlePurchaseConfirm() {
@@ -300,18 +360,23 @@ async function handlePurchaseConfirm() {
     confirmBtn.disabled = true;
     confirmBtn.textContent = 'Achat en cours...';
 
+    // Get quantity
+    const qtyInput = document.getElementById('purchase-qty-input');
+    const quantity = qtyInput ? parseInt(qtyInput.value) : 1;
+
     try {
-        const result = await purchaseItem(currentItemToPurchase.id);
+        const result = await purchaseItem(currentItemToPurchase.id, quantity);
 
         if (result.success) {
             closePurchaseModal();
-            showPurchaseSuccess(result.item);
+            // showPurchaseSuccess(result.item); 
+            // Reuse simple notification for cleaner logic with quantity
 
             // Refresh shop display
             await renderShopItems();
             updateShopBalance(result.newBalance);
 
-            notyf.success(`🎉 ${result.item.name} ajouté à votre inventaire !`);
+            notyf.success(`🎉 ${quantity}x ${result.item.name} ajouté(s) !`);
         } else {
             notyf.error(result.error || 'Erreur lors de l\'achat');
         }

@@ -52,7 +52,9 @@ export const ECONOMY = {
         BADGE: 'badge',
         BOOST: 'boost',
         AVATAR: 'avatar',
-        BACKGROUND: 'background'
+        BACKGROUND: 'background',
+        COMPANION: 'companion',
+        CONSUMABLE: 'consumable'
     },
 
     // ============================================

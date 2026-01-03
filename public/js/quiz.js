@@ -71,9 +71,73 @@ export async function getQuizById(quizId) {
 
 // --- Results Handling ---
 
-// Submit a quiz result
+// Submit a quiz result with Intelligence Bonus
 export async function submitQuizResult(quizId, courseId, score, totalQuestions, answers, duration = null) {
     if (!auth.currentUser) throw new Error("User must be logged in");
+
+    // Default XP calculation (e.g., 10 XP per correct answer)
+    let xpEarned = score * 10;
+    let bonusXp = 0;
+
+    // --- INTELLIGENCE BONUS ---
+    try {
+        const userRef = doc(db, 'users', auth.currentUser.uid);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+            const userData = userSnap.data();
+            if (userData.pet && userData.pet.stats) {
+                const intellect = userData.pet.stats.intelligence || 0;
+                if (intellect > 0) {
+                    // Bonus: +1% XP per INT point
+                    bonusXp = Math.floor(xpEarned * (intellect / 100));
+                    xpEarned += bonusXp;
+                    console.log(`🧠 Intelligence Bonus applied: +${bonusXp} XP`);
+                }
+
+                // Pet XP & Leveling Logic
+                let petLevel = userData.pet.level || 1;
+                let petXp = userData.pet.xp || 0;
+                const xpGain = 10 + Math.floor(score * 2);
+
+                petXp += xpGain;
+
+                // Threshold: Level * 100 (Level 1 needs 100, Level 2 needs 200...)
+                // For simplicity, let's keep it fixed or linear.
+                // User asked "if he reaches lvl 2".
+                const xpNeeded = petLevel * 100;
+
+                let leveledUp = false;
+                if (petXp >= xpNeeded) {
+                    petXp -= xpNeeded;
+                    petLevel++;
+                    leveledUp = true;
+
+                    // Boost Stats on Level Up
+                    if (!userData.pet.stats) userData.pet.stats = { intelligence: 1, creativity: 1, social: 1 };
+                    userData.pet.stats.intelligence += 1;
+                    userData.pet.stats.creativity += 1;
+                    userData.pet.stats.social += 1;
+                }
+
+                const petUpdate = {
+                    "pet.xp": petXp,
+                    "pet.level": petLevel,
+                    "pet.stats": userData.pet.stats
+                };
+
+                await updateDoc(userRef, petUpdate);
+
+                if (leveledUp) {
+                    // Ideally notify user, but we are in a backend function. 
+                    // The UI will update on refresh or next load.
+                    console.log(`🎉 LEVEL UP! ${userData.pet.name} is now level ${petLevel}`);
+                }
+
+            }
+        }
+    } catch (e) {
+        console.warn("Could not apply pet bonus:", e);
+    }
 
     const resultData = {
         quizId,
@@ -83,6 +147,8 @@ export async function submitQuizResult(quizId, courseId, score, totalQuestions, 
         totalQuestions,
         answers, // Optional: store individual answers for review
         duration, // Time in seconds to complete the quiz
+        xpEarned, // Track earned XP
+        bonusXp,  // Track bonus part
         completedAt: serverTimestamp()
     };
 

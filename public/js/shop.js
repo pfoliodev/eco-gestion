@@ -108,10 +108,14 @@ export function isItemAvailable(item) {
  * @param {string} itemId - Item ID to purchase
  * @returns {Promise<{success: boolean, error?: string}>}
  */
-export async function purchaseItem(itemId) {
+export async function purchaseItem(itemId, qty = 1) {
     if (!auth.currentUser) {
         return { success: false, error: 'Non authentifié' };
     }
+
+    // Ensure qty is valid
+    qty = parseInt(qty);
+    if (isNaN(qty) || qty < 1) qty = 1;
 
     try {
         // Get item details
@@ -125,8 +129,16 @@ export async function purchaseItem(itemId) {
             return { success: false, error: 'Article non disponible' };
         }
 
-        // Check if user already owns this item (for non-consumable items)
-        if (item.category !== 'boost') {
+        // Stock check for limited items
+        if (item.stock !== undefined && item.stock !== null && item.stock < qty) {
+            return { success: false, error: `Stock insuffisant (${item.stock} restants)` };
+        }
+
+        // Check if user already owns it (unless it's a consumable)
+        // Consumables can be bought multiple times, but let's prevent non-consumables from bulk buy > 1 if they own it or simple logic check
+        if (item.category !== ECONOMY.CATEGORIES.CONSUMABLE) {
+            if (qty > 1) return { success: false, error: "Impossible d'acheter plusieurs exemplaires de cet objet." };
+
             const hasItem = await userOwnsItem(itemId);
             if (hasItem) {
                 return { success: false, error: 'Vous possédez déjà cet article' };
@@ -134,15 +146,17 @@ export async function purchaseItem(itemId) {
         }
 
         // Check balance
+        const totalCost = item.price * qty;
         const balance = await getUserBalance();
-        if (balance < item.price) {
-            return { success: false, error: 'Solde insuffisant', balance, price: item.price };
+        if (balance < totalCost) {
+            return { success: false, error: 'Solde insuffisant', balance, price: totalCost };
         }
 
         // Deduct coins
-        const spendResult = await spendCoins(item.price, 'shop_purchase', itemId, {
+        const spendResult = await spendCoins(totalCost, 'shop_purchase', itemId, {
             itemName: item.name,
-            category: item.category
+            category: item.category,
+            quantity: qty
         });
 
         if (!spendResult.success) {
@@ -152,20 +166,47 @@ export async function purchaseItem(itemId) {
         // Add item to user's inventory
         const userId = auth.currentUser.uid;
         const inventoryRef = doc(db, 'users', userId, 'inventory', itemId);
+        const inventorySnap = await getDoc(inventoryRef);
 
-        await setDoc(inventoryRef, {
-            itemId,
-            itemName: item.name,
-            category: item.category,
-            purchasedAt: serverTimestamp(),
-            equipped: false
-        });
+        if (item.category === ECONOMY.CATEGORIES.CONSUMABLE && inventorySnap.exists()) {
+            // Stack consumables
+            await updateDoc(inventoryRef, {
+                quantity: increment(qty),
+                updatedAt: serverTimestamp(),
+                image: item.image // Update image in case it changed or was missing
+            });
+        } else {
+            // Create new inventory item (or stack if it was somehow deleted but we are here)
+            // For non-consumables qty is 1. For consumables it might be first purchase of 5.
+            const inventoryData = {
+                itemId,
+                itemName: item.name,
+                category: item.category,
+                purchasedAt: serverTimestamp(),
+                equipped: false,
+                quantity: qty,
+                image: item.image, // Persist the image path
+                icon: item.icon
+            };
+
+            // Initialize companion stats if applicable
+            if (item.category === ECONOMY.CATEGORIES.COMPANION) {
+                inventoryData.level = 1;
+                inventoryData.xp = 0;
+                inventoryData.stats = item.stats || { intelligence: 1, creativity: 1, social: 1 };
+                inventoryData.nickname = item.name;
+                inventoryData.type = item.type || 'Compagnon';
+                inventoryData.image = item.image;
+            }
+
+            await setDoc(inventoryRef, inventoryData);
+        }
 
         // Decrease stock if limited
         if (item.stock !== undefined && item.stock !== null) {
             const itemRef = doc(db, 'shopItems', itemId);
             await updateDoc(itemRef, {
-                stock: increment(-1)
+                stock: increment(-qty)
             });
         }
 
@@ -198,9 +239,30 @@ export async function getUserInventory(category = null) {
     try {
         const userId = auth.currentUser.uid;
         const inventoryRef = collection(db, 'users', userId, 'inventory');
-        const snapshot = await getDocs(inventoryRef);
+        const [inventorySnap, userSnap] = await Promise.all([
+            getDocs(inventoryRef),
+            getDoc(doc(db, 'users', userId))
+        ]);
 
-        let items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        let items = inventorySnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        // Add current starter pet as an inventory item if not already present
+        if (userSnap.exists() && userSnap.data().pet) {
+            const petId = userSnap.data().pet.id;
+            const shopItemId = `pet_${petId}`; // Convention: shop ID = pet_ + petId
+
+            // Check if already in inventory (to avoid duplicates if we actually add it later)
+            if (!items.find(i => i.id === shopItemId)) {
+                // Add virtual inventory item
+                items.push({
+                    id: shopItemId,
+                    itemId: shopItemId,
+                    itemName: 'Compagnon de départ', // Name doesn't matter much for ID check
+                    category: ECONOMY.CATEGORIES.COMPANION,
+                    equipped: true // It's their current pet
+                });
+            }
+        }
 
         if (category && category !== 'all') {
             items = items.filter(item => item.category === category);
@@ -223,9 +285,26 @@ export async function userOwnsItem(itemId) {
 
     try {
         const userId = auth.currentUser.uid;
+
+        // Parallel check: Inventory AND User Profile (for starter pet)
         const inventoryRef = doc(db, 'users', userId, 'inventory', itemId);
-        const snapshot = await getDoc(inventoryRef);
-        return snapshot.exists();
+
+        const [inventorySnap, userSnap] = await Promise.all([
+            getDoc(inventoryRef),
+            getDoc(doc(db, 'users', userId))
+        ]);
+
+        if (inventorySnap.exists()) return true;
+
+        // Check if it's the starter pet
+        if (userSnap.exists() && userSnap.data().pet) {
+            const petId = userSnap.data().pet.id;
+            if (itemId === `pet_${petId}`) {
+                return true;
+            }
+        }
+
+        return false;
     } catch (error) {
         console.error('Error checking item ownership:', error);
         return false;
@@ -255,25 +334,104 @@ export async function equipItem(itemId) {
         const category = itemData.category;
 
         // Unequip all other items in the same category
-        const allInventory = await getUserInventory(category);
-        for (const item of allInventory) {
-            if (item.equipped && item.id !== itemId) {
-                const otherRef = doc(db, 'users', userId, 'inventory', item.id);
-                await updateDoc(otherRef, { equipped: false });
+        // SKIP this for COMPANIONS because we handle swap specifically below (and starter pets might not exist as docs yet)
+        if (category !== ECONOMY.CATEGORIES.COMPANION) {
+            const allInventory = await getUserInventory(category);
+            for (const item of allInventory) {
+                if (item.equipped && item.id !== itemId) {
+                    const otherRef = doc(db, 'users', userId, 'inventory', item.id);
+                    await updateDoc(otherRef, { equipped: false });
+                }
             }
         }
-
         // Equip this item
-        await updateDoc(inventoryRef, { equipped: true });
+        // Note: For companions, we handle the update differently (swap logic below)
+        if (category !== ECONOMY.CATEGORIES.COMPANION) {
+            await updateDoc(inventoryRef, { equipped: true });
+        }
 
         // Update user document with equipped item reference
         const userRef = doc(db, 'users', userId);
+        const userSnap = await getDoc(userRef);
+        const userData = userSnap.data();
         const updateData = {};
 
         if (category === ECONOMY.CATEGORIES.THEME) {
             updateData.equippedTheme = itemId;
         } else if (category === ECONOMY.CATEGORIES.FRAME) {
             updateData.equippedFrame = itemId;
+        } else if (category === ECONOMY.CATEGORIES.COMPANION) {
+            // ============================================
+            // COMPANION SWAP LOGIC (Persistent Stats)
+            // ============================================
+
+            // 1. Save CURRENT pet state to inventory (if it exists)
+            if (userData.pet) {
+                const currentPet = userData.pet;
+                const currentPetInventoryId = `pet_${currentPet.id}`;
+                const currentPetRef = doc(db, 'users', userId, 'inventory', currentPetInventoryId);
+
+                // We create/update the inventory doc for the pet we are putting away
+                // This ensures starter pets get saved too
+                // DATA SAFETY: Ensure we don't save undefined
+                const safeImage = currentPet.image || `/images/pets/${currentPet.id}.png`;
+                const safeType = currentPet.type || 'Compagnon';
+
+                await setDoc(currentPetRef, {
+                    itemId: currentPetInventoryId,
+                    category: ECONOMY.CATEGORIES.COMPANION,
+                    equipped: false,
+                    // Save progress
+                    level: currentPet.level || 1,
+                    xp: currentPet.xp || 0,
+                    stats: currentPet.stats || {},
+                    nickname: currentPet.nickname || currentPet.name,
+                    // Identity
+                    itemName: currentPet.name,
+                    image: safeImage,
+                    type: safeType
+                    // We don't overwrite purchasedAt if it exists, so setDoc with merge is better?
+                    // But setDoc overwrites. Let's use setDoc with merge: true
+                }, { merge: true });
+            }
+
+            // 2. Load NEW pet state from inventory
+            const newPetInventoryData = inventorySnap.data();
+
+            // 3. Mark new pet as equipped in inventory
+            // Explicitly set equipped: true for the new one (and ensure others are false, which loop above did)
+            await updateDoc(inventoryRef, { equipped: true });
+
+            // 4. Update User Profile with new pet data
+            updateData.pet = {
+                id: itemId.replace('pet_', '').toLowerCase(),
+                name: newPetInventoryData.itemName || newPetInventoryData.name,
+                nickname: newPetInventoryData.nickname || newPetInventoryData.itemName,
+                image: newPetInventoryData.image, // Should be saved on purchase/save
+                type: newPetInventoryData.type || 'Compagnon',
+
+                // Restore Persisted Progress
+                level: newPetInventoryData.level || 1,
+                xp: newPetInventoryData.xp || 0,
+                stats: newPetInventoryData.stats || { intelligence: 1, creativity: 1, social: 1 },
+
+                obtainedAt: newPetInventoryData.purchasedAt ? newPetInventoryData.purchasedAt.toDate().toISOString() : new Date().toISOString()
+            };
+
+            // Fallback: If image/type missing in inventory (old data), fetch from shop config
+            if (!updateData.pet.image) {
+                const shopItemRef = doc(db, 'shopItems', itemId);
+                const shopItemSnap = await getDoc(shopItemRef);
+                if (shopItemSnap.exists()) {
+                    const shopData = shopItemSnap.data();
+                    updateData.pet.image = shopData.image;
+                    updateData.pet.type = shopData.type || 'Compagnon';
+                    // If stats were missing in inventory, take base from shop
+                    if (!newPetInventoryData.stats) {
+                        updateData.pet.stats = shopData.stats;
+                    }
+                }
+            }
         }
 
         if (Object.keys(updateData).length > 0) {
@@ -503,6 +661,67 @@ export async function seedDefaultShopItems() {
             isLimited: true,
             stock: 100,
             availableUntil: new Date('2026-01-31')
+        },
+
+        // Compagnons
+        {
+            id: 'pet_feerale',
+            name: 'Féerale',
+            description: 'Un esprit de la nature bienveillant.',
+            price: 2000,
+            category: ECONOMY.CATEGORIES.COMPANION,
+            icon: '<img src="/images/pets/feerale.png" class="shop-item-icon-img" alt="Féerale" />',
+            image: '/images/pets/feerale.png',
+            stats: { intelligence: 2, creativity: 5, social: 3 }
+        },
+        {
+            id: 'pet_voltor',
+            name: 'Voltor',
+            description: 'Une boule d\'énergie pure en lévitation.',
+            price: 2000,
+            category: ECONOMY.CATEGORIES.COMPANION,
+            icon: '<img src="/images/pets/voltor.png" class="shop-item-icon-img" alt="Voltor" />',
+            image: '/images/pets/voltor.png',
+            stats: { intelligence: 4, creativity: 2, social: 4 }
+        },
+        {
+            id: 'pet_ombrage',
+            name: 'Ombrage',
+            description: 'Un spectre mystérieux aux pouvoirs obscurs.',
+            price: 2000,
+            category: ECONOMY.CATEGORIES.COMPANION,
+            icon: '<img src="/images/pets/ombrage.png" class="shop-item-icon-img" alt="Ombrage" />',
+            image: '/images/pets/ombrage.png',
+            stats: { intelligence: 5, creativity: 2, social: 3 }
+        },
+
+        // Consumables
+        {
+            id: 'biscuit_charisme',
+            name: "Biscuit de Charisme",
+            description: "Un délicieux biscuit qui vous rend irrésistible. +1 Social.",
+            price: 500,
+            category: ECONOMY.CATEGORIES.CONSUMABLE,
+            image: "/images/shop/biscuit_charisme.png",
+            effect: { stat: 'social', value: 1 }
+        },
+        {
+            id: 'potion_imagination',
+            name: "Potion d'Imagination",
+            description: "Une gorgée et les idées fusent ! +1 Créativité.",
+            price: 500,
+            category: ECONOMY.CATEGORIES.CONSUMABLE,
+            image: "/images/shop/potion_imagination.png",
+            effect: { stat: 'creativity', value: 1 }
+        },
+        {
+            id: 'fiole_savoir',
+            name: "Fiole de Savoir",
+            description: "Concentré de connaissances pur. +1 Intelligence.",
+            price: 500,
+            category: ECONOMY.CATEGORIES.CONSUMABLE,
+            image: "/images/shop/fiole_savoir.png",
+            effect: { stat: 'intelligence', value: 1 }
         }
     ];
 
@@ -536,4 +755,85 @@ export async function seedDefaultShopItems() {
 // Expose for admin console
 if (typeof window !== 'undefined') {
     window.seedDefaultShopItems = seedDefaultShopItems;
+}
+
+/**
+ * Use a consumable item
+ * @param {string} itemId - Item ID to use
+ * @returns {Promise<{success: boolean, message?: string, error?: string}>}
+ */
+export async function useConsumable(itemId, qty = 1) {
+    if (!auth.currentUser) return { success: false, error: 'Non connecté' };
+
+    qty = parseInt(qty);
+    if (isNaN(qty) || qty < 1) qty = 1;
+
+    try {
+        const userId = auth.currentUser.uid;
+        const userRef = doc(db, 'users', userId);
+        const inventoryRef = doc(db, 'users', userId, 'inventory', itemId);
+
+        const [userSnap, inventorySnap] = await Promise.all([
+            getDoc(userRef),
+            getDoc(inventoryRef)
+        ]);
+
+        if (!inventorySnap.exists()) {
+            return { success: false, error: "Vous ne possédez pas cet objet." };
+        }
+
+        const item = inventorySnap.data();
+        if (item.category !== ECONOMY.CATEGORIES.CONSUMABLE) {
+            return { success: false, error: "Cet objet n'est pas consommable." };
+        }
+
+        const currentQty = item.quantity || 1;
+        if (currentQty < qty) {
+            return { success: false, error: `Vous n'en avez que ${currentQty}.` };
+        }
+
+        // Get effect stat based on item ID
+        let statToBoost = null;
+        let boostAmount = 1;
+
+        if (item.itemId === 'biscuit_charisme') statToBoost = 'social';
+        else if (item.itemId === 'potion_imagination') statToBoost = 'creativity';
+        else if (item.itemId === 'fiole_savoir') statToBoost = 'intelligence';
+
+        if (!statToBoost) {
+            return { success: false, error: "Effet inconnu pour cet objet." };
+        }
+
+        // Apply Effect (multiplied by qty)
+        const totalBoost = boostAmount * qty;
+        const userData = userSnap.data();
+        const petStats = userData.pet?.stats || { intelligence: 1, creativity: 1, social: 1 };
+
+        if (petStats[statToBoost] !== undefined) {
+            petStats[statToBoost] += totalBoost;
+        } else {
+            petStats[statToBoost] = totalBoost; // Init if missing
+        }
+
+        // Save User
+        await updateDoc(userRef, {
+            "pet.stats": petStats
+        });
+
+        // Decrease Quantity or Remove
+        if (currentQty > qty) {
+            await updateDoc(inventoryRef, {
+                quantity: increment(-qty)
+            });
+        } else {
+            // Remove item
+            await deleteDoc(inventoryRef);
+        }
+
+        return { success: true, message: `Miam ! +${totalBoost} ${statToBoost}` };
+
+    } catch (error) {
+        console.error("Error using consumable:", error);
+        return { success: false, error: "Erreur technique." };
+    }
 }

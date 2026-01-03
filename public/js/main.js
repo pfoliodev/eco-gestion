@@ -14,8 +14,9 @@ import { initQuizEditor } from './quiz-ui.js';
 import { initFeatures, applyFeatureFlags } from './features.js';
 import { downloadCourseAsPdf } from './pdf-export.js';
 import { initShopPage } from './shop-ui.js';
-
-// Global exports for inline HTML handlers
+// import './verify_items.js';
+// import { seedConsumables } from './seed_items.js';
+// seedConsumables().then(() => console.log('Seeding finished'));
 window.viewCourse = viewCourse;
 window.showPage = showPage;
 
