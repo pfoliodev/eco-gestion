@@ -1,5 +1,5 @@
 import { auth, bugsCollection, db, storage } from './firebase.js';
-import { getDocs, query, where, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js";
+import { getDocs, query, where, doc, getDoc, setDoc, collection, orderBy, limit } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-storage.js";
 import { state } from './state.js';
 import { notyf } from './ui.js';
@@ -49,6 +49,7 @@ export async function loadAccount() {
     await loadUserBugs();
     await loadUserFavorites();
     await loadUserBadges();
+    await loadUserStats();
     initProfileForm();
     initAccountSidebar();
     initBadgeFilters();
@@ -76,6 +77,11 @@ function initAccountSidebar() {
                 // Dragon Egg Discovery! 🐉
                 if (section === 'badges') {
                     showDragonInConsole();
+                }
+
+                // Reload stats when entering stats section
+                if (section === 'stats') {
+                    loadUserStats();
                 }
             }
         });
@@ -245,6 +251,163 @@ function renderUserBugs(bugs) {
                 <td style="font-weight: 500;">${bug.subject}</td>
                 <td style="color: var(--text-secondary);">${date}</td>
                 <td><span class="bug-status ${statusClass}">${statusLabel}</span></td>
+            </tr>
+        `;
+    }).join('');
+}
+
+// ============================================
+// USER STATISTICS SECTION
+// ============================================
+
+async function loadUserStats() {
+    if (!auth.currentUser) return;
+
+    const userId = auth.currentUser.uid;
+
+    try {
+        // Fetch all data in parallel
+        const [coursesViewed, quizHistory, favorites, badges] = await Promise.all([
+            getCoursesViewedCount(userId),
+            getQuizHistory(userId),
+            getFavoritesCount(userId),
+            getUserBadges()
+        ]);
+
+        // Calculate stats from quiz history
+        const quizCount = quizHistory.length;
+        // Calculate average score as percentage (score / totalQuestions * 100)
+        const avgScore = quizCount > 0
+            ? Math.round(quizHistory.reduce((sum, q) => {
+                const percent = q.totalQuestions > 0 ? (q.score / q.totalQuestions) * 100 : 0;
+                return sum + percent;
+            }, 0) / quizCount)
+            : 0;
+        const bestTime = quizHistory.length > 0
+            ? Math.min(...quizHistory.filter(q => q.duration).map(q => q.duration))
+            : null;
+
+        // Debug: Log calculated stats
+        console.log('User stats calculated:', { coursesViewed, quizCount, avgScore, badgesCount: badges.length, favoritesCount: favorites, bestTime });
+
+        // Render stats cards
+        renderUserStats({
+            coursesViewed,
+            quizCount,
+            avgScore,
+            badgesCount: badges.length,
+            favoritesCount: favorites,
+            bestTime
+        });
+
+        // Render quiz history table
+        renderQuizHistory(quizHistory.slice(0, 5)); // Last 5 quizzes
+
+    } catch (error) {
+        console.error("Error loading user stats:", error);
+    }
+}
+
+async function getCoursesViewedCount(userId) {
+    try {
+        const viewsRef = collection(db, 'courseViews');
+        const q = query(viewsRef, where('userId', '==', userId));
+        const snap = await getDocs(q);
+        return snap.size;
+    } catch {
+        return 0;
+    }
+}
+
+async function getQuizHistory(userId) {
+    try {
+        const historyRef = collection(db, 'quiz_results');
+        const q = query(
+            historyRef,
+            where('userId', '==', userId)
+        );
+        const snap = await getDocs(q);
+        const quizzes = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        // Sort by date (newest first) in memory
+        return quizzes.sort((a, b) => {
+            const dateA = a.completedAt?.seconds || 0;
+            const dateB = b.completedAt?.seconds || 0;
+            return dateB - dateA;
+        });
+    } catch {
+        return [];
+    }
+}
+
+async function getFavoritesCount(userId) {
+    try {
+        // Favorites are stored as an array in the user document
+        const userRef = doc(db, 'users', userId);
+        const userDoc = await getDoc(userRef);
+        const favorites = userDoc.data()?.favorites || [];
+        return favorites.length;
+    } catch {
+        return 0;
+    }
+}
+
+function renderUserStats(stats) {
+    // Update each stat card
+    const setStatValue = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
+    };
+
+    setStatValue('user-stat-courses-viewed', stats.coursesViewed);
+    setStatValue('user-stat-quizzes-completed', stats.quizCount);
+    // Ensure avgScore is a valid number
+    const avgScoreDisplay = (typeof stats.avgScore === 'number' && !isNaN(stats.avgScore))
+        ? stats.avgScore + '%'
+        : '-';
+    setStatValue('user-stat-avg-score', avgScoreDisplay);
+    setStatValue('user-stat-badges-count', stats.badgesCount);
+    setStatValue('user-stat-favorites-count', stats.favoritesCount);
+    setStatValue('user-stat-best-time', stats.bestTime ? formatDuration(stats.bestTime) : '-');
+}
+
+function formatDuration(seconds) {
+    if (!seconds || seconds === Infinity) return '-';
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+}
+
+function renderQuizHistory(quizzes) {
+    const tbody = document.getElementById('user-quiz-history-body');
+    if (!tbody) return;
+
+    if (quizzes.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 2rem; color: var(--text-secondary);">Aucun quiz complété pour le moment.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = quizzes.map(quiz => {
+        const date = quiz.completedAt
+            ? new Date(quiz.completedAt.seconds * 1000).toLocaleDateString('fr-FR')
+            : 'N/A';
+        // Calculate score as percentage
+        const scorePercent = quiz.totalQuestions > 0
+            ? Math.round((quiz.score / quiz.totalQuestions) * 100)
+            : 0;
+        const scoreClass = scorePercent >= 80 ? 'score-high' : (scorePercent >= 50 ? 'score-medium' : 'score-low');
+        const duration = formatDuration(quiz.duration);
+
+        // Find course title from state
+        const course = state.courses.find(c => c.id === quiz.courseId);
+        const courseTitle = course ? course.title : 'Cours inconnu';
+
+        return `
+            <tr>
+                <td style="font-weight: 500;">${courseTitle}</td>
+                <td><span class="quiz-score ${scoreClass}">${scorePercent}%</span></td>
+                <td style="color: var(--text-secondary);">${duration}</td>
+                <td style="color: var(--text-secondary);">${date}</td>
             </tr>
         `;
     }).join('');

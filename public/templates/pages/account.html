@@ -30,6 +30,10 @@ _#/|##########/\######(   /\   )######/\##########|\#_
                 <span class="sidebar-icon">🐞</span>
                 <span class="sidebar-text">Mes Signalements</span>
             </a>
+            <a href="#" class="sidebar-link" data-account-section="stats">
+                <span class="sidebar-icon">📊</span>
+                <span class="sidebar-text">Mes Statistiques</span>
+            </a>
             <a href="#" class="sidebar-link" data-account-section="badges">
                 <span class="sidebar-icon">🏆</span>
                 <span class="sidebar-text">Mes Badges</span>
@@ -102,6 +106,67 @@ _#/|##########/\######(   /\   )######/\##########|\#_
                         </tr>
                     </tbody>
                 </table>
+            </div>
+        </div>
+
+        <!-- Statistics Section -->
+        <div id="account-section-stats" class="account-section">
+            <h2>📊 Mes Statistiques</h2>
+
+            <!-- Stats Overview Cards -->
+            <div class="user-stats-grid">
+                <div class="user-stat-card">
+                    <div class="stat-icon">📚</div>
+                    <div class="stat-value" id="user-stat-courses-viewed">-</div>
+                    <div class="stat-label">Cours consultés</div>
+                </div>
+                <div class="user-stat-card">
+                    <div class="stat-icon">✅</div>
+                    <div class="stat-value" id="user-stat-quizzes-completed">-</div>
+                    <div class="stat-label">Quiz complétés</div>
+                </div>
+                <div class="user-stat-card">
+                    <div class="stat-icon">🎯</div>
+                    <div class="stat-value" id="user-stat-avg-score">-</div>
+                    <div class="stat-label">Score moyen</div>
+                </div>
+                <div class="user-stat-card">
+                    <div class="stat-icon">🏆</div>
+                    <div class="stat-value" id="user-stat-badges-count">-</div>
+                    <div class="stat-label">Badges débloqués</div>
+                </div>
+                <div class="user-stat-card">
+                    <div class="stat-icon">⭐</div>
+                    <div class="stat-value" id="user-stat-favorites-count">-</div>
+                    <div class="stat-label">Cours favoris</div>
+                </div>
+                <div class="user-stat-card">
+                    <div class="stat-icon">⚡</div>
+                    <div class="stat-value" id="user-stat-best-time">-</div>
+                    <div class="stat-label">Meilleur temps quiz</div>
+                </div>
+            </div>
+
+            <!-- Quiz History -->
+            <div class="stats-section-block">
+                <h3>📝 Historique des derniers quiz</h3>
+                <div class="users-table-container">
+                    <table class="users-table">
+                        <thead>
+                            <tr>
+                                <th>Cours</th>
+                                <th>Score</th>
+                                <th>Temps</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="user-quiz-history-body">
+                            <tr>
+                                <td colspan="4" style="text-align: center; padding: 2rem;">Chargement...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
