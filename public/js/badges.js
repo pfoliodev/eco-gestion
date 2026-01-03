@@ -15,6 +15,8 @@ import {
 } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js";
 import { notyf } from './ui.js';
 import { getUserQuizHistory } from './quiz.js';
+import { addCoins, updateBalanceDisplay } from './coins.js';
+import { ECONOMY } from './config/economy.js';
 
 const badgesCollection = collection(db, 'badges');
 
@@ -114,6 +116,19 @@ export async function unlockBadge(badgeId, metadata = {}) {
         unlockedAt: serverTimestamp(),
         ...metadata
     });
+
+    // Award IFH Coins for badge unlock
+    try {
+        const result = await addCoins(ECONOMY.BADGE_UNLOCK, 'badge_unlock', badgeId, {
+            badgeName: metadata.badgeName || badgeId
+        });
+        if (result.success) {
+            updateBalanceDisplay(result.newBalance);
+            console.log(`🏅 Badge unlocked: +${ECONOMY.BADGE_UNLOCK} IFH`);
+        }
+    } catch (error) {
+        console.error('Error awarding coins for badge:', error);
+    }
 
     return { alreadyUnlocked: false, success: true };
 }

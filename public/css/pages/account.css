@@ -214,3 +214,214 @@
         font-size: 1.5rem;
     }
 }
+
+/* ========================================
+   INVENTORY SECTION
+   ======================================== */
+
+.account-balance-card {
+    background: linear-gradient(135deg, #2d3047 0%, #1a1a2e 100%);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    color: white;
+}
+
+.account-balance-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.account-balance-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.account-balance-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #d4af37;
+    text-shadow: 0 2px 8px rgba(212, 175, 55, 0.3);
+}
+
+.account-balance-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.btn-shop,
+.btn-transactions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1rem;
+    border-radius: 100px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-shop {
+    background: #d4af37;
+    color: #1a1a2e;
+    text-decoration: none;
+}
+
+.btn-shop:hover {
+    background: #c9a22e;
+}
+
+.btn-transactions {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn-transactions:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.inventory-equipped-section,
+.inventory-owned-section {
+    margin-bottom: 2rem;
+}
+
+.inventory-equipped-section h3,
+.inventory-owned-section h3 {
+    font-size: 1rem;
+    margin-bottom: 1rem;
+    color: var(--text-main);
+}
+
+.inventory-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.inventory-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.inventory-item-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    transition: all 0.2s ease;
+}
+
+.inventory-item-card:hover {
+    border-color: var(--primary-color);
+}
+
+.inventory-item-icon {
+    font-size: 2rem;
+    flex-shrink: 0;
+}
+
+.inventory-item-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.inventory-item-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text-main);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.inventory-item-category {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.btn-equip {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border: 1px solid var(--border-color);
+    background: transparent;
+    color: var(--text-main);
+    border-radius: 100px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.btn-equip:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.btn-equip.equipped {
+    background: #16a34a;
+    border-color: #16a34a;
+    color: white;
+}
+
+/* Transactions */
+.transactions-section {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.transactions-section h3 {
+    font-size: 1rem;
+    margin-bottom: 1rem;
+}
+
+.transactions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.transaction-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+}
+
+.transaction-type {
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.transaction-date {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.transaction-amount {
+    font-weight: 700;
+    font-size: 0.95rem;
+}
+
+.transaction-amount.positive {
+    color: #16a34a;
+}
+
+.transaction-amount.negative {
+    color: #dc2626;
+}

@@ -4,13 +4,18 @@ import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/9.21.0/f
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-auth.js";
 import { setIsAdmin, setUser, state } from './state.js';
 import { notyf, showPage } from './ui.js';
+import { getUserBalance, initBalanceListener, updateBalanceDisplay, addCoins } from './coins.js';
+import { ECONOMY } from './config/economy.js';
 
-export async function createUserProfile(userId, email, firstName = '', lastName = '', photoURL = null) {
+export async function createUserProfile(userId, email, firstName = '', lastName = '', photoURL = null, isNewUser = true) {
     try {
         const userData = {
             role: 'student',
             email: email,
-            createdAt: new Date()
+            createdAt: new Date(),
+            balance: isNewUser ? ECONOMY.FIRST_LOGIN_BONUS : 0,
+            totalEarned: isNewUser ? ECONOMY.FIRST_LOGIN_BONUS : 0,
+            totalSpent: 0
         };
 
         if (firstName) userData.firstname = firstName;
@@ -18,6 +23,14 @@ export async function createUserProfile(userId, email, firstName = '', lastName 
         if (photoURL) userData.photoURL = photoURL;
 
         await setDoc(doc(db, 'users', userId), userData);
+
+        // Show welcome bonus notification for new users
+        if (isNewUser && ECONOMY.FIRST_LOGIN_BONUS > 0) {
+            setTimeout(() => {
+                notyf.success(`🎁 Bonus de bienvenue: +${ECONOMY.FIRST_LOGIN_BONUS} IFH!`);
+            }, 1500);
+        }
+
         return userData;
     } catch (error) {
         console.error("Error creating user profile:", error);
@@ -169,6 +182,19 @@ export function initAuth() {
 
             // Update QCM card button
             if (window.updateQcmCardButton) window.updateQcmCardButton();
+
+            // Show and update IFH Coins balance
+            const coinBalanceNav = document.getElementById('coin-balance-nav');
+            if (coinBalanceNav) {
+                coinBalanceNav.style.display = 'flex';
+                const balance = await getUserBalance();
+                updateBalanceDisplay(balance);
+
+                // Initialize real-time balance listener
+                initBalanceListener((newBalance) => {
+                    updateBalanceDisplay(newBalance);
+                });
+            }
         } else {
             setIsAdmin(false);
             setUser(null); // Clear user from state
@@ -189,6 +215,12 @@ export function initAuth() {
 
             // Update QCM card button
             if (window.updateQcmCardButton) window.updateQcmCardButton();
+
+            // Hide IFH Coins balance
+            const coinBalanceNav = document.getElementById('coin-balance-nav');
+            if (coinBalanceNav) {
+                coinBalanceNav.style.display = 'none';
+            }
 
             // Reload courses to hide favorite buttons
             if (window.location.hash === '#cours' || window.location.hash === '') {

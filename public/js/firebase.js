@@ -11,3 +11,5 @@ export const usersCollection = collection(db, 'users');
 export const bugsCollection = collection(db, 'bugs');
 export const flashcardsCollection = collection(db, 'flashcards');
 export const settingsCollection = collection(db, 'settings');
+export const shopItemsCollection = collection(db, 'shopItems');
+export const tradeOffersCollection = collection(db, 'tradeOffers');

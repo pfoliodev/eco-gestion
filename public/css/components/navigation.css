@@ -102,6 +102,13 @@ header {
     font-size: 0.85rem;
 }
 
+/* Nav Actions Container */
+.nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
 /* Profile Dropdown */
 .profile-dropdown {
     position: relative;

@@ -63,6 +63,24 @@ Une application web moderne pour gérer, réviser et partager des cours d'écono
 - **Politique de confidentialité** détaillée
 - **Mentions légales** complètes
 
+### 🪙 Système IFH Coins (Économie Virtuelle)
+- **Monnaie virtuelle** : Gagnez des IFH Coins en participant
+- **Sources de gains** :
+  - Quiz complétés (basé sur le score et la rapidité)
+  - Badges débloqués (+50 IFH par badge)
+  - Bonus de première connexion
+- **Boutique** avec catégories :
+  - 🎨 **Thèmes** : Personnalisez l'interface
+  - 🖼️ **Cadres** : Décorez votre photo de profil
+  - 🏅 **Badges** : Éditions limitées et exclusifs
+  - ⚡ **Boosts** : Avantages temporaires
+- **Inventaire utilisateur** : Équipez vos articles achetés
+- **Historique des transactions** : Suivi complet de vos gains/dépenses
+- **Admin** : 
+  - Gestion CRUD des articles boutique
+  - Don de coins aux utilisateurs
+  - Statistiques de l'économie
+
 ## 🛠️ Technologies Utilisées
 
 ### Frontend
@@ -123,10 +141,12 @@ eco-gestion/
 ├── public/
 │   ├── css/
 │   │   ├── base/           # Variables, reset, typographie
-│   │   ├── components/     # Boutons, cartes, modals, tables...
-│   │   ├── pages/          # Styles par page
+│   │   ├── components/     # Boutons, cartes, modals, coins...
+│   │   ├── pages/          # Styles par page (shop, account...)
 │   │   └── main.css        # Point d'entrée CSS
 │   ├── js/
+│   │   ├── config/
+│   │   │   └── economy.js  # Configuration économie IFH
 │   │   ├── main.js         # Point d'entrée JS
 │   │   ├── auth.js         # Authentification
 │   │   ├── course.js       # Gestion des cours
@@ -136,6 +156,10 @@ eco-gestion/
 │   │   ├── flashcard-ui.js # Interface flashcards
 │   │   ├── badges.js       # Système de badges
 │   │   ├── favorites.js    # Gestion des favoris
+│   │   ├── coins.js        # Gestion IFH Coins
+│   │   ├── shop.js         # Boutique (logique)
+│   │   ├── shop-ui.js      # Boutique (interface)
+│   │   ├── trades.js       # Échanges entre utilisateurs
 │   │   ├── pdf-export.js   # Export PDF
 │   │   ├── admin.js        # Panneau admin
 │   │   ├── account.js      # Profil utilisateur

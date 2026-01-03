@@ -13,6 +13,7 @@ import { initFlashcards } from './flashcard-ui.js';
 import { initQuizEditor } from './quiz-ui.js';
 import { initFeatures, applyFeatureFlags } from './features.js';
 import { downloadCourseAsPdf } from './pdf-export.js';
+import { initShopPage } from './shop-ui.js';
 
 // Global exports for inline HTML handlers
 window.viewCourse = viewCourse;
@@ -44,6 +45,14 @@ function initNavigation() {
             else if (href === '#login') showPage('login');
             else if (href === '#register') showPage('register');
             else if (href === '#flashcards') showPage('flashcards');
+            else if (href === '#shop') {
+                showPage('shop');
+                initShopPage();
+            }
+            else if (href === '#mon-compte') {
+                loadAccount();
+                showPage('mon-compte');
+            }
         }
     });
 }
@@ -180,7 +189,8 @@ async function initApp() {
             { containerId: 'page-admin', path: 'templates/pages/admin.html' },
             { containerId: 'page-mon-compte', path: 'templates/pages/account.html' },
             { containerId: 'page-privacy-policy', path: 'templates/pages/privacy-policy.html' },
-            { containerId: 'page-legal-notice', path: 'templates/pages/legal-notice.html' }
+            { containerId: 'page-legal-notice', path: 'templates/pages/legal-notice.html' },
+            { containerId: 'page-shop', path: 'templates/pages/shop.html' }
         ]);
 
         // Initialize app after templates are loaded

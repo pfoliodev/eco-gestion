@@ -11,13 +11,16 @@ import { checkAndUnlockBadges, updateStreakData, updatePerfectStreakData } from 
 import { notyf, showPage } from './ui.js';
 import { state } from './state.js';
 import { auth } from './firebase.js';
+import { addCoins, showCoinGainAnimation, updateBalanceDisplay } from './coins.js';
+import { calculateQuizReward } from './config/economy.js';
 
 // --- Global UI State ---
 let currentQuiz = null;
 let currentQuizQuestions = [];
 let currentQuestionIndex = 0;
 let userAnswers = {};
-let quizStartTime = null; // { questionIndex: selectedOptionIndex }
+let quizStartTime = null;
+let lastQuizCoinsEarned = null; // Store coins earned for display
 
 // --- Admin: List & Manage Quizzes ---
 
@@ -315,6 +318,23 @@ function renderQuizPlayer() {
 
             // Check and unlock badges after quiz completion
             await checkAndUnlockBadges(currentQuiz.id, score, currentQuizQuestions.length, currentQuiz.title, currentQuiz.courseId, { duration });
+
+            // Award IFH Coins for quiz completion
+            const userStreak = state.user?.quizStreak || 0;
+            const reward = calculateQuizReward(score, currentQuizQuestions.length, duration, userStreak);
+            lastQuizCoinsEarned = reward;
+
+            const result = await addCoins(reward.total, 'quiz_complete', currentQuiz.id, {
+                quizTitle: currentQuiz.title,
+                score,
+                total: currentQuizQuestions.length,
+                duration,
+                breakdown: reward.breakdown
+            });
+
+            if (result.success) {
+                updateBalanceDisplay(result.newBalance);
+            }
         } catch (e) {
             console.error("Failed to save result", e);
         }
@@ -369,6 +389,23 @@ async function showQuizResults(score, total) {
             </div>
 
             <p class="score-message">${message} ${emoji}</p>
+            
+            ${lastQuizCoinsEarned ? `
+            <div class="coins-earned-card">
+                <div class="coins-earned-header">
+                    <span class="coin-icon-large">🪙</span>
+                    <span class="coins-total">+${lastQuizCoinsEarned.total} IFH</span>
+                </div>
+                <div class="coins-breakdown">
+                    ${lastQuizCoinsEarned.breakdown.map(b => `
+                        <div class="coins-breakdown-item">
+                            <span class="breakdown-label">${b.label}</span>
+                            <span class="breakdown-amount">+${b.amount}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            ` : ''}
             
             <div class="quiz-result-actions">
                 ${nextQuizBtn}
