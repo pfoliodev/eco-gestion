@@ -648,7 +648,7 @@ function renderInventoryItems(items) {
         <div class="inventory-item-card" data-item-id="${item.id}">
             <div class="inventory-item-icon">${item.icon || '🎁'}</div>
             <div class="inventory-item-info">
-                <div class="inventory-item-name">${item.name}</div>
+                <div class="inventory-item-name">${item.itemName || item.name || 'Article'}</div>
                 <div class="inventory-item-category">${getCategoryLabel(item.category)}</div>
             </div>
             ${item.category !== 'boost' ? `
