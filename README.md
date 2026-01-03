@@ -1,73 +1,91 @@
-# Eco-Gestion - Plateforme de Gestion de Cours d'Économie
+# Eco-Gestion - Plateforme de Cours d'Économie
 
-Une application web moderne pour gérer, organiser et partager des cours et exercices d'économie avec un système d'administration complet.
+Une application web moderne pour gérer, réviser et partager des cours d'économie avec un système complet de gamification et d'outils pédagogiques.
 
 ## ✨ Fonctionnalités Principales
 
 ### 📚 Gestion des Cours et Exercices
-- **Création et édition** de cours avec éditeur de texte riche (TinyMCE)
+- **Création et édition** avec éditeur de texte riche (TinyMCE)
 - **Types de contenu** : Cours théoriques et exercices pratiques
 - **Catégorisation** par sujet et catégorie
 - **Liaison cours-exercices** : Associez des exercices à vos cours
-- **Système d'archivage** : Les cours supprimés sont archivés et peuvent être restaurés
-- **Recherche et filtrage** avancés par titre, sujet, type et description
+- **Système d'archivage** : Les cours supprimés sont archivés (restaurables)
+- **Recherche et filtrage** avancés par titre, sujet, type
+- **📄 Export PDF** : Téléchargez n'importe quel cours en PDF formaté
+
+### 🃏 Flashcards
+- **Création de decks** par sujet ou par cours
+- **Mode révision** avec retournement de carte
+- **Suivi de progression** : Cartes maîtrisées vs à revoir
+- **Interface intuitive** : Glissez ou cliquez pour naviguer
+
+### 📝 QCM de Révision
+- **Quiz interactifs** liés aux cours
+- **Correction instantanée** avec explications
+- **Historique des scores** par utilisateur
+- **Temps de complétion** suivi et affiché
+- **Administration simple** pour créer/modifier les quiz
+
+### 🏆 Système de Badges (Gamification)
+- **Badges automatiques** débloqués selon l'activité :
+  - 🌟 Premier Pas - Premier quiz complété
+  - 🎯 Expert - Score parfait sur un quiz
+  - ⚡ Flash - Quiz complété en moins de 60 secondes
+  - 📚 Érudit - 5 cours lus entièrement
+  - 🔥 Assidu - 7 jours consécutifs connecté
+  - Et bien d'autres...
+- **Affichage sur le profil** avec progression
+
+### ❤️ Favoris et Suivi
+- **Ajout aux favoris** : Marquez vos cours préférés
+- **Historique de visites** : Voir qui a consulté chaque cours
+- **Cours récents** : Accès rapide aux derniers cours consultés
+
+### 🔔 Rappels de Révision
+- **Rappels personnalisés** : Planifiez vos sessions de révision
+- **Notifications** : Ne manquez jamais une session
+- **Gestion admin** : Créez des rappels globaux
 
 ### 👥 Système d'Authentification
-- **Inscription** avec email/mot de passe (prénom et nom optionnels)
-- **Connexion** par email/mot de passe ou Google Sign-In
-- **Gestion de profil** : Modification du prénom, nom et photo de profil
-- **Système de rôles** : Administrateur et Étudiant
+- **Inscription** avec email/mot de passe
+- **Connexion Google** (OAuth 2.0)
+- **Profil utilisateur** : Photo, prénom, nom
+- **Rôles** : Administrateur et Étudiant
 
 ### 🔐 Panneau d'Administration
-- **Gestion des utilisateurs** :
-  - Liste complète avec prénom, nom, email, rôle et date de création
-  - Promotion/rétrogradation des rôles
-  - Archivage des utilisateurs (restauration possible)
-  - Onglet dédié aux utilisateurs archivés
-  
-- **Gestion des cours** :
-  - Association cours-exercices
-  - Visualisation des cours archivés
-  - Restauration des cours archivés
-  
-- **Gestion des signalements** :
-  - Système de reporting de bugs par les utilisateurs
-  - Marquage résolu/nouveau
-  - Vue détaillée des signalements
+- **Gestion des utilisateurs** : Liste, rôles, archivage
+- **Gestion des cours** : Création, édition, liaison exercices
+- **Signalements de bugs** : Suivi et résolution
+- **Statistiques** : Temps moyen de quiz, utilisateurs actifs
+- **Feature Flags** : Activation/désactivation de fonctionnalités
 
-### 🎨 Interface Utilisateur
-- **Design moderne** avec mode sombre
-- **Responsive** : Optimisé pour mobile, tablette et desktop
-- **Menu mobile** avec fermeture automatique lors de la navigation
-- **Navigation fluide** avec système de pages SPA
-- **Notifications toast** pour les actions utilisateur
-- **Statistiques** : Nombre de cours et exercices
-
-### 🔄 Système d'Archivage
-- **Cours archivés** : Restauration depuis le panneau admin
-- **Utilisateurs archivés** : Évite les conflits avec Firebase Authentication
-- **Traçabilité** : Date d'archivage enregistrée
+### 🍪 RGPD & Confidentialité
+- **Bandeau cookies** : Consentement explicite
+- **Politique de confidentialité** détaillée
+- **Mentions légales** complètes
 
 ## 🛠️ Technologies Utilisées
 
 ### Frontend
-- **HTML5, CSS3** - Structure et style moderne
-- **JavaScript (ES6 Modules)** - Logique applicative modulaire
-- **Architecture SPA** - Navigation sans rechargement de page
+- **HTML5, CSS3** - Structure et styles modernes (modularisés)
+- **JavaScript (ES6 Modules)** - Architecture modulaire
+- **Architecture SPA** - Navigation sans rechargement
 
 ### Backend & Services
 - **Firebase Authentication** - Gestion sécurisée des utilisateurs
-- **Firebase Firestore** - Base de données NoSQL en temps réel
+- **Firebase Firestore** - Base de données NoSQL temps réel
 - **Firebase Hosting** - Hébergement rapide et sécurisé
 
 ### Bibliothèques
-- [TinyMCE](https://www.tiny.cloud/) - Éditeur de texte riche WYSIWYG
-- [Notyf](https://carlosroso.com/notyf/) - Notifications toast élégantes
+- [TinyMCE](https://www.tiny.cloud/) - Éditeur WYSIWYG
+- [Notyf](https://carlosroso.com/notyf/) - Notifications toast
+- [html2pdf.js](https://ekoopmans.github.io/html2pdf.js/) - Export PDF
+- [Inter Font](https://fonts.google.com/specimen/Inter) - Typographie
 
-## 📦 Installation et Lancement
+## 📦 Installation
 
 ### Prérequis
-- Node.js et npm installés
+- Node.js et npm
 - Compte Firebase
 
 ### 1. Cloner le dépôt
@@ -77,37 +95,24 @@ cd eco-gestion
 ```
 
 ### 2. Configuration Firebase
-
 1. Créez un projet sur [Firebase Console](https://console.firebase.google.com/)
-2. Activez les services suivants :
-   - **Authentication** : Email/Password et Google Sign-In
-   - **Firestore Database**
-   - **Hosting**
-3. Créez une application web et copiez la configuration
-4. Collez votre configuration dans `public/js/firebase-config.js`
+2. Activez **Authentication** (Email/Password + Google)
+3. Activez **Firestore Database**
+4. Copiez la configuration dans `public/js/firebase-config.js`
 
-### 3. Règles Firestore
-
-Déployez les règles de sécurité :
+### 3. Déployer les règles Firestore
 ```bash
 firebase deploy --only firestore:rules
 ```
 
-Les règles incluent :
-- Lecture/écriture sécurisée pour les utilisateurs
-- Permissions admin pour la gestion
-- Protection contre la suppression de son propre compte
-
-### 4. Lancement Local
-
+### 4. Lancement local
 ```bash
+npx serve public -l 3000
+# ou
 firebase serve
 ```
 
-L'application sera accessible sur `http://localhost:5000`
-
-### 5. Déploiement en Production
-
+### 5. Déploiement
 ```bash
 firebase deploy
 ```
@@ -117,39 +122,42 @@ firebase deploy
 ```
 eco-gestion/
 ├── public/
+│   ├── css/
+│   │   ├── base/           # Variables, reset, typographie
+│   │   ├── components/     # Boutons, cartes, modals, tables...
+│   │   ├── pages/          # Styles par page
+│   │   └── main.css        # Point d'entrée CSS
 │   ├── js/
-│   │   ├── main.js              # Point d'entrée principal
-│   │   ├── auth.js              # Authentification
-│   │   ├── course.js            # Gestion des cours
-│   │   ├── admin.js             # Panneau d'administration
-│   │   ├── account.js           # Gestion du profil
-│   │   ├── bug.js               # Système de signalement
-│   │   ├── firebase.js          # Configuration Firebase
-│   │   ├── state.js             # Gestion d'état global
-│   │   └── ui.js                # Utilitaires UI
+│   │   ├── main.js         # Point d'entrée JS
+│   │   ├── auth.js         # Authentification
+│   │   ├── course.js       # Gestion des cours
+│   │   ├── quiz.js         # Logique quiz
+│   │   ├── quiz-ui.js      # Interface quiz
+│   │   ├── flashcard.js    # Logique flashcards
+│   │   ├── flashcard-ui.js # Interface flashcards
+│   │   ├── badges.js       # Système de badges
+│   │   ├── favorites.js    # Gestion des favoris
+│   │   ├── pdf-export.js   # Export PDF
+│   │   ├── admin.js        # Panneau admin
+│   │   ├── account.js      # Profil utilisateur
+│   │   ├── reminders.js    # Rappels de révision
+│   │   ├── stats.js        # Statistiques
+│   │   └── ...
 │   ├── templates/
-│   │   ├── components/          # Composants réutilisables
-│   │   └── pages/               # Pages de l'application
-│   ├── styles.css               # Styles globaux
-│   └── index.html               # Page principale
-├── firestore.rules              # Règles de sécurité Firestore
-└── firebase.json                # Configuration Firebase
+│   │   ├── components/     # Header, footer, modals
+│   │   └── pages/          # Templates des pages
+│   └── index.html          # Page principale
+├── firestore.rules         # Règles de sécurité
+├── firebase.json           # Configuration Firebase
+└── README.md
 ```
 
 ## 🔒 Sécurité
 
-- **Authentification Firebase** : Mots de passe cryptés
+- **Authentification Firebase** : Tokens JWT sécurisés
 - **Règles Firestore** : Contrôle d'accès granulaire
-- **Validation côté serveur** : Protection contre les injections
-- **Archivage** : Pas de suppression définitive des données
-
-## 🚀 Fonctionnalités à Venir
-
-- [ ] Système de notifications en temps réel
-- [ ] Export de cours en PDF
-- [ ] Partage de cours entre utilisateurs
-- [ ] Système de favoris
-- [ ] Statistiques avancées pour les admins
+- **Sanitization** : Protection XSS sur les entrées utilisateur
+- **Archivage** : Pas de suppression définitive
 
 ## 📝 Licence
 
@@ -161,4 +169,5 @@ Développé par [pfoliodev](https://github.com/pfoliodev)
 
 ## 🤝 Contribution
 
-Les contributions sont les bienvenues ! N'hésitez pas à ouvrir une issue ou une pull request.
+Les contributions sont les bienvenues ! Ouvrez une issue ou une pull request.
+
