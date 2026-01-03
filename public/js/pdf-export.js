@@ -116,6 +116,25 @@ export async function downloadCourseAsPdf(courseId) {
                     background: #f1f5f9;
                     font-weight: 600;
                 }
+                /* Prevent page breaks inside content blocks */
+                .pdf-content h1, .pdf-content h2, .pdf-content h3,
+                .pdf-content h4, .pdf-content h5, .pdf-content h6 {
+                    page-break-after: avoid;
+                    break-after: avoid;
+                }
+                .pdf-content p, .pdf-content li, .pdf-content blockquote,
+                .pdf-content pre, .pdf-content div, .pdf-content section {
+                    page-break-inside: avoid;
+                    break-inside: avoid;
+                }
+                .pdf-content table {
+                    page-break-inside: avoid;
+                    break-inside: avoid;
+                }
+                .pdf-content tr {
+                    page-break-inside: avoid;
+                    break-inside: avoid;
+                }
                 .pdf-footer {
                     margin-top: 40px;
                     padding-top: 20px;
@@ -159,6 +178,25 @@ export async function downloadCourseAsPdf(courseId) {
         // Temporarily add to DOM for rendering
         document.body.appendChild(pdfContainer);
 
+        // Expand all collapsible elements for PDF (details/summary, accordions, etc.)
+        pdfContainer.querySelectorAll('details').forEach(d => d.setAttribute('open', 'true'));
+        pdfContainer.querySelectorAll('[data-collapsed="true"]').forEach(el => el.setAttribute('data-collapsed', 'false'));
+        pdfContainer.querySelectorAll('.collapsed, .hidden, .is-collapsed').forEach(el => {
+            el.classList.remove('collapsed', 'hidden', 'is-collapsed');
+            el.style.display = '';
+            el.style.maxHeight = 'none';
+            el.style.overflow = 'visible';
+        });
+
+        // Make all content visible regardless of overflow settings
+        pdfContainer.querySelectorAll('*').forEach(el => {
+            const style = window.getComputedStyle(el);
+            if (style.overflow === 'hidden' && el.scrollHeight > el.clientHeight) {
+                el.style.overflow = 'visible';
+                el.style.maxHeight = 'none';
+            }
+        });
+
         // Force a reflow to ensure styles are applied
         pdfContainer.offsetHeight;
 
@@ -178,7 +216,12 @@ export async function downloadCourseAsPdf(courseId) {
                 format: 'a4',
                 orientation: 'portrait'
             },
-            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+            pagebreak: {
+                mode: 'css',
+                before: '.pdf-page-break-before',
+                after: '.pdf-page-break-after',
+                avoid: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'li', 'tr', 'blockquote', 'pre', 'table', '.avoid-break']
+            }
         };
 
         // Generate and download PDF
