@@ -87,12 +87,31 @@ export const STARTER_PETS = [
             creativity: 0.8,
             social: 0.8
         },
+        evolution: {
+            id: "voltonnerre",
+            name: "Voltonnerre",
+            type: "Foudre / Vitesse",
+            description: "Une boule d'énergie pure capable de générer des orages. Sa vitesse est inégalée.",
+            flavorText: "L'air crépite autour de Voltonnerre. Il est prêt à foudroyer n'importe quel obstacle !",
+            image: "/images/pets/voltonnerre.png",
+            color: "#facc15",
+            baseStats: {
+                intelligence: 9,
+                creativity: 8,
+                social: 7
+            },
+            statGrowth: {
+                intelligence: 1.3,
+                creativity: 1.1,
+                social: 1.1
+            }
+        },
         stats: {
             intelligence: 4,
             creativity: 3,
             social: 3
         },
-        evolution: null // TODO: Add evolved form
+
     },
     {
         id: "ombrage",

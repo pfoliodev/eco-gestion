@@ -409,7 +409,35 @@ export async function equipItem(itemId) {
             // 1. Save CURRENT pet state to inventory (if it exists)
             if (userData.pet) {
                 const currentPet = userData.pet;
-                const currentPetInventoryId = `pet_${currentPet.id}`;
+                let currentPetInventoryId = currentPet.itemId;
+
+                // Fallback: If no persisted itemId, try to find the "equipped" item in inventory to overwrite it
+                // This handles cases where pet evolved (id changed) but inventory doc is still under old name
+                if (!currentPetInventoryId) {
+                    // We need to find the doc in 'users/{uid}/inventory' where equipped == true
+                    // Since we can't easily query subcollections without potential index issues, 
+                    // and we expect few items, we can check the most likely candidates or all.
+                    // Actually, let's try the legacy ID first
+                    const legacyId = `pet_${currentPet.id}`;
+
+                    // But if it evolved, legacyId is 'pet_lunombre', but real doc is 'pet_ombrage'.
+                    // This is the problem.
+
+                    // Strategy: Fetch all companions from inventory and find the equipped one.
+                    // We can't use getUserInventory here easily as it formats data.
+                    // Let's use direct collection access.
+                    const invColRef = collection(db, 'users', userId, 'inventory');
+                    const q = query(invColRef, where('category', '==', ECONOMY.CATEGORIES.COMPANION), where('equipped', '==', true));
+                    const qSnap = await getDocs(q);
+
+                    if (!qSnap.empty) {
+                        currentPetInventoryId = qSnap.docs[0].id;
+                    } else {
+                        // Default to ID based on current state if nothing found (new pet system?)
+                        currentPetInventoryId = currentPet.instanceId ? `pet_${currentPet.instanceId}` : `pet_${currentPet.id}`;
+                    }
+                }
+
                 const currentPetRef = doc(db, 'users', userId, 'inventory', currentPetInventoryId);
 
                 // We create/update the inventory doc for the pet we are putting away
@@ -452,6 +480,7 @@ export async function equipItem(itemId) {
 
             updateData.pet = {
                 id: speciesId.toLowerCase(),
+                itemId: itemId, // CRITICAL: Persist the inventory doc ID so we know where to save it back later
                 name: newPetInventoryData.itemName || newPetInventoryData.name,
                 nickname: newPetInventoryData.nickname || newPetInventoryData.itemName,
                 image: newPetInventoryData.image, // Should be saved on purchase/save

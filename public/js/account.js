@@ -1,5 +1,5 @@
 import { auth, bugsCollection, db, storage } from './firebase.js';
-import { getDocs, query, where, doc, getDoc, setDoc, collection, orderBy, limit } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js";
+import { getDocs, query, where, doc, getDoc, setDoc, updateDoc, collection, orderBy, limit, deleteDoc } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-storage.js";
 import { state } from './state.js';
 import { notyf } from './ui.js';
@@ -622,7 +622,6 @@ export async function loadUserPet() {
 
         if (userData && userData.pet) {
             await renderPetDashboard(userData.pet);
-            await updateEvolutionButton(); // Check if evolution is available
         } else {
             container.innerHTML = `
                 <div style="text-align: center; padding: 2rem;">
@@ -656,7 +655,8 @@ async function renderPetDashboard(petData) {
     // Find pet definition for stats calculation
     // currentPet.id might be instanceId (e.g. "1767..."), so we need to find the species ID
     // usually stored in itemId (e.g. "pet_ombrage") or we need to try finding it directly if it's a legacy pet
-    let speciesId = currentPet.itemId ? currentPet.itemId.replace('pet_', '') : currentPet.id.replace('pet_', '');
+    // Fix: If evolved, rely on valid ID. Otherwise prefer itemId if available.
+    let speciesId = (currentPet.evolved && currentPet.id) ? currentPet.id : (currentPet.itemId ? currentPet.itemId.replace('pet_', '') : currentPet.id.replace('pet_', ''));
     let petDefinition = STARTER_PETS.find(p => p.id === speciesId);
 
     // Final fallback: if speciesId provided didn't match (maybe it was an instanceId), try to find the item in inventory by instanceId
@@ -758,10 +758,9 @@ async function renderPetDashboard(petData) {
 
     // Lookup personalized flavor text
     let flavorText = `${currentPet.nickname || currentPet.name} vous regarde avec attention. Il semble prêt à apprendre !`;
-    const configPetForFlavor = STARTER_PETS.find(p => p.id === currentPet.id);
-    if (configPetForFlavor && configPetForFlavor.flavorText) {
-        flavorText = configPetForFlavor.flavorText;
-    } else if (petDefinition && petDefinition.flavorText) {
+
+    // ConfigPetForFlavor was redundant and dangerous; rely on the correctly resolved petDefinition
+    if (petDefinition && petDefinition.flavorText) {
         flavorText = petDefinition.flavorText;
     }
 
@@ -874,56 +873,64 @@ async function renderPetDashboard(petData) {
             <div class="pet-flavor-text">
                 <p>"${flavorText}"</p>
             </div>
+
+            ${petDefinition && petDefinition.evolution ? `
+            <div class="pet-action-footer" style="margin-top: 1.5rem; text-align: center;">
+                <button onclick="handleEvolutionClick()" class="btn-evolution-glow">
+                    ✨ Faire évoluer !
+                </button>
+            </div>
+            ` : ''}
+
+
         </div>
 
         <!-- STATS INFO MODAL -->
-        <div id="stats-info-modal" class="modal-overlay" style="display:none;" onclick="if(event.target===this)this.style.display='none'">
-            <div class="modal-content" style="max-width: 500px;">
-                <h3 style="margin-top:0;">Comprendre les Stats de votre Compagnon</h3>
-                <div class="stats-explanation-list">
-                    <div class="stat-explain-item" style="margin-bottom: 1rem; display: flex; gap: 0.8rem; align-items: flex-start;">
-                        <span style="font-size: 1.5rem;">🧠</span>
-                        <div>
-                            <strong>Intelligence</strong>
-                            <p style="margin:0.2rem 0 0; font-size: 0.9rem; color: var(--text-secondary);">Augmente l'expérience (XP) gagnée par votre compagnon à chaque bon quiz. Plus il est intelligent, plus il évolue vite !</p>
-                        </div>
-                    </div>
-                    <div class="stat-explain-item" style="margin-bottom: 1rem; display: flex; gap: 0.8rem; align-items: flex-start;">
-                        <span style="font-size: 1.5rem;">🎨</span>
-                        <div>
-                            <strong>Créativité</strong>
-                            <p style="margin:0.2rem 0 0; font-size: 0.9rem; color: var(--text-secondary);">Augmente la chance de trouver des pièces (Coins) bonus aléatoires en naviguant sur le site.</p>
-                        </div>
-                    </div>
-                    <div class="stat-explain-item" style="margin-bottom: 1rem; display: flex; gap: 0.8rem; align-items: flex-start;">
-                        <span style="font-size: 1.5rem;">🤝</span>
-                        <div>
-                            <strong>Social</strong>
-                            <p style="margin:0.2rem 0 0; font-size: 0.9rem; color: var(--text-secondary);">Multiplie votre bonus de connexion quotidien. Un compagnon sociable vous rapporte plus de pièces chaque jour !</p>
-                        </div>
+    <div id="stats-info-modal" class="modal-overlay" style="display:none;" onclick="if(event.target===this)this.style.display='none'">
+        <div class="modal-content" style="max-width: 500px;">
+            <h3 style="margin-top:0;">Comprendre les Stats de votre Compagnon</h3>
+            <div class="stats-explanation-list">
+                <div class="stat-explain-item" style="margin-bottom: 1rem; display: flex; gap: 0.8rem; align-items: flex-start;">
+                    <span style="font-size: 1.5rem;">🧠</span>
+                    <div>
+                        <strong>Intelligence</strong>
+                        <p style="margin:0.2rem 0 0; font-size: 0.9rem; color: var(--text-secondary);">Augmente l'expérience (XP) gagnée par votre compagnon à chaque bon quiz. Plus il est intelligent, plus il évolue vite !</p>
                     </div>
                 </div>
-                <button class="btn-primary" onclick="document.getElementById('stats-info-modal').style.display='none'" style="width:100%; margin-top:1rem;">Compris !</button>
+                <div class="stat-explain-item" style="margin-bottom: 1rem; display: flex; gap: 0.8rem; align-items: flex-start;">
+                    <span style="font-size: 1.5rem;">🎨</span>
+                    <div>
+                        <strong>Créativité</strong>
+                        <p style="margin:0.2rem 0 0; font-size: 0.9rem; color: var(--text-secondary);">Augmente la chance de trouver des pièces (Coins) bonus aléatoires en naviguant sur le site.</p>
+                    </div>
+                </div>
+                <div class="stat-explain-item" style="margin-bottom: 1rem; display: flex; gap: 0.8rem; align-items: flex-start;">
+                    <span style="font-size: 1.5rem;">🤝</span>
+                    <div>
+                        <strong>Social</strong>
+                        <p style="margin:0.2rem 0 0; font-size: 0.9rem; color: var(--text-secondary);">Multiplie votre bonus de connexion quotidien. Un compagnon sociable vous rapporte plus de pièces chaque jour !</p>
+                    </div>
+                </div>
             </div>
+            <button class="btn-primary" onclick="document.getElementById('stats-info-modal').style.display='none'" style="width:100%; margin-top:1rem;">Compris !</button>
         </div>
-    `;
-
-    // 3. Render Other Companions Grid
-    // If pet has evolved, find the pre-evolution ID to exclude it
-    let preEvolutionId = null;
-    if (currentPet.evolved) {
-        // Find which starter pet evolved into the current one
-        const evolvedFromStarter = STARTER_PETS.find(s => s.evolution && s.evolution.id === currentPet.id);
-        if (evolvedFromStarter) {
-            preEvolutionId = evolvedFromStarter.id;
-        }
-    }
+    </div>
+`;
 
     // Filter out the current pet AND its pre-evolution form if evolved
     const filteredCompanions = ownedCompanions.filter(p => {
+        // ABSOLUTE RULE: If it's equipped, it's the current pet. Don't show it in "Other Companions".
+        if (p.equipped) return false;
+
         // If we have instance IDs (new system), rely on them for exact matching
         if (currentPet.instanceId && p.instanceId) {
-            return currentPet.instanceId !== p.instanceId;
+            // If instance IDs match, it's the same pet
+            if (currentPet.instanceId === p.instanceId) return false;
+        }
+
+        // Check by Inventory Document ID (itemId) if available - most robust
+        if (currentPet.itemId && p.itemId && currentPet.itemId === p.itemId) {
+            return false;
         }
 
         // Fallback for legacy pets or mixed cases:
@@ -931,31 +938,18 @@ async function renderPetDashboard(petData) {
         const petIdFromItem = p.id.replace('pet_', '');
         const itemPetId = p.itemId?.replace('pet_', '') || petIdFromItem;
 
-        // If it looks like the exact same legacy pet (based on ID match where one might be the active one moved to inventory virtually)
-        // Wait, getUserInventory includes the active pet virtually? Yes.
-        // So we MUST filter out the active pet itself.
-
-        // If both are legacy (no instanceId), matching species ID implies it's the same pet (since you could only have one)
-        // OR if getUserInventory returns the active pet as a virtual item, we want to hide it from "Other pets" list.
-
-        // Check if this specific inventory item IS the current active pet
-        if (p.equipped) return false;
-
         // Also check if species matches AND we don't have instance IDs differentiation
         // (This prevents showing duplicates if logic above fails, but allows multiple Ombrage if they are distinct instances)
         if (!p.instanceId && !currentPet.instanceId && (itemPetId === currentPet.id || petIdFromItem === currentPet.id)) {
             return false;
         }
 
-        // Skip pre-evolution form if the pet has evolved (keep this logic)
-        if (preEvolutionId && (itemPetId === preEvolutionId || petIdFromItem === preEvolutionId)) return false;
-
         return true;
     });
 
     if (filteredCompanions.length > 0) {
         html += `
-            <div class="other-pets-section">
+    <div class="other-pets-section">
                 <h3>Mes Compagnons</h3>
                 <div class="pets-grid">
                     ${filteredCompanions.map(p => {
@@ -1062,8 +1056,8 @@ async function renderPetDashboard(petData) {
                         `;
         }).join('')}
                 </div>
-            </div>
-        `;
+            </div >
+    `;
     }
 
     container.innerHTML = html;
@@ -1111,7 +1105,7 @@ async function renderPetDashboard(petData) {
                     ✨ +100 XP
                 </button>
             </div>
-        `;
+`;
         container.appendChild(debugSection);
 
         // Pet reset buttons
@@ -1124,6 +1118,16 @@ async function renderPetDashboard(petData) {
                 try {
                     const { generateRandomIVs, generateInstanceId } = await import('./utils/pet-utils.js');
                     const randomIVs = generateRandomIVs();
+
+                    // SAFETY: Unequip current inventory items to prevent "ghost" equipped pets
+                    // when forcing a debug pet overwrite.
+                    const qInv = query(collection(db, 'users', auth.currentUser.uid, 'inventory'), where('equipped', '==', true));
+                    const snap = await getDocs(qInv);
+                    const updates = [];
+                    snap.forEach(doc => {
+                        updates.push(updateDoc(doc.ref, { equipped: false }));
+                    });
+                    await Promise.all(updates);
 
                     await setDoc(doc(db, 'users', auth.currentUser.uid), {
                         pet: {
@@ -1143,7 +1147,7 @@ async function renderPetDashboard(petData) {
                     }, { merge: true });
 
                     const hasEvolution = petConfig.evolution !== null;
-                    notyf.success(`${petConfig.name} Lvl 16 ! ${hasEvolution ? '(peut évoluer)' : '(pas d\'évolution)'}`);
+                    notyf.success(`${petConfig.name} Lvl 16! ${hasEvolution ? '(peut évoluer)' : '(pas d\'évolution)'} `);
                     loadUserPet();
                 } catch (e) {
                     console.error(e);
@@ -1167,7 +1171,7 @@ async function renderPetDashboard(petData) {
                 await setDoc(doc(db, 'users', auth.currentUser.uid), {
                     pet: { level: level, xp: 0 }
                 }, { merge: true });
-                notyf.success(`Niveau changé à ${level}`);
+                notyf.success(`Niveau changé à ${level} `);
                 loadUserPet();
             } catch (e) {
                 notyf.error('Erreur');
@@ -1185,9 +1189,9 @@ async function renderPetDashboard(petData) {
                 }, { merge: true });
 
                 if (result.levelsGained > 0) {
-                    notyf.success(`Level up ! Niveau ${result.newLevel}`);
+                    notyf.success(`Level up! Niveau ${result.newLevel} `);
                 } else {
-                    notyf.success(`+100 XP`);
+                    notyf.success(`+ 100 XP`);
                 }
                 loadUserPet();
             } catch (e) {
@@ -1241,6 +1245,38 @@ async function loadInventory() {
             console.warn("Could not fetch shop images for enrichment:", e);
         }
 
+        // [SELF-REPAIR] Fix "Ghost Equipped" items
+        // If an item is marked equipped in inventory but is NOT the currently active pet in userData,
+        // it means it was left in a dirty state (e.g. by debug tools). Fix it.
+        try {
+            const userDocRef = doc(db, 'users', auth.currentUser.uid);
+            const userSnap = await getDoc(userDocRef);
+            if (userSnap.exists()) {
+                const userData = userSnap.data();
+                if (userData && userData.pet) {
+                    const currentPet = userData.pet;
+                    const currentInstanceId = currentPet.instanceId;
+                    const currentItemId = currentPet.itemId;
+
+                    inventory.forEach(item => {
+                        if (item.equipped) {
+                            const matchesInstance = currentInstanceId && item.instanceId === currentInstanceId;
+                            const matchesItem = currentItemId && item.itemId === currentItemId;
+
+                            if (!matchesInstance && !matchesItem) {
+                                console.warn("Auto-fixing ghost equipped item:", item.itemName);
+                                updateDoc(doc(db, 'users', auth.currentUser.uid, 'inventory', item.itemId), { equipped: false });
+                                item.equipped = false;
+                            }
+                        }
+                    });
+                }
+            }
+        } catch (err) {
+            console.error("Self-repair error:", err);
+        }
+
+
         renderInventoryItems(inventory);
 
         // Initialize inventory filters
@@ -1282,6 +1318,22 @@ function renderInventoryItems(items) {
             actionBtn = `<button class="btn-primary" onclick="window.confirmUse('${item.id}', '${sName}', ${item.quantity || 1}, '${sImage}')" style="width:100%; margin-top:0.5rem; padding:0.4rem; font-size:0.9rem;">Utiliser</button>`;
         }
 
+        // Admin: Add Delete Button
+        let adminBtn = '';
+        let itemDetails = '';
+
+        // Companion stats for display
+        if (item.category === 'companion' && item.level) {
+            const ivTotal = item.ivs ? (item.ivs.intelligence + item.ivs.creativity + item.ivs.social) : 0;
+            const ivText = item.ivs ? `${ivTotal} IV` : '';
+            itemDetails = `Lvl ${item.level} ${ivText ? '• ' + ivText : ''} `;
+        }
+
+        if (state.isAdmin) {
+            const detailStr = itemDetails || '';
+            adminBtn = `<button class="btn-secondary" onclick="event.stopPropagation(); window.deleteItem('${item.itemId}', '${(item.itemName || '').replace(/'/g, "\\'")}', '${detailStr}')" style="width:100%; margin-top:0.5rem; padding:0.4rem; font-size:0.8rem; background:#fee2e2; color:#ef4444; border:1px solid #fecaca;">🗑️ Supprimer (Admin)</button>`;
+        }
+
         // Quantity badge
         const qtyBadge = item.quantity && item.quantity > 1
             ? `<div style="position:absolute; top:5px; right:5px; background:var(--primary-color); color:white; border-radius:12px; padding:2px 8px; font-size:0.8rem; font-weight:bold; box-shadow:0 2px 5px rgba(0,0,0,0.2);">x${item.quantity}</div>`
@@ -1296,7 +1348,9 @@ function renderInventoryItems(items) {
             <div class="inventory-item-info">
                 <div class="inventory-item-name">${item.itemName || item.name || 'Article'}</div>
                 <div class="inventory-item-category">${getCategoryLabel(item.category)}</div>
+                ${itemDetails ? `<div style="font-size:0.85rem; color:var(--primary-color); font-weight:bold; margin-bottom:0.3rem;">${itemDetails}</div>` : ''}
                 ${actionBtn}
+                ${adminBtn}
             </div>
         </div>
         `;
@@ -1431,6 +1485,23 @@ function renderInventoryItems(items) {
         }
     };
 }
+
+// Admin Cleanup Tool
+window.deleteItem = async (itemId, itemName, details = '') => {
+    const detailMsg = details ? `\n(${details})` : '';
+    if (!confirm(`ADMIN: Supprimer définitivement "${itemName}"${detailMsg} de l'inventaire ?`)) return;
+
+    try {
+        const userId = auth.currentUser.uid;
+        await deleteDoc(doc(db, 'users', userId, 'inventory', itemId));
+        notyf.success(`Item supprimé: ${itemName}`);
+        loadInventory();
+        if (typeof loadUserPet === 'function') loadUserPet();
+    } catch (e) {
+        console.error("Error deleting item:", e);
+        notyf.error("Erreur lors de la suppression.");
+    }
+};
 
 function getCategoryLabel(category) {
     const labels = {
@@ -1583,11 +1654,23 @@ export async function checkEvolutionAvailable() {
         const petData = userData.pet;
 
         console.log('[Evolution] petData:', petData);
-        console.log('[Evolution] petData.id:', petData?.id, 'petData.level:', petData?.level);
+        // Normalize ID similar to renderPetDashboard
+        const rawId = petData?.id || '';
+        const speciesId = petData?.itemId ? petData.itemId.replace('pet_', '') : rawId.replace('pet_', '');
+
+        console.log('[Evolution] Normalized ID:', speciesId, 'petData.level:', petData?.level);
 
         if (!petData || petData.evolved) return null; // Already evolved or no pet
 
-        const petDef = getPetDefinition(petData.id);
+        // Robust definition lookup
+        let petDef = STARTER_PETS.find(p => p.id === speciesId);
+
+        // Fallback: Match by NAME if ID failed (handles instance IDs)
+        if (!petDef && petData.name) {
+            console.log('[Evolution] ID lookup failed. Trying fallback by Name:', petData.name);
+            petDef = STARTER_PETS.find(p => p.name === petData.name);
+        }
+
         console.log('[Evolution] petDef:', petDef?.name, 'evolution:', petDef?.evolution);
 
         if (!petDef || !petDef.evolution) return null; // No evolution available
@@ -1599,7 +1682,8 @@ export async function checkEvolutionAvailable() {
         console.log('[Evolution] Required level:', evolutionLevel, 'Current level:', petLevel);
 
         if (petLevel >= evolutionLevel) {
-            return { petData, petDef };
+            // Also merge config properties (flavor text etc) which might be needed
+            return { petData, petDef: { ...petDef, ...petData } };
         }
 
         return null;
@@ -1632,6 +1716,9 @@ function startEvolutionSequence(evolutionData) {
 
     // Show first dialogue
     showNextEvolutionDialogue();
+
+    // Ensure listeners are attached (fix for stuck button)
+    initEvolutionListeners();
 
     // Show modal with animation
     modal.style.display = 'flex';
@@ -1688,6 +1775,21 @@ async function completeEvolution() {
             pet: evolvedPetData
         }, { merge: true });
 
+        // Update Inventory Item if it exists
+        if (evolvedPetData.itemId) {
+            console.log('[Evolution] Updating inventory item:', evolvedPetData.itemId);
+            await setDoc(doc(db, 'users', auth.currentUser.uid, 'inventory', evolvedPetData.itemId), {
+                itemName: evolvedPetData.name,
+                itemId: `pet_${evolvedPetData.id}`, // Update species reference
+                image: evolvedPetData.image,
+                level: evolvedPetData.level,
+                ivs: evolvedPetData.ivs || null,
+                evolutionBonus: evolvedPetData.evolutionBonus || null,
+                evolved: true,
+                evolvedAt: new Date()
+            }, { merge: true });
+        }
+
         // Show boost notification
         const boost = evolvedPetData.lastEvolutionBoost;
         notyf.success(`Boost d'évolution: +${boost.intelligence} INT, +${boost.creativity} CRE, +${boost.social} SOC`);
@@ -1723,42 +1825,35 @@ function initEvolutionListeners() {
     if (closeBtn) closeBtn.onclick = closeEvolutionModal;
 }
 
-// Called after loadUserPet to show evolution button if available
-async function updateEvolutionButton() {
-    const container = document.getElementById('pet-dashboard-content');
-    console.log('[Evolution] updateEvolutionButton called, container:', !!container);
-    if (!container) return;
 
-    // Remove existing evolution button if any
-    const existingBtn = container.querySelector('.evolution-btn');
-    if (existingBtn) existingBtn.remove();
-
-    const evolutionData = await checkEvolutionAvailable();
-    console.log('[Evolution] evolutionData result:', evolutionData);
-
-    if (evolutionData) {
-        console.log('[Evolution] Creating button...');
-        const btn = document.createElement('button');
-        btn.className = 'btn-primary evolution-btn';
-        btn.style.cssText = 'margin-top: 1rem; padding: 0.75rem 2rem; font-size: 1rem; background: linear-gradient(135deg, #ffd700, #ff8c00); border: none; border-radius: 50px; cursor: pointer; animation: pulse 2s infinite; display: block; margin-left: auto; margin-right: auto;';
-        btn.innerHTML = '✨ Faire évoluer !';
-        btn.onclick = () => {
-            startEvolutionSequence(evolutionData);
-        };
-
-        // Insert button inside the pet card, after the flavor text
-        const petCard = container.querySelector('.pet-profile-card');
-        if (petCard) {
-            petCard.appendChild(btn);
-        } else {
-            container.appendChild(btn);
-        }
-        console.log('[Evolution] Button appended!');
-    }
-
-    initEvolutionListeners();
-}
 
 // Expose globally
 window.startEvolutionSequence = startEvolutionSequence;
 window.closeEvolutionModal = closeEvolutionModal;
+
+window.handleEvolutionClick = async () => {
+    const btn = document.querySelector('.btn-evolution-glow');
+    if (btn) {
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.style.opacity = '0.8';
+        btn.innerHTML = '⏳ Chargement...';
+
+        try {
+            const evolutionData = await checkEvolutionAvailable();
+            if (evolutionData) {
+                startEvolutionSequence(evolutionData);
+            } else {
+                notyf.error("L'évolution n'est plus disponible.");
+                setTimeout(() => window.location.reload(), 1500);
+            }
+        } catch (e) {
+            console.error(e);
+            notyf.error("Erreur technique.");
+        } finally {
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            btn.innerHTML = originalText;
+        }
+    }
+};
