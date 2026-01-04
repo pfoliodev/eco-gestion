@@ -632,3 +632,89 @@
         font-size: 0.7rem;
     }
 }
+
+/* ============================================
+   LOGIN REQUIRED STATE
+   ============================================ */
+
+.shop-login-required {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 3rem 2rem;
+    margin: 4rem auto;
+    max-width: 450px;
+    background: #ffffff;
+    border: 1px solid var(--border-color);
+    border-radius: 1.5rem;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05);
+    background: linear-gradient(145deg, #ffffff, #f8fafc);
+    position: relative;
+    overflow: hidden;
+}
+
+.shop-login-required::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #d4af37, #fcd34d);
+}
+
+.shop-login-required .icon {
+    font-size: 4rem;
+    margin-bottom: 1.5rem;
+    display: inline-block;
+    filter: drop-shadow(0 10px 10px rgba(212, 175, 55, 0.2));
+    animation: float 3s ease-in-out infinite;
+}
+
+.shop-login-required h3 {
+    font-size: 1.75rem;
+    color: var(--text-main);
+    margin-bottom: 1rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+.shop-login-required p {
+    color: var(--text-secondary);
+    margin-bottom: 2.5rem;
+    line-height: 1.6;
+    font-size: 1.05rem;
+}
+
+.shop-login-required .btn-primary {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0.875rem 2.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    border-radius: 100px;
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+    color: #1a1a1a;
+    box-shadow: 0 4px 15px rgba(251, 191, 36, 0.3);
+    transition: all 0.3s ease;
+    text-decoration: none;
+    border: none;
+}
+
+.shop-login-required .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(251, 191, 36, 0.4);
+}
+
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
+}
