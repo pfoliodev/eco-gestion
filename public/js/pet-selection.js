@@ -1,6 +1,7 @@
 import { PROFESSOR, STARTER_PETS } from './config/pets.js';
 import { db } from './firebase.js';
 import { doc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js";
+import { createNewPetInstance, getQualityTier, getTotalIVs } from './utils/pet-utils.js';
 
 export class PetSelection {
     constructor(user) {
@@ -180,20 +181,14 @@ export class PetSelection {
         try {
             const userRef = doc(db, "users", this.user.uid);
 
-            // Initial pet state
-            const petData = {
-                id: this.selectedPet.id,
-                name: this.selectedPet.name,
-                nickname: this.selectedPet.name, // Can be changed later
-                type: this.selectedPet.type,
-                image: this.selectedPet.image,
-                color: this.selectedPet.color,
-                level: 1,
-                xp: 0,
-                stats: this.selectedPet.stats,
-                evolutionStage: 1,
-                obtainedAt: new Date().toISOString()
-            };
+            // Create new pet instance with random IVs
+            const petData = createNewPetInstance(this.selectedPet);
+            petData.nickname = petData.name; // Can be changed later
+            petData.evolutionStage = 1;
+
+            // Show quality to user
+            const quality = getQualityTier(petData.ivs);
+            console.log(`[Pet] New pet created: ${petData.name} - Quality: ${quality.name} (IV Total: ${getTotalIVs(petData.ivs)}/45)`);
 
             await updateDoc(userRef, {
                 pet: petData

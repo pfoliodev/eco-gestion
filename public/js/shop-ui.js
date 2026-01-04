@@ -151,8 +151,8 @@ function renderItemCard(item, isOwned, userBalance) {
     const canAfford = userBalance >= item.price;
     const isOutOfStock = item.stock !== undefined && item.stock !== null && item.stock <= 0;
 
-    // Consumables are never "fully owned" in a way that blocks purchase
-    const showAsOwned = isOwned && item.category !== 'consumable';
+    // Consumables and Companions are never "fully owned" in a way that blocks purchase
+    const showAsOwned = isOwned && item.category !== 'consumable' && item.category !== 'companion';
 
     let badgeHtml = '';
     if (showAsOwned) {

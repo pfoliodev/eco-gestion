@@ -307,3 +307,89 @@ _#/|##########/\######(   /\   )######/\##########|\#_
         </div>
     </div>
 </div>
+
+<!-- Evolution Modal (Same style as pet selection) -->
+<div id="evolution-modal" class="pet-selection-overlay" style="display: none;">
+    <div class="pet-selection-container evolution-container">
+
+        <!-- Phase 1: Vladimir Dialogue -->
+        <div id="evolution-dialogue-phase" class="professor-area evolution-professor-area">
+            <img id="evolution-prof-img" src="/images/prof/vladimir.png" alt="Professor Vladimir"
+                class="professor-image visible">
+            <div id="evolution-dialogue-box" class="dialogue-box visible">
+                <span class="professor-name">Vladimir Inalta</span>
+                <p id="evolution-dialogue-text" class="dialogue-text"></p>
+                <button id="evolution-next-btn" class="dialogue-next-btn">▼</button>
+            </div>
+        </div>
+
+        <!-- Phase 2: Evolution Animation (CSS-based) -->
+        <div id="evolution-animation-phase" class="evolution-animation-wrapper" style="display: none;">
+            <h2 class="evolution-title">Évolution en cours...</h2>
+            <div class="evolution-effect-container">
+                <div class="evolution-glow"></div>
+                <div class="evolution-ring ring-1"></div>
+                <div class="evolution-ring ring-2"></div>
+                <div class="evolution-ring ring-3"></div>
+                <div class="evolution-sparkle s1">✨</div>
+                <div class="evolution-sparkle s2">⭐</div>
+                <div class="evolution-sparkle s3">✨</div>
+                <div class="evolution-sparkle s4">🌟</div>
+                <div class="evolution-sparkle s5">✨</div>
+                <div class="evolution-sparkle s6">⭐</div>
+            </div>
+        </div>
+
+        <!-- Phase 3: Result (Same style as pet cards) -->
+        <div id="evolution-result-phase" class="evolution-result-wrapper" style="display: none;">
+            <div class="professor-area evolution-professor-area result-mode">
+                <img src="/images/prof/vladimir.png" alt="Professor Vladimir" class="professor-image visible">
+                <div class="dialogue-box visible result-dialogue">
+                    <span class="professor-name">Vladimir Inalta</span>
+                    <p class="dialogue-text">Félicitations ! L'évolution est un succès magnifique !</p>
+                </div>
+            </div>
+            <div class="evolution-result-card">
+                <div class="result-header">
+                    <span class="result-badge">✨ Évolution Réussie !</span>
+                </div>
+                <div class="pet-image-container">
+                    <img id="evolution-new-pet-img" src="" alt="Evolved Pet" class="pet-image evolved-pet-image">
+                </div>
+                <div class="pet-info">
+                    <h3 id="evolution-new-pet-name" class="pet-name"></h3>
+                    <p id="evolution-new-pet-flavor" class="pet-description"></p>
+                </div>
+                <button id="evolution-close-btn" class="pet-select-btn" style="opacity: 1; transform: none;">Fantastique
+                    !</button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<style>
+    @keyframes pulse {
+
+        0%,
+        100% {
+            transform: scale(1);
+        }
+
+        50% {
+            transform: scale(1.05);
+        }
+    }
+
+    @keyframes floatBounce {
+
+        0%,
+        100% {
+            transform: translateY(0);
+        }
+
+        50% {
+            transform: translateY(-10px);
+        }
+    }
+</style>

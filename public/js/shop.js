@@ -22,6 +22,7 @@ import {
 import { spendCoins, getUserBalance, updateBalanceDisplay } from './coins.js';
 import { ECONOMY } from './config/economy.js';
 import { notyf } from './ui.js';
+import { generateRandomIVs, generateInstanceId, getQualityTier, getTotalIVs } from './utils/pet-utils.js';
 
 // ============================================
 // SHOP ITEMS MANAGEMENT
@@ -134,9 +135,10 @@ export async function purchaseItem(itemId, qty = 1) {
             return { success: false, error: `Stock insuffisant (${item.stock} restants)` };
         }
 
-        // Check if user already owns it (unless it's a consumable)
-        // Consumables can be bought multiple times, but let's prevent non-consumables from bulk buy > 1 if they own it or simple logic check
-        if (item.category !== ECONOMY.CATEGORIES.CONSUMABLE) {
+        // Check if user already owns it (unless it's a consumable or companion)
+        // Consumables can be bought multiple times
+        // Companions can also be bought multiple times (each has unique IVs)
+        if (item.category !== ECONOMY.CATEGORIES.CONSUMABLE && item.category !== ECONOMY.CATEGORIES.COMPANION) {
             if (qty > 1) return { success: false, error: "Impossible d'acheter plusieurs exemplaires de cet objet." };
 
             const hasItem = await userOwnsItem(itemId);
@@ -165,41 +167,72 @@ export async function purchaseItem(itemId, qty = 1) {
 
         // Add item to user's inventory
         const userId = auth.currentUser.uid;
-        const inventoryRef = doc(db, 'users', userId, 'inventory', itemId);
-        const inventorySnap = await getDoc(inventoryRef);
 
-        if (item.category === ECONOMY.CATEGORIES.CONSUMABLE && inventorySnap.exists()) {
-            // Stack consumables
-            await updateDoc(inventoryRef, {
-                quantity: increment(qty),
-                updatedAt: serverTimestamp(),
-                image: item.image // Update image in case it changed or was missing
-            });
-        } else {
-            // Create new inventory item (or stack if it was somehow deleted but we are here)
-            // For non-consumables qty is 1. For consumables it might be first purchase of 5.
+        // Handle companions specially - each purchase creates a unique instance with IVs
+        if (item.category === ECONOMY.CATEGORIES.COMPANION) {
+            const instanceId = generateInstanceId();
+            const ivs = generateRandomIVs();
+            const qualityTier = getQualityTier(ivs);
+
             const inventoryData = {
                 itemId,
+                instanceId,
                 itemName: item.name,
                 category: item.category,
                 purchasedAt: serverTimestamp(),
                 equipped: false,
-                quantity: qty,
-                image: item.image, // Persist the image path
-                icon: item.icon
+                quantity: 1,
+                // Pet-specific data
+                level: 1,
+                xp: 0,
+                ivs: ivs,
+                evolutionBonus: { intelligence: 0, creativity: 0, social: 0 },
+                evolved: false,
+                stats: item.stats || { intelligence: 1, creativity: 1, social: 1 },
+                nickname: item.name,
+                type: item.type || 'Compagnon',
+                image: item.image
             };
 
-            // Initialize companion stats if applicable
-            if (item.category === ECONOMY.CATEGORIES.COMPANION) {
-                inventoryData.level = 1;
-                inventoryData.xp = 0;
-                inventoryData.stats = item.stats || { intelligence: 1, creativity: 1, social: 1 };
-                inventoryData.nickname = item.name;
-                inventoryData.type = item.type || 'Compagnon';
-                inventoryData.image = item.image;
-            }
-
+            // Use instanceId as the document ID to allow multiple of same pet
+            const inventoryRef = doc(db, 'users', userId, 'inventory', instanceId);
             await setDoc(inventoryRef, inventoryData);
+
+            // Log the quality for the user
+            console.log(`[Shop] New ${item.name} acquired with quality: ${qualityTier.name} (IVs: ${getTotalIVs(ivs)}/45)`);
+
+            // Show quality notification
+            notyf.success(`Nouveau compagnon: ${item.name} (${qualityTier.emoji} ${qualityTier.name})`);
+
+        } else {
+            // Non-companion items
+            const inventoryRef = doc(db, 'users', userId, 'inventory', itemId);
+            const inventorySnap = await getDoc(inventoryRef);
+
+            if (item.category === ECONOMY.CATEGORIES.CONSUMABLE && inventorySnap.exists()) {
+                // Stack consumables
+                await updateDoc(inventoryRef, {
+                    quantity: increment(qty),
+                    updatedAt: serverTimestamp(),
+                    image: item.image // Update image in case it changed or was missing
+                });
+            } else {
+                // Create new inventory item
+                const inventoryData = {
+                    itemId,
+                    itemName: item.name,
+                    category: item.category,
+                    purchasedAt: serverTimestamp(),
+                    equipped: false,
+                    quantity: qty
+                };
+
+                // Only add optional fields if they exist
+                if (item.image) inventoryData.image = item.image;
+                if (item.icon) inventoryData.icon = item.icon;
+
+                await setDoc(inventoryRef, inventoryData);
+            }
         }
 
         // Decrease stock if limited
@@ -248,18 +281,26 @@ export async function getUserInventory(category = null) {
 
         // Add current starter pet as an inventory item if not already present
         if (userSnap.exists() && userSnap.data().pet) {
-            const petId = userSnap.data().pet.id;
-            const shopItemId = `pet_${petId}`; // Convention: shop ID = pet_ + petId
+            const currentPet = userSnap.data().pet;
+            const shopItemId = `pet_${currentPet.id}`; // Convention: shop ID = pet_ + petId
 
             // Check if already in inventory (to avoid duplicates if we actually add it later)
             if (!items.find(i => i.id === shopItemId)) {
-                // Add virtual inventory item
+                // Add virtual inventory item with full pet data
                 items.push({
                     id: shopItemId,
                     itemId: shopItemId,
-                    itemName: 'Compagnon de départ', // Name doesn't matter much for ID check
+                    itemName: currentPet.name,
                     category: ECONOMY.CATEGORIES.COMPANION,
-                    equipped: true // It's their current pet
+                    equipped: true, // It's their current pet
+                    // Include all pet stats for display
+                    level: currentPet.level || 1,
+                    xp: currentPet.xp || 0,
+                    ivs: currentPet.ivs || null,
+                    evolutionBonus: currentPet.evolutionBonus || null,
+                    evolved: currentPet.evolved || false,
+                    image: currentPet.image,
+                    type: currentPet.type
                 });
             }
         }
@@ -389,9 +430,12 @@ export async function equipItem(itemId) {
                     // Identity
                     itemName: currentPet.name,
                     image: safeImage,
-                    type: safeType
-                    // We don't overwrite purchasedAt if it exists, so setDoc with merge is better?
-                    // But setDoc overwrites. Let's use setDoc with merge: true
+                    type: safeType,
+                    // New IV system data
+                    ivs: currentPet.ivs || null,
+                    evolutionBonus: currentPet.evolutionBonus || null,
+                    evolved: currentPet.evolved || false,
+                    instanceId: currentPet.instanceId || null
                 }, { merge: true });
             }
 
@@ -403,8 +447,11 @@ export async function equipItem(itemId) {
             await updateDoc(inventoryRef, { equipped: true });
 
             // 4. Update User Profile with new pet data
+            // Fix: For new pets (instanceId), the docId is NOT the species ID. use itemId from data instead.
+            const speciesId = newPetInventoryData.itemId ? newPetInventoryData.itemId.replace('pet_', '') : itemId.replace('pet_', '');
+
             updateData.pet = {
-                id: itemId.replace('pet_', '').toLowerCase(),
+                id: speciesId.toLowerCase(),
                 name: newPetInventoryData.itemName || newPetInventoryData.name,
                 nickname: newPetInventoryData.nickname || newPetInventoryData.itemName,
                 image: newPetInventoryData.image, // Should be saved on purchase/save
@@ -414,6 +461,12 @@ export async function equipItem(itemId) {
                 level: newPetInventoryData.level || 1,
                 xp: newPetInventoryData.xp || 0,
                 stats: newPetInventoryData.stats || { intelligence: 1, creativity: 1, social: 1 },
+
+                // Restore IV system data
+                ivs: newPetInventoryData.ivs || null,
+                evolutionBonus: newPetInventoryData.evolutionBonus || null,
+                evolved: newPetInventoryData.evolved || false,
+                instanceId: newPetInventoryData.instanceId || null,
 
                 obtainedAt: newPetInventoryData.purchasedAt ? newPetInventoryData.purchasedAt.toDate().toISOString() : new Date().toISOString()
             };
