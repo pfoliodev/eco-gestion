@@ -1,5 +1,4 @@
-# Eco-Gestion - Plateforme de Cours d'Économie
-
+# Plateforme de Cours 
 Une application web moderne pour gérer, réviser et partager des cours d'économie avec un système complet de gamification et d'outils pédagogiques.
 
 ## ✨ Fonctionnalités Principales
