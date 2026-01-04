@@ -1,5 +1,5 @@
 import { db, usersCollection, bugsCollection, coursesCollection } from './firebase.js';
-import { getDocs, doc, updateDoc, deleteDoc, query, orderBy, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js";
+import { getDocs, doc, updateDoc, deleteDoc, query, orderBy, where, serverTimestamp, collection, limit, getCountFromServer } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js";
 import { state } from './state.js';
 import { auth } from './firebase.js';
 import { notyf } from './ui.js';
@@ -284,6 +284,12 @@ export function initAdminSidebar() {
             }
             if (section === 'shop') {
                 loadShopAdmin();
+            }
+            if (section === 'pets') {
+                loadPetsAdmin();
+            }
+            if (section === 'database') {
+                loadDatabase();
             }
 
             // Close sidebar on mobile after selection
@@ -796,6 +802,489 @@ export async function loadBadgesAdmin() {
         notyf.error("Erreur de chargement des badges.");
     }
 }
+
+// ============================================
+// DATABASE VISUALIZATION
+// ============================================
+
+const KNOWN_COLLECTIONS = [
+    'users', 'courses', 'bugs', 'shop_items', 'badges',
+    'quiz_results', 'favorites', 'coin_transactions', 'pets'
+];
+
+export async function loadDatabase() {
+    if (!state.isAdmin) return;
+
+    const grid = document.getElementById('db-stats-grid');
+    if (!grid) return;
+
+    grid.innerHTML = '<div class="loading-spinner">Chargement des données...</div>';
+
+    // Hide detail view if open
+    document.getElementById('db-collection-detail').style.display = 'none';
+
+    try {
+        const stats = await Promise.all(KNOWN_COLLECTIONS.map(async (colName) => {
+            return await fetchCollectionData(colName);
+        }));
+
+        renderDatabaseStats(stats);
+    } catch (error) {
+        console.error("Error loading database stats:", error);
+        notyf.error("Erreur lors du chargement de la base de données.");
+        grid.innerHTML = '<p class="error-text">Erreur de chargement.</p>';
+    }
+
+    // Add event listener for refresh button
+    const refreshBtn = document.getElementById('refresh-database-btn');
+    if (refreshBtn) {
+        // Remove old listener to avoid duplicates
+        const newBtn = refreshBtn.cloneNode(true);
+        refreshBtn.parentNode.replaceChild(newBtn, refreshBtn);
+        newBtn.addEventListener('click', loadDatabase);
+    }
+}
+
+async function fetchCollectionData(collectionName) {
+    try {
+        const colRef = collection(db, collectionName);
+
+        // 1. Get Count (Estimate or Exact)
+        let count = 'N/A';
+        try {
+            // Check if getCountFromServer is available (v9 modular SDK)
+            // If not available, we might fall back to reading metadata or just listing docs (expensive for large DBs)
+            // For now, let's assume valid SDK or handle error
+            if (typeof getCountFromServer === 'function') {
+                const snapshot = await getCountFromServer(colRef);
+                count = snapshot.data().count;
+            } else {
+                // Fallback: Get all docs (Use with caution on large DBs, maybe limit?)
+                // Actually, let's just use a small sample query to test existence if we can't count cheap
+                const snap = await getDocs(query(colRef, limit(1000))); // Hard limit for safety
+                count = snap.size + (snap.size === 1000 ? '+' : '');
+            }
+        } catch (e) {
+            console.warn(`Could not count ${collectionName}`, e);
+        }
+
+        // 2. Get Sample for Schema Inference
+        const sampleSnap = await getDocs(query(colRef, limit(5)));
+        const samples = sampleSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+        return {
+            name: collectionName,
+            count: count,
+            samples: samples
+        };
+    } catch (error) {
+        console.error(`Error fetching ${collectionName}:`, error);
+        return { name: collectionName, count: 'Err', samples: [] };
+    }
+}
+
+function renderDatabaseStats(statsData) {
+    const grid = document.getElementById('db-stats-grid');
+    if (!grid) return;
+
+    if (statsData.length === 0) {
+        grid.innerHTML = '<p>Aucune collection trouvée.</p>';
+        return;
+    }
+
+    grid.innerHTML = statsData.map(stat => {
+        const icon = getCollectionIcon(stat.name);
+        return `
+            <div class="db-collection-card" onclick="viewCollectionDetail('${stat.name}')">
+                <h3>
+                    ${stat.name}
+                    <span class="count-badge">${stat.count}</span>
+                </h3>
+                <div class="db-icon">${icon}</div>
+                <p style="font-size: 0.85rem; color: var(--text-secondary);">
+                    ${stat.samples.length > 0 ? 'Données disponibles' : 'Collection vide'}
+                </p>
+            </div>
+        `;
+    }).join('');
+
+    // Store data globally or partially for detail view
+    window.dbStatsCache = statsData;
+}
+
+function getCollectionIcon(name) {
+    const map = {
+        'users': '👥', 'courses': '📚', 'bugs': '🐞',
+        'shop_items': '🛒', 'badges': '🏆', 'quiz_results': '📝',
+        'favorites': '❤️', 'coin_transactions': '🪙', 'pets': '🐾'
+    };
+    return map[name] || '📂';
+}
+
+export function viewCollectionDetail(collectionName) {
+    const data = window.dbStatsCache?.find(s => s.name === collectionName);
+    if (!data) return;
+
+    const container = document.getElementById('db-collection-detail');
+    const nameEl = document.getElementById('detail-collection-name');
+    const schemaList = document.getElementById('detail-schema-list');
+    const sampleJson = document.getElementById('detail-sample-json');
+
+    if (!container || !nameEl) return;
+
+    nameEl.textContent = `Collection: ${collectionName}`;
+
+    // Inferred Schema
+    const schema = inferSchema(data.samples);
+    if (Object.keys(schema).length === 0) {
+        schemaList.innerHTML = '<li><em>Aucun schéma détecté (collection vide ?)</em></li>';
+    } else {
+        schemaList.innerHTML = Object.entries(schema).map(([field, type]) => `
+            <li>
+                <strong>${field}</strong>
+                <span class="type-badge">${type}</span>
+            </li>
+        `).join('');
+    }
+
+    // Sample Data - Table View
+    if (data.samples.length > 0) {
+        // Create a more readable table view
+        const tableView = createTableView(data.samples, schema);
+        sampleJson.innerHTML = `
+            <div class="db-view-controls">
+                <button class="btn-view-toggle active" data-view="table">📊 Table</button>
+                <button class="btn-view-toggle" data-view="json">📄 JSON</button>
+            </div>
+            <div class="db-table-view" style="display: block;">${tableView}</div>
+            <div class="db-json-view" style="display: none;">
+                <pre>${JSON.stringify(data.samples, null, 2)}</pre>
+            </div>
+        `;
+
+        // Add toggle listeners
+        sampleJson.querySelectorAll('.btn-view-toggle').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const view = this.dataset.view;
+                sampleJson.querySelectorAll('.btn-view-toggle').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+
+                if (view === 'table') {
+                    sampleJson.querySelector('.db-table-view').style.display = 'block';
+                    sampleJson.querySelector('.db-json-view').style.display = 'none';
+                } else {
+                    sampleJson.querySelector('.db-table-view').style.display = 'none';
+                    sampleJson.querySelector('.db-json-view').style.display = 'block';
+                }
+            });
+        });
+    } else {
+        sampleJson.innerHTML = '<p style="padding: 1rem; color: var(--text-secondary);">Aucune donnée disponible</p>';
+    }
+
+    container.style.display = 'block';
+
+    // Smooth scroll
+    container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function createTableView(samples, schema) {
+    if (!samples || samples.length === 0) return '<p>Aucune donnée</p>';
+
+    // Get top 5-6 most important fields (exclude very nested objects)
+    const fields = Object.keys(schema).slice(0, 6);
+
+    let html = '<div class="db-data-table-wrapper"><table class="db-data-table"><thead><tr>';
+    html += fields.map(f => `<th>${f}</th>`).join('');
+    html += '<th>Actions</th></tr></thead><tbody>';
+
+    samples.forEach((doc, idx) => {
+        html += '<tr>';
+        fields.forEach(field => {
+            let value = doc[field];
+
+            // Format the value for display
+            if (value === null || value === undefined) {
+                value = '<em>null</em>';
+            } else if (typeof value === 'object') {
+                if (value.seconds) {
+                    // Firestore Timestamp
+                    value = new Date(value.seconds * 1000).toLocaleString('fr-FR');
+                } else if (Array.isArray(value)) {
+                    value = `[${value.length} items]`;
+                } else {
+                    value = '{...}';
+                }
+            } else if (typeof value === 'string' && value.length > 50) {
+                value = value.substring(0, 50) + '...';
+            }
+
+            html += `<td>${value}</td>`;
+        });
+
+        html += `<td><button class="btn-expand-doc" onclick="expandDocument(${idx})" title="Voir le document complet">🔍</button></td>`;
+        html += '</tr>';
+    });
+
+    html += '</tbody></table></div>';
+
+    // Store samples globally for expand function
+    window.currentDetailSamples = samples;
+
+    return html;
+}
+
+window.expandDocument = function (index) {
+    const doc = window.currentDetailSamples?.[index];
+    if (!doc) return;
+
+    // Create a modal to show the full document
+    let modal = document.getElementById('doc-detail-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'doc-detail-modal';
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 800px; max-height: 80vh; overflow: auto;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;">
+                    <h3>Document Complet</h3>
+                    <button id="close-doc-detail" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-secondary);">✖</button>
+                </div>
+                <pre id="doc-detail-content" class="json-viewer"></pre>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) modal.style.display = 'none';
+        });
+        document.getElementById('close-doc-detail').addEventListener('click', () => {
+            modal.style.display = 'none';
+        });
+    }
+
+    document.getElementById('doc-detail-content').textContent = JSON.stringify(doc, null, 2);
+    modal.style.display = 'flex';
+};
+
+function inferSchema(samples) {
+    if (!samples || samples.length === 0) return {};
+    const schema = {};
+
+    // Merge keys from all samples
+    samples.forEach(doc => {
+        Object.keys(doc).forEach(key => {
+            const val = doc[key];
+            let type = typeof val;
+            if (val === null) type = 'null';
+            else if (Array.isArray(val)) type = 'array';
+            else if (val instanceof Object && val.seconds) type = 'timestamp'; // Firestore Timestamp guess
+
+            // Simple conflict resolution: overwrite
+            if (!schema[key] || schema[key] === 'null') {
+                schema[key] = type;
+            }
+        });
+    });
+    return schema;
+}
+
+export function closeCollectionDetail() {
+    const container = document.getElementById('db-collection-detail');
+    if (container) container.style.display = 'none';
+}
+window.viewCollectionDetail = viewCollectionDetail;
+window.closeCollectionDetail = closeCollectionDetail;
+
+// ============================================
+// PETS ADMIN MANAGEMENT
+// ============================================
+
+let currentPets = [];
+let filteredPets = [];
+
+export async function loadPetsAdmin() {
+    if (!state.isAdmin) return;
+
+    try {
+        // Fetch all pets from the pets collection
+        const petsCollection = collection(db, 'pets');
+        const petsSnap = await getDocs(petsCollection);
+        currentPets = [];
+
+        // Fetch all users for owner names
+        const usersSnap = await getDocs(usersCollection);
+        const usersMap = new Map();
+        usersSnap.docs.forEach(doc => {
+            const userData = doc.data();
+            usersMap.set(doc.id, {
+                firstname: userData.firstname || 'Unknown',
+                lastname: userData.lastname || ''
+            });
+        });
+
+        petsSnap.docs.forEach(doc => {
+            const pet = doc.data();
+            const petId = doc.id;
+            const userId = pet.userId;
+
+            // Get owner name from users map
+            const owner = usersMap.get(userId) || { firstname: 'Unknown', lastname: '' };
+
+            currentPets.push({
+                id: petId, // Document ID from pets collection
+                userId: userId,
+                ownerName: `${owner.firstname} ${owner.lastname}`.trim(),
+                name: pet.name || 'Sans nom',
+                petId: pet.petId || pet.id || 'unknown',
+                level: pet.level || 1,
+                xp: pet.xp || 0,
+                affectionLevel: pet.affectionLevel || 0,
+                adoptedAt: pet.adoptedAt,
+                // Include full pet data for potential future use
+                petData: pet
+            });
+        });
+
+        // Calculate and display statistics
+        displayPetsStats(currentPets);
+
+        // Render table
+        filteredPets = [...currentPets];
+        renderPetsTable(filteredPets);
+
+        // Add filter listeners
+        initPetsFilters();
+    } catch (error) {
+        console.error('Error loading pets:', error);
+        notyf.error('Erreur lors du chargement des compagnons.');
+    }
+}
+
+function displayPetsStats(pets) {
+    document.getElementById('stat-total-pets').textContent = pets.length;
+
+    // Count evolved pets (those with petId that ends in evolution forms)
+    const evolvedPets = pets.filter(p =>
+        ['celestiale', 'voltonnerre', 'lunombre'].includes(p.petId)
+    );
+    document.getElementById('stat-evolved-pets').textContent = evolvedPets.length;
+
+    // Average level
+    const avgLevel = pets.length > 0
+        ? Math.round(pets.reduce((sum, p) => sum + (p.level || 1), 0) / pets.length)
+        : 0;
+    document.getElementById('stat-avg-level').textContent = avgLevel;
+
+    // Average affection
+    const avgAffection = pets.length > 0
+        ? Math.round(pets.reduce((sum, p) => sum + (p.affectionLevel || 0), 0) / pets.length)
+        : 0;
+    document.getElementById('stat-avg-affection').textContent = avgAffection;
+}
+
+function renderPetsTable(pets) {
+    const tbody = document.getElementById('pets-table-body');
+    if (!tbody) return;
+
+    if (pets.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 2rem;">Aucun compagnon trouvé.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = pets.map(pet => {
+        const adoptedDate = pet.adoptedAt?.seconds
+            ? new Date(pet.adoptedAt.seconds * 1000).toLocaleDateString('fr-FR')
+            : 'N/A';
+
+        const petName = pet.name || 'Sans nom';
+        const petType = pet.petId || 'Unknown';
+        const level = pet.level || 1;
+        const xp = pet.xp || 0;
+        const affection = pet.affectionLevel || 0;
+
+        return `
+            <tr>
+                <td><strong>${escapeHtml(petName)}</strong></td>
+                <td>${escapeHtml(pet.ownerName)}</td>
+                <td><span class="pet-type-badge">${escapeHtml(petType)}</span></td>
+                <td>${level}</td>
+                <td>${xp}</td>
+                <td>${affection}%</td>
+                <td>${adoptedDate}</td>
+                <td>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="btn-delete" onclick="deletePet('${sanitizeAttribute(pet.id)}')" title="Supprimer">
+                            🗑️
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function initPetsFilters() {
+    const typeFilter = document.getElementById('filter-pet-type');
+    const evolutionFilter = document.getElementById('filter-pet-evolution');
+    const resetBtn = document.getElementById('reset-pets-filters');
+
+    if (typeFilter) {
+        typeFilter.addEventListener('change', applyPetsFilters);
+    }
+    if (evolutionFilter) {
+        evolutionFilter.addEventListener('change', applyPetsFilters);
+    }
+    if (resetBtn) {
+        resetBtn.addEventListener('click', () => {
+            typeFilter.value = 'all';
+            evolutionFilter.value = 'all';
+            applyPetsFilters();
+        });
+    }
+}
+
+function applyPetsFilters() {
+    const typeFilter = document.getElementById('filter-pet-type').value;
+    const evolutionFilter = document.getElementById('filter-pet-evolution').value;
+
+    filteredPets = currentPets.filter(pet => {
+        // Type filter
+        if (typeFilter !== 'all' && pet.petId !== typeFilter) {
+            return false;
+        }
+
+        // Evolution filter
+        if (evolutionFilter !== 'all') {
+            const isEvolved = ['celestiale', 'voltonnerre', 'lunombre'].includes(pet.petId);
+            if (evolutionFilter === 'evolved' && !isEvolved) return false;
+            if (evolutionFilter === 'base' && isEvolved) return false;
+        }
+
+        return true;
+    });
+
+    renderPetsTable(filteredPets);
+}
+
+async function deletePet(petId) {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer ce compagnon ?')) return;
+
+    try {
+        await deleteDoc(doc(db, 'pets', petId));
+        notyf.success('Compagnon supprimé avec succès.');
+        loadPetsAdmin();
+    } catch (error) {
+        console.error('Error deleting pet:', error);
+        notyf.error('Erreur lors de la suppression du compagnon.');
+    }
+}
+
+window.deletePet = deletePet;
+
+// ============================================
+// BADGES ADMIN MANAGEMENT (RENDERING)
+// ============================================
 
 function renderBadgesAdmin(badges) {
     const tbody = document.getElementById('badges-table-body');

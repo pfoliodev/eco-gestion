@@ -15,15 +15,25 @@ export async function loadTemplate(path) {
     }
 
     try {
-        const response = await fetch(path);
+        const response = await fetch(`${path}?v=${Date.now()}`);
         if (!response.ok) {
             throw new Error(`Failed to load template: ${path} (${response.status})`);
         }
         const html = await response.text();
+
+        // Check for SPA fallback (if index.html is returned instead of template)
+        if (html.trim().toLowerCase().startsWith('<!doctype html') || html.includes('<html')) {
+            throw new Error(`Invalid template content (SPA Fallback detected): ${path}`);
+        }
+
         templateCache.set(path, html);
         return html;
     } catch (error) {
         console.error('Template loading error:', error);
+        // Try to verify if notyf is available before using it, or use console.error as fallback
+        if (typeof window.notyf !== 'undefined') {
+            window.notyf.error(`Erreur de chargement: ${path}`);
+        }
         return '';
     }
 }

@@ -616,12 +616,15 @@ export async function loadUserPet() {
     if (!container) return;
 
     try {
-        const userRef = doc(db, 'users', auth.currentUser.uid);
-        const userSnap = await getDoc(userRef);
-        const userData = userSnap.data();
+        // Fetch user's active pet from pets collection
+        const petsCollection = collection(db, 'pets');
+        const q = query(petsCollection, where('userId', '==', auth.currentUser.uid), where('isActive', '==', true));
+        const petsSnap = await getDocs(q);
 
-        if (userData && userData.pet) {
-            await renderPetDashboard(userData.pet);
+        if (!petsSnap.empty) {
+            const petData = petsSnap.docs[0].data();
+            petData.docId = petsSnap.docs[0].id; // Store document ID for updates
+            await renderPetDashboard(petData);
         } else {
             container.innerHTML = `
                 <div style="text-align: center; padding: 2rem;">
@@ -651,6 +654,18 @@ async function renderPetDashboard(petData) {
 
     // Hydrate current pet data (fix for existing users)
     let currentPet = { ...petData };
+
+    // HOTFIX: Force correct ID for evolved pets if name matches but ID is wrong (handling legacy/cache issues)
+    const EVOLVED_ID_MAP = {
+        'Voltonnerre': 'voltonnerre',
+        'Célestiale': 'celestiale',
+        'Lunombre': 'lunombre'
+    };
+    if (EVOLVED_ID_MAP[currentPet.name] && currentPet.id !== EVOLVED_ID_MAP[currentPet.name]) {
+        console.log(`[Dashboard] Fixing mismatched ID for ${currentPet.name}: ${currentPet.id} -> ${EVOLVED_ID_MAP[currentPet.name]}`);
+        currentPet.id = EVOLVED_ID_MAP[currentPet.name];
+        currentPet.evolved = true; // Ensure evolved flag is true
+    }
 
     // Find pet definition for stats calculation
     // currentPet.id might be instanceId (e.g. "1767..."), so we need to find the species ID
@@ -702,14 +717,21 @@ async function renderPetDashboard(petData) {
         }
     }
 
+    console.log(`[Dashboard Debug] Pet: ${currentPet.name}, ID: ${currentPet.id}, Def Found: ${!!petDefinition}`);
+    if (petDefinition) {
+        console.log(`[Dashboard Debug] Def Stats:`, petDefinition.baseStats, `Growth:`, petDefinition.statGrowth);
+    }
+
     // Calculate stats using new system (if IVs exist and are valid) or fallback to legacy
     let calculatedStats;
     let hasNewSystem = currentPet.ivs !== undefined && currentPet.ivs !== null;
 
-    if (hasNewSystem && petDefinition) {
+    // FORCE dynamic calculation if definition is found (even if IVs are missing, defaults to 0)
+    // This ensures level-based growth is applied
+    if (petDefinition) {
         calculatedStats = calculatePetStats(petDefinition, currentPet);
     } else {
-        // Legacy: use stored stats directly
+        // Legacy: use stored stats only if no definition found
         calculatedStats = currentPet.stats || { intelligence: 0, creativity: 0, social: 0 };
     }
 
@@ -874,7 +896,7 @@ async function renderPetDashboard(petData) {
                 <p>"${flavorText}"</p>
             </div>
 
-            ${petDefinition && petDefinition.evolution ? `
+            ${petDefinition && petDefinition.evolution && (currentPet.level >= (typeof EVOLUTION_LEVELS !== 'undefined' ? EVOLUTION_LEVELS.FIRST : 16)) ? `
             <div class="pet-action-footer" style="margin-top: 1.5rem; text-align: center;">
                 <button onclick="handleEvolutionClick()" class="btn-evolution-glow">
                     ✨ Faire évoluer !
@@ -1246,31 +1268,31 @@ async function loadInventory() {
         }
 
         // [SELF-REPAIR] Fix "Ghost Equipped" items
-        // If an item is marked equipped in inventory but is NOT the currently active pet in userData,
+        // If an item is marked equipped in inventory but is NOT the currently active pet,
         // it means it was left in a dirty state (e.g. by debug tools). Fix it.
         try {
-            const userDocRef = doc(db, 'users', auth.currentUser.uid);
-            const userSnap = await getDoc(userDocRef);
-            if (userSnap.exists()) {
-                const userData = userSnap.data();
-                if (userData && userData.pet) {
-                    const currentPet = userData.pet;
-                    const currentInstanceId = currentPet.instanceId;
-                    const currentItemId = currentPet.itemId;
+            // Fetch the current active pet from pets collection
+            const petsCollection = collection(db, 'pets');
+            const petsQuery = query(petsCollection, where('userId', '==', auth.currentUser.uid), where('isActive', '==', true));
+            const petsSnap = await getDocs(petsQuery);
 
-                    inventory.forEach(item => {
-                        if (item.equipped) {
-                            const matchesInstance = currentInstanceId && item.instanceId === currentInstanceId;
-                            const matchesItem = currentItemId && item.itemId === currentItemId;
+            if (!petsSnap.empty) {
+                const currentPet = petsSnap.docs[0].data();
+                const currentInstanceId = currentPet.instanceId;
+                const currentItemId = currentPet.itemId;
 
-                            if (!matchesInstance && !matchesItem) {
-                                console.warn("Auto-fixing ghost equipped item:", item.itemName);
-                                updateDoc(doc(db, 'users', auth.currentUser.uid, 'inventory', item.itemId), { equipped: false });
-                                item.equipped = false;
-                            }
+                inventory.forEach(item => {
+                    if (item.equipped) {
+                        const matchesInstance = currentInstanceId && item.instanceId === currentInstanceId;
+                        const matchesItem = currentItemId && item.itemId === currentItemId;
+
+                        if (!matchesInstance && !matchesItem) {
+                            console.warn("Auto-fixing ghost equipped item:", item.itemName);
+                            updateDoc(doc(db, 'users', auth.currentUser.uid, 'inventory', item.itemId), { equipped: false });
+                            item.equipped = false;
                         }
-                    });
-                }
+                    }
+                });
             }
         } catch (err) {
             console.error("Self-repair error:", err);
@@ -1647,39 +1669,65 @@ export async function checkEvolutionAvailable() {
     if (!auth.currentUser) return null;
 
     try {
-        const userDoc = await getDoc(doc(db, 'users', auth.currentUser.uid));
-        if (!userDoc.exists()) return null;
+        // Fetch the current active pet from pets collection
+        const petsCollection = collection(db, 'pets');
+        const petsQuery = query(petsCollection, where('userId', '==', auth.currentUser.uid), where('isActive', '==', true));
+        const petsSnap = await getDocs(petsQuery);
 
-        const userData = userDoc.data();
-        const petData = userData.pet;
+        if (petsSnap.empty) return null;
+
+        const petData = petsSnap.docs[0].data();
+        const petDocId = petsSnap.docs[0].id;
 
         console.log('[Evolution] petData:', petData);
+        console.log('[Evolution] petData.evolved:', petData.evolved);
+        console.log('[Evolution] petData.name:', petData.name);
+
+        // CRITICAL: If pet is already evolved, don't allow re-evolution
+        if (petData.evolved === true) {
+            console.log('[Evolution] Pet is already evolved. No further evolution available.');
+            return null;
+        }
+
+        // CRITICAL CHECK 2: Block known evolved names (Failsafe)
+        // This prevents evolved pets from evolving again even if ID/evolved flag is somehow wrong
+        const EVOLVED_NAMES = ['Célestiale', 'Lunombre', 'Voltonnerre'];
+        if (EVOLVED_NAMES.includes(petData.name)) {
+            console.log('[Evolution] Pet is a known evolved form (name check). Blocking.');
+            return null;
+        }
+
         // Normalize ID similar to renderPetDashboard
         const rawId = petData?.id || '';
         const speciesId = petData?.itemId ? petData.itemId.replace('pet_', '') : rawId.replace('pet_', '');
 
         console.log('[Evolution] Normalized ID:', speciesId, 'petData.level:', petData?.level);
 
-        if (!petData || petData.evolved) return null; // Already evolved or no pet
-
-        // Robust definition lookup
+        // Robust definition lookup - only in STARTER_PETS base forms
         let petDef = STARTER_PETS.find(p => p.id === speciesId);
 
-        // Fallback: Match by NAME if ID failed (handles instance IDs)
+        // Fallback: Match by NAME if ID failed - but only for base forms
         if (!petDef && petData.name) {
             console.log('[Evolution] ID lookup failed. Trying fallback by Name:', petData.name);
             petDef = STARTER_PETS.find(p => p.name === petData.name);
+
+            // If still not found, the pet might be an evolved form stored with wrong data
+            if (!petDef) {
+                console.log('[Evolution] Pet not found in STARTER_PETS - might be evolved form.');
+                return null;
+            }
         }
 
         console.log('[Evolution] petDef:', petDef?.name, 'evolution:', petDef?.evolution);
 
-        if (!petDef || !petDef.evolution) return null; // No evolution available
+        if (!petDef || !petDef.evolution) {
+            console.log('[Evolution] No evolution definition found for this pet.');
+            return null; // No evolution available
+        }
 
         // Use new level-based evolution check
-        const evolutionLevel = EVOLUTION_LEVELS?.FIRST || STAT_CONFIG.FIRST_EVOLUTION_LEVEL;
-        const petLevel = petData.level || 1;
-
-        console.log('[Evolution] Required level:', evolutionLevel, 'Current level:', petLevel);
+        const evolutionLevel = Number(EVOLUTION_LEVELS?.FIRST || STAT_CONFIG.FIRST_EVOLUTION_LEVEL || 16);
+        const petLevel = Number(petData.level || 1);
 
         if (petLevel >= evolutionLevel) {
             // Also merge config properties (flavor text etc) which might be needed
@@ -1769,26 +1817,67 @@ async function completeEvolution() {
     // Log the boost for debugging
     console.log('[Evolution] Stat boost applied:', evolvedPetData.lastEvolutionBoost);
 
-    // Update Firestore
+    // Update Firestore - pets collection
     try {
-        await setDoc(doc(db, 'users', auth.currentUser.uid), {
-            pet: evolvedPetData
-        }, { merge: true });
+        // Get the active pet document from pets collection
+        const petsCollection = collection(db, 'pets');
+        const petsQuery = query(petsCollection, where('userId', '==', auth.currentUser.uid), where('isActive', '==', true));
+        const petsSnap = await getDocs(petsQuery);
 
-        // Update Inventory Item if it exists
-        if (evolvedPetData.itemId) {
-            console.log('[Evolution] Updating inventory item:', evolvedPetData.itemId);
-            await setDoc(doc(db, 'users', auth.currentUser.uid, 'inventory', evolvedPetData.itemId), {
-                itemName: evolvedPetData.name,
-                itemId: `pet_${evolvedPetData.id}`, // Update species reference
+        if (!petsSnap.empty) {
+            const petDocId = petsSnap.docs[0].id;
+
+            // Update the pet in pets collection
+            await updateDoc(doc(db, 'pets', petDocId), {
+                id: evolvedPetData.id,
+                name: evolvedPetData.name,
                 image: evolvedPetData.image,
-                level: evolvedPetData.level,
-                ivs: evolvedPetData.ivs || null,
-                evolutionBonus: evolvedPetData.evolutionBonus || null,
                 evolved: true,
-                evolvedAt: new Date()
-            }, { merge: true });
+                evolutionBonus: evolvedPetData.evolutionBonus,
+                level: evolvedPetData.level,
+                xp: evolvedPetData.xp,
+                stats: evolvedPetData.stats,
+                lastEvolutionBoost: evolvedPetData.lastEvolutionBoost
+            });
+
+            console.log('[Evolution] Updated pet in pets collection:', petDocId);
         }
+
+        // CORRECTION INVENTORY MANAGEMENT:
+        // 1. Unequip the OLD form (e.g. pet_voltor) so other Voltors typically appear available
+        // 2. Create/Update the NEW form (e.g. pet_voltonnerre) as equipped
+
+        const oldInventoryId = petData.itemId || `pet_${petData.id}`;
+        const newInventoryId = `pet_${evolvedPetData.id}`;
+
+        // 1. Unequip old
+        if (oldInventoryId !== newInventoryId) {
+            try {
+                const oldInvRef = doc(db, 'users', auth.currentUser.uid, 'inventory', oldInventoryId);
+                await updateDoc(oldInvRef, { equipped: false });
+                console.log(`[Evolution] Unequipped old inventory item: ${oldInventoryId}`);
+            } catch (e) {
+                console.warn('[Evolution] Failed to unequip old item (may not exist):', e);
+            }
+        }
+
+        // 2. Create/Update new item
+        console.log('[Evolution] Creating/Updating new inventory item:', newInventoryId);
+        await setDoc(doc(db, 'users', auth.currentUser.uid, 'inventory', newInventoryId), {
+            itemId: newInventoryId,
+            itemName: evolvedPetData.name,
+            category: ECONOMY.CATEGORIES.COMPANION,
+            image: evolvedPetData.image,
+            level: evolvedPetData.level,
+            xp: evolvedPetData.xp,
+            stats: evolvedPetData.stats,
+            ivs: evolvedPetData.ivs || null,
+            evolutionBonus: evolvedPetData.evolutionBonus || null,
+            evolved: true,
+            equipped: true, // It remains equipped
+            type: evolvedPetData.type || 'Compagnon',
+            lastUpdated: new Date()
+        }, { merge: true });
 
         // Show boost notification
         const boost = evolvedPetData.lastEvolutionBoost;

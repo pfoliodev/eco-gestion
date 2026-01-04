@@ -81,12 +81,17 @@ export async function submitQuizResult(quizId, courseId, score, totalQuestions, 
 
     // --- INTELLIGENCE BONUS ---
     try {
-        const userRef = doc(db, 'users', auth.currentUser.uid);
-        const userSnap = await getDoc(userRef);
-        if (userSnap.exists()) {
-            const userData = userSnap.data();
-            if (userData.pet && userData.pet.stats) {
-                const intellect = userData.pet.stats.intelligence || 0;
+        // Fetch user's active pet from pets collection
+        const petsCollection = collection(db, 'pets');
+        const petsQuery = query(petsCollection, where('userId', '==', auth.currentUser.uid), where('isActive', '==', true));
+        const petsSnap = await getDocs(petsQuery);
+
+        if (!petsSnap.empty) {
+            const petData = petsSnap.docs[0].data();
+            const petDocId = petsSnap.docs[0].id;
+
+            if (petData.stats) {
+                const intellect = petData.stats.intelligence || 0;
                 if (intellect > 0) {
                     // Bonus: +1% XP per INT point
                     bonusXp = Math.floor(xpEarned * (intellect / 100));
@@ -95,15 +100,13 @@ export async function submitQuizResult(quizId, courseId, score, totalQuestions, 
                 }
 
                 // Pet XP & Leveling Logic
-                let petLevel = userData.pet.level || 1;
-                let petXp = userData.pet.xp || 0;
+                let petLevel = petData.level || 1;
+                let petXp = petData.xp || 0;
                 const xpGain = 10 + Math.floor(score * 2);
 
                 petXp += xpGain;
 
                 // Threshold: Level * 100 (Level 1 needs 100, Level 2 needs 200...)
-                // For simplicity, let's keep it fixed or linear.
-                // User asked "if he reaches lvl 2".
                 const xpNeeded = petLevel * 100;
 
                 let leveledUp = false;
@@ -113,26 +116,27 @@ export async function submitQuizResult(quizId, courseId, score, totalQuestions, 
                     leveledUp = true;
 
                     // Boost Stats on Level Up
-                    if (!userData.pet.stats) userData.pet.stats = { intelligence: 1, creativity: 1, social: 1 };
-                    userData.pet.stats.intelligence += 1;
-                    userData.pet.stats.creativity += 1;
-                    userData.pet.stats.social += 1;
+                    const currentStats = petData.stats || { intelligence: 1, creativity: 1, social: 1 };
+                    currentStats.intelligence += 1;
+                    currentStats.creativity += 1;
+                    currentStats.social += 1;
+
+                    // Update the pet in the pets collection
+                    await updateDoc(doc(db, 'pets', petDocId), {
+                        xp: petXp,
+                        level: petLevel,
+                        stats: currentStats
+                    });
+
+                    if (leveledUp) {
+                        console.log(`🎉 LEVEL UP! ${petData.name} is now level ${petLevel}`);
+                    }
+                } else {
+                    // Just update xp if no level up
+                    await updateDoc(doc(db, 'pets', petDocId), {
+                        xp: petXp
+                    });
                 }
-
-                const petUpdate = {
-                    "pet.xp": petXp,
-                    "pet.level": petLevel,
-                    "pet.stats": userData.pet.stats
-                };
-
-                await updateDoc(userRef, petUpdate);
-
-                if (leveledUp) {
-                    // Ideally notify user, but we are in a backend function. 
-                    // The UI will update on refresh or next load.
-                    console.log(`🎉 LEVEL UP! ${userData.pet.name} is now level ${petLevel}`);
-                }
-
             }
         }
     } catch (e) {

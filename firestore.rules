@@ -102,10 +102,44 @@ service cloud.firestore {
     // IFH COINS SYSTEM
     // ============================================
 
-    // Shop Items (public catalog)
+    // Shop Items (public catalog) - using shopItems as collection name
     match /shopItems/{itemId} {
       allow read: if true;
       allow create, update, delete: if isAdmin();
+    }
+
+    // Shop Items - alternative collection name (shop_items with underscore)
+    match /shop_items/{itemId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Coin Transactions (global transaction log)
+    match /coin_transactions/{transactionId} {
+      // Users can read their own transactions
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      // Admins can read all transactions
+      allow read: if isAdmin();
+      // System creates transactions
+      allow create: if request.auth != null;
+    }
+
+    // Pets (user pets collection)
+    match /pets/{petId} {
+      // Users can read/write their own pets
+      allow read, write: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      // Admins can read, write, and create all pets (needed for migration)
+      allow read, write, create: if isAdmin();
+    }
+
+    // Favorites (user favorites)
+    match /favorites/{favoriteId} {
+      // Users can read/write their own favorites
+      allow read, write: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      // Admins can read all favorites
+      allow read: if isAdmin();
     }
 
     // Trade Offers

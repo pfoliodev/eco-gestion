@@ -16,7 +16,7 @@ import { addCoins, showCoinGainAnimation, updateBalanceDisplay } from './coins.j
 import { calculateQuizReward } from './config/economy.js';
 import { processXPGain, calculatePetStats } from './utils/pet-utils.js';
 import { XP_CONFIG, STARTER_PETS } from './config/pets.js';
-import { doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js";
+import { doc, getDoc, updateDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js";
 
 // --- Global UI State ---
 let currentQuiz = null;
@@ -349,6 +349,55 @@ function renderQuizPlayer() {
         // Calculate duration in seconds
         const duration = quizStartTime ? Math.floor((Date.now() - quizStartTime) / 1000) : null;
 
+        // Fetch user's active pet EARLY for reward calculations
+        let activePet = null;
+        let petStats = null;
+        let petDocId = null;
+
+        try {
+            const petsCollection = collection(db, 'pets');
+            const petsQuery = query(petsCollection, where('userId', '==', auth.currentUser.uid), where('isActive', '==', true));
+            const petsSnap = await getDocs(petsQuery);
+
+            if (!petsSnap.empty) {
+                const petData = petsSnap.docs[0].data();
+                petDocId = petsSnap.docs[0].id;
+
+                // Resolve Pet Definition to get base stats
+                let speciesId = petData.itemId ? petData.itemId.replace('pet_', '') : petData.id;
+                let petDefinition = STARTER_PETS.find(p => p.id === speciesId);
+
+                if (!petDefinition) {
+                    petDefinition = STARTER_PETS.find(p => p.name === petData.name || p.name === petData.nickname);
+                }
+
+                // Handle evolution definition match
+                if (petDefinition && petDefinition.evolution && petData.evolved && petData.evolutionId) {
+                    if (petDefinition.evolution.id === petData.evolutionId) {
+                        petDefinition = petDefinition.evolution;
+                    }
+                }
+
+                // Fallback for direct evolution match
+                if (!petDefinition) {
+                    const directMatch = STARTER_PETS.find(p => p.evolution && p.evolution.id === speciesId);
+                    if (directMatch) petDefinition = directMatch.evolution;
+                }
+
+                if (petDefinition) {
+                    // Calculate Real Stats (IVs + Level + Base)
+                    petStats = calculatePetStats(petDefinition, petData);
+                } else {
+                    // Fallback to stored stats
+                    petStats = petData.stats || { intelligence: 0, creativity: 0, social: 0 };
+                }
+
+                activePet = petData;
+            }
+        } catch (e) {
+            console.error("Error fetching pet for rewards:", e);
+        }
+
         // Save result and check for badges
         try {
             await submitQuizResult(currentQuiz.id, currentQuiz.courseId, score, currentQuizQuestions.length, userAnswers, duration);
@@ -361,7 +410,9 @@ function renderQuizPlayer() {
 
             // Award IFH Coins for quiz completion
             const userStreak = state.user?.quizStreak || 0;
-            const reward = calculateQuizReward(score, currentQuizQuestions.length, duration, userStreak);
+
+            // PASS PET STATS HERE for Creativity Bonus
+            const reward = calculateQuizReward(score, currentQuizQuestions.length, duration, userStreak, petStats);
             lastQuizCoinsEarned = reward;
 
             const result = await addCoins(reward.total, 'quiz_complete', currentQuiz.id, {
@@ -380,59 +431,10 @@ function renderQuizPlayer() {
         }
 
         // --- PET XP REWARD ---
-        try {
-            // Fetch fresh user data to ensure we have the pet info
-            const userSnap = await getDoc(doc(db, 'users', auth.currentUser.uid));
-            const userData = userSnap.exists() ? userSnap.data() : null;
-
-
-
-            if (userData && userData.pet) {
-                const pet = userData.pet;
-
-                // 1. Resolve Pet Definition
-                let speciesId = pet.itemId ? pet.itemId.replace('pet_', '') : pet.id;
-                // Handle instance IDs or corrupted IDs by checking name fallback
-                let petDefinition = STARTER_PETS.find(p => p.id === speciesId);
-
-                if (!petDefinition) {
-                    // Try finding by name or instance fallback
-                    petDefinition = STARTER_PETS.find(p => p.name === pet.name || p.name === pet.nickname);
-                }
-
-                // If evolved, find the evolution definition
-                if (petDefinition && petDefinition.evolution && pet.evolved && pet.evolutionId) {
-                    // Check if current pet is effectively the evolved form.
-                    // IMPORTANT: 'pet.id' might still be the base species or instance id.
-                    // The reliable way is to check the evolution ID stored on the pet or look it up.
-                    // However, usually 'petDefinition' has the 'evolution' block.
-                    if (petDefinition.evolution.id === pet.evolutionId) {
-                        petDefinition = petDefinition.evolution;
-                    }
-                }
-
-                // Also check if the pet object ITSELF is the evolved form (e.g. Lunombre directly)
-                if (!petDefinition) {
-                    // Maybe speciesId is 'lunombre' directly?
-                    const directMatch = STARTER_PETS.find(p => p.evolution && p.evolution.id === speciesId);
-                    if (directMatch) petDefinition = directMatch.evolution;
-                }
-
-                // If still not found, default to pet stats provided (fallback)
-                let intelligence = 0;
-
-                if (petDefinition) {
-                    // 2. Calculate Real Stats
-                    const currentStats = calculatePetStats(petDefinition, pet);
-                    intelligence = currentStats.intelligence;
-                } else {
-                    // Fallback to stored stats if definition missing (risky but better than 0)
-                    intelligence = (pet.stats && typeof pet.stats.intelligence === 'number') ? pet.stats.intelligence : 0;
-                }
-
-
-
+        if (activePet && petDocId && petStats) {
+            try {
                 // Calculate XP: Base + Intelligence Bonus
+                const intelligence = petStats.intelligence || 0;
                 const baseXP = XP_CONFIG.REWARDS.QUIZ_COMPLETE;
                 const bonusMultiplier = 1 + (intelligence / 100);
 
@@ -441,30 +443,22 @@ function renderQuizPlayer() {
 
                 lastQuizXPEarned = { total: totalXP, base: baseXP, bonus: bonusXP, multiplier: bonusMultiplier };
 
-
-
                 // Process Level Up
-                const currentLevel = pet.level || 1;
-                const currentXP = pet.xp || 0;
+                const currentLevel = activePet.level || 1;
+                const currentXP = activePet.xp || 0;
                 const result = processXPGain(currentLevel, currentXP, totalXP);
 
-                // Update Pet in Database
-                const userRef = doc(db, 'users', auth.currentUser.uid);
-
-                // Prepare update data
+                // Update Pet in pets collection
+                const petRef = doc(db, 'pets', petDocId);
                 const updateData = {
-                    'pet.level': result.newLevel,
-                    'pet.xp': result.newXP
+                    'level': result.newLevel,
+                    'xp': result.newXP
                 };
 
-                // If leveled up, we might want to update stats too (handled by account.js usually, but good to save level)
-                // For now, simple level/xp update is enough, as stats are dynamic or re-calculated on load
-
-                await updateDoc(userRef, updateData);
-            } else {
+                await updateDoc(petRef, updateData);
+            } catch (e) {
+                console.error("Failed to award Pet XP", e);
             }
-        } catch (e) {
-            console.error("Failed to award Pet XP", e);
         }
 
         showQuizResults(score, currentQuizQuestions.length);

@@ -161,7 +161,7 @@ export function initAuth() {
                 });
             }
 
-            loginNavLink.style.display = 'none';
+            if (loginNavLink) loginNavLink.style.display = 'none';
             if (profileDropdown) profileDropdown.style.display = 'block';
 
             // Update avatar
@@ -214,7 +214,7 @@ export function initAuth() {
             setIsAdmin(false);
             setUser(null); // Clear user from state
 
-            loginNavLink.style.display = 'flex';
+            if (loginNavLink) loginNavLink.style.display = 'flex';
             if (profileDropdown) profileDropdown.style.display = 'none';
             if (adminActions) adminActions.style.display = 'none';
             if (addCourseBtn) addCourseBtn.style.display = 'none';

@@ -1,6 +1,6 @@
 import { PROFESSOR, STARTER_PETS } from './config/pets.js';
 import { db } from './firebase.js';
-import { doc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js";
+import { doc, updateDoc, getDoc, collection, query, where, getDocs, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js";
 import { createNewPetInstance, getQualityTier, getTotalIVs } from './utils/pet-utils.js';
 
 export class PetSelection {
@@ -15,15 +15,13 @@ export class PetSelection {
     async checkAndTrigger() {
         if (!this.user) return;
 
-        // Check if user already has a pet
-        const userRef = doc(db, "users", this.user.uid);
-        const userSnap = await getDoc(userRef);
+        // Check if user already has a pet in the pets collection
+        const petsCollection = collection(db, 'pets');
+        const petsQuery = query(petsCollection, where('userId', '==', this.user.uid));
+        const petsSnap = await getDocs(petsQuery);
 
-        if (userSnap.exists()) {
-            const userData = userSnap.data();
-            if (!userData.pet) {
-                this.initUI();
-            }
+        if (petsSnap.empty) {
+            this.initUI();
         }
     }
 
@@ -179,20 +177,21 @@ export class PetSelection {
         if (!this.selectedPet) return;
 
         try {
-            const userRef = doc(db, "users", this.user.uid);
-
             // Create new pet instance with random IVs
             const petData = createNewPetInstance(this.selectedPet);
             petData.nickname = petData.name; // Can be changed later
             petData.evolutionStage = 1;
+            petData.userId = this.user.uid;
+            petData.isActive = true;
+            petData.obtainedAt = serverTimestamp();
 
             // Show quality to user
             const quality = getQualityTier(petData.ivs);
             console.log(`[Pet] New pet created: ${petData.name} - Quality: ${quality.name} (IV Total: ${getTotalIVs(petData.ivs)}/45)`);
 
-            await updateDoc(userRef, {
-                pet: petData
-            });
+            // Save pet to pets collection
+            const petsCollection = collection(db, 'pets');
+            await addDoc(petsCollection, petData);
 
             // Close modal with animation
             this.container.classList.remove('active');

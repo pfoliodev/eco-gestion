@@ -17,7 +17,8 @@ import {
     where,
     orderBy,
     serverTimestamp,
-    increment
+    increment,
+    addDoc
 } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js";
 import { spendCoins, getUserBalance, updateBalanceDisplay } from './coins.js';
 import { ECONOMY } from './config/economy.js';
@@ -272,37 +273,39 @@ export async function getUserInventory(category = null) {
     try {
         const userId = auth.currentUser.uid;
         const inventoryRef = collection(db, 'users', userId, 'inventory');
-        const [inventorySnap, userSnap] = await Promise.all([
+        const [inventorySnap, petsSnap] = await Promise.all([
             getDocs(inventoryRef),
-            getDoc(doc(db, 'users', userId))
+            getDocs(query(collection(db, 'pets'), where('userId', '==', userId), where('isActive', '==', true)))
         ]);
 
         let items = inventorySnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-        // Add current starter pet as an inventory item if not already present
-        if (userSnap.exists() && userSnap.data().pet) {
-            const currentPet = userSnap.data().pet;
+        // Add current active pet as an inventory item
+        if (!petsSnap.empty) {
+            const currentPet = petsSnap.docs[0].data();
             const shopItemId = `pet_${currentPet.id}`; // Convention: shop ID = pet_ + petId
 
-            // Check if already in inventory (to avoid duplicates if we actually add it later)
-            if (!items.find(i => i.id === shopItemId)) {
-                // Add virtual inventory item with full pet data
-                items.push({
-                    id: shopItemId,
-                    itemId: shopItemId,
-                    itemName: currentPet.name,
-                    category: ECONOMY.CATEGORIES.COMPANION,
-                    equipped: true, // It's their current pet
-                    // Include all pet stats for display
-                    level: currentPet.level || 1,
-                    xp: currentPet.xp || 0,
-                    ivs: currentPet.ivs || null,
-                    evolutionBonus: currentPet.evolutionBonus || null,
-                    evolved: currentPet.evolved || false,
-                    image: currentPet.image,
-                    type: currentPet.type
-                });
-            }
+            // Remove the static inventory item if it exists (to replace with dynamic one)
+            // Strategy: Remove any item marked as 'equipped' OR matching the current pet ID
+            // This handles cases where ID changed after evolution (e.g. pet_feerale -> pet_celestiale)
+            items = items.filter(i => !i.equipped && i.id !== shopItemId && i.itemId !== shopItemId);
+
+            // Add virtual inventory item with full pet data
+            items.push({
+                id: shopItemId,
+                itemId: shopItemId,
+                itemName: currentPet.name,
+                category: ECONOMY.CATEGORIES.COMPANION,
+                equipped: true, // It's their current pet
+                // Include all pet stats for display
+                level: currentPet.level || 1,
+                xp: currentPet.xp || 0,
+                ivs: currentPet.ivs || null,
+                evolutionBonus: currentPet.evolutionBonus || null,
+                evolved: currentPet.evolved || false,
+                image: currentPet.image,
+                type: currentPet.type
+            });
         }
 
         if (category && category !== 'all') {
@@ -327,19 +330,19 @@ export async function userOwnsItem(itemId) {
     try {
         const userId = auth.currentUser.uid;
 
-        // Parallel check: Inventory AND User Profile (for starter pet)
+        // Parallel check: Inventory AND pets collection (for active pet)
         const inventoryRef = doc(db, 'users', userId, 'inventory', itemId);
 
-        const [inventorySnap, userSnap] = await Promise.all([
+        const [inventorySnap, petsSnap] = await Promise.all([
             getDoc(inventoryRef),
-            getDoc(doc(db, 'users', userId))
+            getDocs(query(collection(db, 'pets'), where('userId', '==', userId), where('isActive', '==', true)))
         ]);
 
         if (inventorySnap.exists()) return true;
 
-        // Check if it's the starter pet
-        if (userSnap.exists() && userSnap.data().pet) {
-            const petId = userSnap.data().pet.id;
+        // Check if it's the active pet
+        if (!petsSnap.empty) {
+            const petId = petsSnap.docs[0].data().id;
             if (itemId === `pet_${petId}`) {
                 return true;
             }
@@ -406,43 +409,23 @@ export async function equipItem(itemId) {
             // COMPANION SWAP LOGIC (Persistent Stats)
             // ============================================
 
-            // 1. Save CURRENT pet state to inventory (if it exists)
-            if (userData.pet) {
-                const currentPet = userData.pet;
-                let currentPetInventoryId = currentPet.itemId;
+            // 1. Save CURRENT active pet state to pets collection and inventory
+            const petsCollection = collection(db, 'pets');
+            const activePetsQuery = query(petsCollection, where('userId', '==', userId), where('isActive', '==', true));
+            const activePetsSnap = await getDocs(activePetsQuery);
 
-                // Fallback: If no persisted itemId, try to find the "equipped" item in inventory to overwrite it
-                // This handles cases where pet evolved (id changed) but inventory doc is still under old name
-                if (!currentPetInventoryId) {
-                    // We need to find the doc in 'users/{uid}/inventory' where equipped == true
-                    // Since we can't easily query subcollections without potential index issues, 
-                    // and we expect few items, we can check the most likely candidates or all.
-                    // Actually, let's try the legacy ID first
-                    const legacyId = `pet_${currentPet.id}`;
+            if (!activePetsSnap.empty) {
+                const currentPetDocId = activePetsSnap.docs[0].id;
+                const currentPet = activePetsSnap.docs[0].data();
 
-                    // But if it evolved, legacyId is 'pet_lunombre', but real doc is 'pet_ombrage'.
-                    // This is the problem.
+                // Mark the current pet as inactive in pets collection
+                await updateDoc(doc(db, 'pets', currentPetDocId), {
+                    isActive: false
+                });
 
-                    // Strategy: Fetch all companions from inventory and find the equipped one.
-                    // We can't use getUserInventory here easily as it formats data.
-                    // Let's use direct collection access.
-                    const invColRef = collection(db, 'users', userId, 'inventory');
-                    const q = query(invColRef, where('category', '==', ECONOMY.CATEGORIES.COMPANION), where('equipped', '==', true));
-                    const qSnap = await getDocs(q);
-
-                    if (!qSnap.empty) {
-                        currentPetInventoryId = qSnap.docs[0].id;
-                    } else {
-                        // Default to ID based on current state if nothing found (new pet system?)
-                        currentPetInventoryId = currentPet.instanceId ? `pet_${currentPet.instanceId}` : `pet_${currentPet.id}`;
-                    }
-                }
-
+                // Also save to inventory if not already there
+                let currentPetInventoryId = currentPet.itemId || `pet_${currentPet.id}`;
                 const currentPetRef = doc(db, 'users', userId, 'inventory', currentPetInventoryId);
-
-                // We create/update the inventory doc for the pet we are putting away
-                // This ensures starter pets get saved too
-                // DATA SAFETY: Ensure we don't save undefined
                 const safeImage = currentPet.image || `/images/pets/${currentPet.id}.png`;
                 const safeType = currentPet.type || 'Compagnon';
 
@@ -467,52 +450,44 @@ export async function equipItem(itemId) {
                 }, { merge: true });
             }
 
-            // 2. Load NEW pet state from inventory
+            // 2. Load NEW pet state from inventory or create new pet in pets collection
             const newPetInventoryData = inventorySnap.data();
 
             // 3. Mark new pet as equipped in inventory
-            // Explicitly set equipped: true for the new one (and ensure others are false, which loop above did)
             await updateDoc(inventoryRef, { equipped: true });
 
-            // 4. Update User Profile with new pet data
-            // Fix: For new pets (instanceId), the docId is NOT the species ID. use itemId from data instead.
+            // 4. Create/Update pet in pets collection and mark as active
             const speciesId = newPetInventoryData.itemId ? newPetInventoryData.itemId.replace('pet_', '') : itemId.replace('pet_', '');
 
-            updateData.pet = {
+            // Check if this pet already exists in pets collection (from previous usage)
+            const existingPetQuery = query(petsCollection, where('userId', '==', userId), where('instanceId', '==', newPetInventoryData.instanceId || itemId));
+            const existingPetSnap = await getDocs(existingPetQuery);
+
+            const petData = {
+                userId: userId,
                 id: speciesId.toLowerCase(),
-                itemId: itemId, // CRITICAL: Persist the inventory doc ID so we know where to save it back later
+                itemId: itemId,
                 name: newPetInventoryData.itemName || newPetInventoryData.name,
                 nickname: newPetInventoryData.nickname || newPetInventoryData.itemName,
-                image: newPetInventoryData.image, // Should be saved on purchase/save
+                image: newPetInventoryData.image,
                 type: newPetInventoryData.type || 'Compagnon',
-
-                // Restore Persisted Progress
                 level: newPetInventoryData.level || 1,
                 xp: newPetInventoryData.xp || 0,
                 stats: newPetInventoryData.stats || { intelligence: 1, creativity: 1, social: 1 },
-
-                // Restore IV system data
                 ivs: newPetInventoryData.ivs || null,
                 evolutionBonus: newPetInventoryData.evolutionBonus || null,
                 evolved: newPetInventoryData.evolved || false,
                 instanceId: newPetInventoryData.instanceId || null,
-
-                obtainedAt: newPetInventoryData.purchasedAt ? newPetInventoryData.purchasedAt.toDate().toISOString() : new Date().toISOString()
+                isActive: true,
+                obtainedAt: newPetInventoryData.purchasedAt || serverTimestamp()
             };
 
-            // Fallback: If image/type missing in inventory (old data), fetch from shop config
-            if (!updateData.pet.image) {
-                const shopItemRef = doc(db, 'shopItems', itemId);
-                const shopItemSnap = await getDoc(shopItemRef);
-                if (shopItemSnap.exists()) {
-                    const shopData = shopItemSnap.data();
-                    updateData.pet.image = shopData.image;
-                    updateData.pet.type = shopData.type || 'Compagnon';
-                    // If stats were missing in inventory, take base from shop
-                    if (!newPetInventoryData.stats) {
-                        updateData.pet.stats = shopData.stats;
-                    }
-                }
+            if (!existingPetSnap.empty) {
+                // Update existing pet doc
+                await updateDoc(doc(db, 'pets', existingPetSnap.docs[0].id), petData);
+            } else {
+                // Create new pet doc
+                await addDoc(petsCollection, petData);
             }
         }
 
@@ -888,8 +863,19 @@ export async function useConsumable(itemId, qty = 1) {
 
         // Apply Effect (multiplied by qty)
         const totalBoost = boostAmount * qty;
-        const userData = userSnap.data();
-        const petStats = userData.pet?.stats || { intelligence: 1, creativity: 1, social: 1 };
+
+        // Fetch active pet from pets collection
+        const petsCollection = collection(db, 'pets');
+        const activePetsQuery = query(petsCollection, where('userId', '==', userId), where('isActive', '==', true));
+        const activePetsSnap = await getDocs(activePetsQuery);
+
+        if (activePetsSnap.empty) {
+            return { success: false, error: "Aucun compagnon actif trouvé." };
+        }
+
+        const petDocId = activePetsSnap.docs[0].id;
+        const petData = activePetsSnap.docs[0].data();
+        const petStats = petData.stats || { intelligence: 1, creativity: 1, social: 1 };
 
         if (petStats[statToBoost] !== undefined) {
             petStats[statToBoost] += totalBoost;
@@ -897,12 +883,12 @@ export async function useConsumable(itemId, qty = 1) {
             petStats[statToBoost] = totalBoost; // Init if missing
         }
 
-        // Save User
-        await updateDoc(userRef, {
-            "pet.stats": petStats
+        // Update pet in pets collection
+        await updateDoc(doc(db, 'pets', petDocId), {
+            stats: petStats
         });
 
-        // Decrease Quantity or Remove
+        // Decrease Quantity or Remove from inventory
         if (currentQty > qty) {
             await updateDoc(inventoryRef, {
                 quantity: increment(-qty)
