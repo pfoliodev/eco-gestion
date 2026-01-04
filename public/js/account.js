@@ -985,6 +985,7 @@ function renderInventoryItems(items) {
                     const res = await useConsumable(consumeState.itemId, consumeState.currentQty);
                     if (res.success) {
                         notyf.success(res.message);
+                        showStatBoostAnimation(res.message);
                         loadInventory();
                         if (typeof loadUserPet === 'function') loadUserPet();
                         window.closeConsumeModal();
@@ -1161,4 +1162,33 @@ function renderTransactions(transactions) {
             </div>
         `;
     }).join('');
+}
+
+function showStatBoostAnimation(message) {
+    if (!message) return;
+    const match = message.match(/([+-]\d+)\s+(\w+)/);
+    if (!match) return;
+
+    const amount = match[1];
+    const stat = match[2];
+
+    let icon = '⭐';
+    let statClass = 'stat-boost-default';
+
+    if (stat.includes('social')) { icon = '💖'; statClass = 'stat-boost-social'; }
+    else if (stat.includes('creativity') || stat.includes('créativité')) { icon = '✨'; statClass = 'stat-boost-creativity'; }
+    else if (stat.includes('intelligence')) { icon = '🧠'; statClass = 'stat-boost-intelligence'; }
+
+    const animContainer = document.createElement('div');
+    animContainer.className = `stat-boost-anim ${statClass}`;
+    animContainer.innerHTML = `
+        <div class="stat-boost-icon">${icon}</div>
+        <div class="stat-boost-text">${amount} ${stat.charAt(0).toUpperCase() + stat.slice(1)}</div>
+    `;
+
+    document.body.appendChild(animContainer);
+
+    setTimeout(() => {
+        animContainer.remove();
+    }, 2600);
 }
