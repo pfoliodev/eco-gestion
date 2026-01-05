@@ -1858,35 +1858,6 @@ function initShopAdminListeners() {
         });
     }
 
-    // Fix Images Button (Hotfix)
-    const fixImgBtn = document.getElementById('fix-shop-images-btn');
-    if (fixImgBtn && !fixImgBtn.dataset.listenerAdded) {
-        fixImgBtn.dataset.listenerAdded = 'true';
-        fixImgBtn.addEventListener('click', async () => {
-            if (confirm('Réparer les chemins des images des compagnons ?')) {
-                try {
-                    const updates = [
-                        { id: 'pet_feerale', image: '/images/pets/feerale.png', icon: '<img src="/images/pets/feerale.png" class="shop-item-icon-img" alt="Féerale" />' },
-                        { id: 'pet_voltor', image: '/images/pets/voltor.png', icon: '<img src="/images/pets/voltor.png" class="shop-item-icon-img" alt="Voltor" />' },
-                        { id: 'pet_ombrage', image: '/images/pets/ombrage.png', icon: '<img src="/images/pets/ombrage.png" class="shop-item-icon-img" alt="Ombrage" />' }
-                    ];
-
-                    for (const item of updates) {
-                        await updateShopItem(item.id, {
-                            image: item.image,
-                            icon: item.icon
-                        });
-                    }
-                    notyf.success('Images réparées !');
-                    loadShopAdmin();
-                } catch (error) {
-                    console.error('Fix error:', error);
-                    notyf.error('Erreur lors de la réparation');
-                }
-            }
-        });
-    }
-
     // Add new item button
     const addBtn = document.getElementById('add-shop-item-btn');
     if (addBtn && !addBtn.dataset.listenerAdded) {
