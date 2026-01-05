@@ -52,7 +52,9 @@ export const ECONOMY = {
         BADGE: 'badge',
         BOOST: 'boost',
         AVATAR: 'avatar',
-        BACKGROUND: 'background'
+        BACKGROUND: 'background',
+        COMPANION: 'companion',
+        CONSUMABLE: 'consumable'
     },
 
     // ============================================
@@ -85,7 +87,7 @@ export const ECONOMY = {
  * @param {number} streak - Current daily streak
  * @returns {object} - { base, bonuses, total, breakdown }
  */
-export function calculateQuizReward(score, total, duration = null, streak = 0) {
+export function calculateQuizReward(score, total, duration = null, streak = 0, petStats = null) {
     let base = ECONOMY.QUIZ_COMPLETE;
     const bonuses = [];
 
@@ -97,6 +99,19 @@ export function calculateQuizReward(score, total, duration = null, streak = 0) {
     // Speed bonus
     if (duration && duration <= ECONOMY.QUIZ_SPEED_THRESHOLD) {
         bonuses.push({ type: 'speed', amount: ECONOMY.QUIZ_SPEED_BONUS, label: 'Bonus vitesse!' });
+    }
+
+    // Pet Creativity Bonus (e.g., 2% per creativity point)
+    if (petStats && petStats.creativity > 0) {
+        // Base bonus on the current subtotal (base + standard bonuses) or just base? 
+        // Let's base it on the base reward to keep it simple and predictable, or base+perf.
+        // Let's do 2% of base per point.
+        const creativityBonusPct = petStats.creativity * 0.02;
+        const creativityBonusAmount = Math.floor(base * creativityBonusPct);
+
+        if (creativityBonusAmount > 0) {
+            bonuses.push({ type: 'creativity', amount: creativityBonusAmount, label: `Bonus Créativité (+${Math.round(creativityBonusPct * 100)}%)` });
+        }
     }
 
     // Calculate subtotal before multipliers

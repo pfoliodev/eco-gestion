@@ -1,12 +1,24 @@
 import { auth, bugsCollection, db, storage } from './firebase.js';
-import { getDocs, query, where, doc, getDoc, setDoc, collection, orderBy, limit } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js";
+import { getDocs, query, where, doc, getDoc, setDoc, updateDoc, collection, orderBy, limit, deleteDoc } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-storage.js";
 import { state } from './state.js';
 import { notyf } from './ui.js';
 import { loadUserFavorites } from './favorites.js';
 import { getUserBadges, getAllBadgeDefinitions, getUserBadgeStats, unlockBadge, removeUserBadge, showBadgeUnlockedPopup, getBadgeById } from './badges.js';
-import { getUserInventory, equipItem, unequipItem } from './shop.js';
+import { getUserInventory, equipItem, unequipItem, useConsumable } from './shop.js';
 import { getUserBalance, formatCoins, getTransactionHistory } from './coins.js';
+import { STARTER_PETS, PROFESSOR, XP_CONFIG, EVOLUTION_LEVELS } from './config/pets.js';
+import { ECONOMY } from './config/economy.js';
+import {
+    calculatePetStats,
+    getQualityTier,
+    getQualityHTML,
+    getTotalIVs,
+    getXPForNextLevel,
+    canEvolve,
+    applyEvolution,
+    STAT_CONFIG
+} from './utils/pet-utils.js';
 
 let allBadgesCache = [];
 let userBadgesCache = [];
@@ -52,7 +64,9 @@ export async function loadAccount() {
     await loadUserFavorites();
     await loadUserBadges();
     await loadUserStats();
+    await loadUserStats();
     await loadInventory();
+    await loadUserPet();
     initProfileForm();
     initAccountSidebar();
     initBadgeFilters();
@@ -85,6 +99,11 @@ function initAccountSidebar() {
                 // Reload stats when entering stats section
                 if (section === 'stats') {
                     loadUserStats();
+                }
+
+                // Reload inventory when entering inventory section
+                if (section === 'inventory') {
+                    loadInventory();
                 }
             }
         });
@@ -593,6 +612,544 @@ function initBadgeFilters() {
 }
 
 // ============================================
+// PET SECTION
+// ============================================
+
+export async function loadUserPet() {
+    if (!auth.currentUser) return;
+
+    const container = document.getElementById('pet-dashboard-content');
+    if (!container) return;
+
+    try {
+        // Fetch user's active pet from pets collection
+        const petsCollection = collection(db, 'pets');
+        const q = query(petsCollection, where('userId', '==', auth.currentUser.uid), where('isActive', '==', true));
+        const petsSnap = await getDocs(q);
+
+        if (!petsSnap.empty) {
+            const petData = petsSnap.docs[0].data();
+            petData.docId = petsSnap.docs[0].id; // Store document ID for updates
+            await renderPetDashboard(petData);
+        } else {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 2rem;">
+                    <p style="margin-bottom: 1rem; color: var(--text-secondary);">Vous n'avez pas encore de compagnon.</p>
+                    <button class="btn-primary" onclick="window.location.reload()">Rencontrer le Professeur</button>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error("Error loading pet:", error);
+        container.innerHTML = '<div class="error-msg">Erreur de chargement du compagnon.</div>';
+    }
+}
+
+async function renderPetDashboard(petData) {
+    const container = document.getElementById('pet-dashboard-content');
+    if (!container) return;
+
+    // 1. Get all owned companions
+    let ownedCompanions = [];
+    try {
+        const inventory = await getUserInventory('companion');
+        ownedCompanions = inventory;
+    } catch (err) {
+        console.error("Error fetching companions:", err);
+    }
+
+    // Hydrate current pet data (fix for existing users)
+    let currentPet = { ...petData };
+
+    // HOTFIX: Force correct ID for evolved pets if name matches but ID is wrong (handling legacy/cache issues)
+    const EVOLVED_ID_MAP = {
+        'Voltonnerre': 'voltonnerre',
+        'Célestiale': 'celestiale',
+        'Lunombre': 'lunombre'
+    };
+    if (EVOLVED_ID_MAP[currentPet.name] && currentPet.id !== EVOLVED_ID_MAP[currentPet.name]) {
+        console.log(`[Dashboard] Fixing mismatched ID for ${currentPet.name}: ${currentPet.id} -> ${EVOLVED_ID_MAP[currentPet.name]}`);
+        currentPet.id = EVOLVED_ID_MAP[currentPet.name];
+        currentPet.evolved = true; // Ensure evolved flag is true
+    }
+
+    // Find pet definition for stats calculation
+    // currentPet.id might be instanceId (e.g. "1767..."), so we need to find the species ID
+    // usually stored in itemId (e.g. "pet_ombrage") or we need to try finding it directly if it's a legacy pet
+    // Fix: If evolved, rely on valid ID. Otherwise prefer itemId if available.
+    let speciesId = (currentPet.evolved && currentPet.id) ? currentPet.id : (currentPet.itemId ? currentPet.itemId.replace('pet_', '') : currentPet.id.replace('pet_', ''));
+    let petDefinition = STARTER_PETS.find(p => p.id === speciesId);
+
+    // Final fallback: if speciesId provided didn't match (maybe it was an instanceId), try to find the item in inventory by instanceId
+    if (!petDefinition && ownedCompanions) {
+        // Try to find an inventory item that matches this instance ID
+        const inventoryItem = ownedCompanions.find(i => i.instanceId === speciesId || i.id === speciesId || i.instanceId === currentPet.id);
+
+        if (inventoryItem) {
+            // Check if itemId exists
+            if (inventoryItem.itemId) {
+                speciesId = inventoryItem.itemId.replace('pet_', '');
+                petDefinition = STARTER_PETS.find(p => p.id === speciesId);
+            }
+            // If itemId is missing (corrupted data), Try matching by NAME as a last resort
+            if (!petDefinition && inventoryItem.itemName) {
+                petDefinition = STARTER_PETS.find(p => p.name === inventoryItem.itemName || p.name === inventoryItem.name);
+            }
+        }
+    }
+
+    // Absolute last resort: Match by currentPet.name directly
+    if (!petDefinition && currentPet.name) {
+        petDefinition = STARTER_PETS.find(p => p.name === currentPet.name);
+    }
+
+    // Check if this is an evolved form
+    if (!petDefinition) {
+        // Search in evolutions
+        for (const starter of STARTER_PETS) {
+            if (starter.evolution && starter.evolution.id === currentPet.id) {
+                petDefinition = starter.evolution;
+                break;
+            }
+        }
+    }
+
+    // Fallback for missing data
+    if (!currentPet.image || !currentPet.type) {
+        if (petDefinition) {
+            currentPet.image = currentPet.image || petDefinition.image;
+            currentPet.type = currentPet.type || petDefinition.type;
+            currentPet.color = currentPet.color || petDefinition.color;
+        }
+    }
+
+    console.log(`[Dashboard Debug] Pet: ${currentPet.name}, ID: ${currentPet.id}, Def Found: ${!!petDefinition}`);
+    if (petDefinition) {
+        console.log(`[Dashboard Debug] Def Stats:`, petDefinition.baseStats, `Growth:`, petDefinition.statGrowth);
+    }
+
+    // Calculate stats using new system (if IVs exist and are valid) or fallback to legacy
+    let calculatedStats;
+    let hasNewSystem = currentPet.ivs !== undefined && currentPet.ivs !== null;
+
+    // FORCE dynamic calculation if definition is found (even if IVs are missing, defaults to 0)
+    // This ensures level-based growth is applied
+    if (petDefinition) {
+        calculatedStats = calculatePetStats(petDefinition, currentPet);
+    } else {
+        // Legacy: use stored stats only if no definition found
+        calculatedStats = currentPet.stats || { intelligence: 0, creativity: 0, social: 0 };
+    }
+
+    // Calculate level progress using new formula
+    const xpNeeded = getXPForNextLevel(currentPet.level || 1);
+    const progressPercent = Math.min(100, Math.floor(((currentPet.xp || 0) / xpNeeded) * 100));
+
+    // Get quality tier if IVs exist
+    const qualityTier = hasNewSystem ? getQualityTier(currentPet.ivs) : null;
+
+    // Build quality stars display with rarity-specific colors
+    let qualityDisplay = '';
+    if (qualityTier) {
+        // Define rarity-specific colors and styles
+        const rarityStyles = {
+            'Commun': {
+                color: '#9ca3af',
+                bgColor: 'rgba(156, 163, 175, 0.15)',
+                stars: '⭐',
+                glow: 'none'
+            },
+            'Rare': {
+                color: '#3b82f6',
+                bgColor: 'rgba(59, 130, 246, 0.15)',
+                stars: '⭐⭐',
+                glow: '0 0 8px rgba(59, 130, 246, 0.5)'
+            },
+            'Épique': {
+                color: '#a855f7',
+                bgColor: 'rgba(168, 85, 247, 0.15)',
+                stars: '⭐⭐⭐',
+                glow: '0 0 12px rgba(168, 85, 247, 0.6)'
+            },
+            'Légendaire': {
+                color: '#f59e0b',
+                bgColor: 'linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(249, 115, 22, 0.2))',
+                stars: '🌟',
+                glow: '0 0 15px rgba(245, 158, 11, 0.7)'
+            }
+        };
+
+        const style = rarityStyles[qualityTier.name] || rarityStyles['Commun'];
+
+        qualityDisplay = `<span class="pet-quality-stars" style="margin-left: 0.5rem; padding: 0.2rem 0.6rem; background: ${style.bgColor}; border-radius: 12px; font-size: 1.1rem; filter: drop-shadow(${style.glow}); cursor: help; display: inline-flex; align-items: center; -webkit-text-fill-color: initial;" title="${qualityTier.name} (IV: ${getTotalIVs(currentPet.ivs)}/45)">${style.stars}</span>`;
+    }
+
+    // Lookup personalized flavor text
+    let flavorText = `${currentPet.nickname || currentPet.name} vous regarde avec attention. Il semble prêt à apprendre !`;
+
+    // ConfigPetForFlavor was redundant and dangerous; rely on the correctly resolved petDefinition
+    if (petDefinition && petDefinition.flavorText) {
+        flavorText = petDefinition.flavorText;
+    }
+
+    // Render Hero Section (Active Pet)
+    let html = `
+        <div class="pet-profile-card pet-theme-${currentPet.id}" style="border-top: 3px solid ${currentPet.color || 'var(--primary-color)'}">
+            <div class="pet-header">
+                <div class="pet-visual-container">
+                    <div class="pet-avatar-large">
+                        <img src="${currentPet.image}" alt="${currentPet.name}" class="pet-image-anim">
+                    </div>
+                    <!-- Effect Particles -->
+                    <div class="effect-particle p1"></div>
+                    <div class="effect-particle p2"></div>
+                    <div class="effect-particle p3"></div>
+                    
+                    <div class="pet-shadow"></div>
+                </div>
+                <div class="pet-identity">
+                    <h3 class="pet-name-large">${currentPet.name}${qualityDisplay}</h3>
+                    <div class="pet-badges">
+                        <span class="pet-type-badge">${currentPet.type || 'Compagnon'}</span>
+                        <span class="pet-level-badge">Niveau ${currentPet.level || 1}</span>
+                        ${currentPet.evolved ? '<span class="pet-evolved-badge">✨ Évolué</span>' : ''}
+                    </div>
+                </div>
+            </div>
+
+            <div class="pet-stats-container">
+                <div class="pet-progress-section">
+                    <div class="progress-label">
+                        <span>Expérience</span>
+                        <span>${currentPet.xp || 0} / ${xpNeeded} XP</span>
+                    </div>
+                    <div class="pet-xp-bar">
+                        <div class="pet-xp-fill" style="width: ${progressPercent}%"></div>
+                    </div>
+                </div>
+
+                <div class="pet-attributes-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                    <h4 style="margin:0; color:var(--text-secondary);">Statistiques</h4>
+                    <button class="pet-info-btn" onclick="document.getElementById('stats-info-modal').style.display='flex'" title="Plus d'infos">i</button>
+                </div>
+
+                <div class="pet-attributes-grid">
+                    <div class="pet-stat-item" title="Augmente l'XP gagnée dans les quiz">
+                        <div class="stat-icon">🧠</div>
+                        <div class="stat-name">Intelligence</div>
+                        <div class="stat-value">${calculatedStats.intelligence}</div>
+                        <div class="stat-effect">+${Math.floor(calculatedStats.intelligence / 2)}% XP Quiz</div>
+                    </div>
+                    <div class="pet-stat-item" title="Augmente la chance de trouver des pièces">
+                        <div class="stat-icon">🎨</div>
+                        <div class="stat-name">Créativité</div>
+                        <div class="stat-value">${calculatedStats.creativity}</div>
+                        <div class="stat-effect">+${Math.floor(calculatedStats.creativity / 2)}% Chance Coins</div>
+                    </div>
+                    <div class="pet-stat-item" title="Augmente le bonus de connexion quotidienne">
+                        <div class="stat-icon">🤝</div>
+                        <div class="stat-name">Social</div>
+                        <div class="stat-value">${calculatedStats.social}</div>
+                        <div class="stat-effect">+${Math.floor(calculatedStats.social)}% Bonus Jour</div>
+                    </div>
+                </div>
+                
+                ${hasNewSystem ? `
+                <div class="pet-iv-section" style="margin-top: 1.5rem;">
+                    <div class="pet-iv-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+                        <h4 style="margin: 0; color: var(--text-secondary); display: flex; align-items: center; gap: 0.5rem;">
+                            🧬 Potentiel Génétique
+                        </h4>
+                        <span class="pet-iv-badge" style="padding: 0.25rem 0.75rem; background: ${qualityTier.color}20; color: ${qualityTier.color}; border-radius: 20px; font-weight: 600; font-size: 0.85rem;">
+                            ${qualityTier.emoji} ${qualityTier.name}
+                        </span>
+                    </div>
+                    <div class="pet-iv-bars" style="display: flex; flex-direction: column; gap: 0.75rem; padding: 1rem; background: rgba(0,0,0,0.02); border-radius: 12px; border: 1px solid rgba(0,0,0,0.05);">
+                        <div class="iv-bar-row" style="display: flex; align-items: center; gap: 0.75rem;">
+                            <span style="font-size: 1.25rem;">🧠</span>
+                            <span style="width: 30px; font-size: 0.8rem; color: var(--text-secondary);">INT</span>
+                            <div style="flex: 1; height: 8px; background: rgba(59, 130, 246, 0.15); border-radius: 4px; overflow: hidden;">
+                                <div style="height: 100%; width: ${(currentPet.ivs.intelligence / 15) * 100}%; background: linear-gradient(90deg, #3b82f6, #60a5fa); border-radius: 4px; transition: width 0.5s ease;"></div>
+                            </div>
+                            <span style="width: 30px; text-align: right; font-weight: 600; color: #3b82f6;">${currentPet.ivs.intelligence}</span>
+                        </div>
+                        <div class="iv-bar-row" style="display: flex; align-items: center; gap: 0.75rem;">
+                            <span style="font-size: 1.25rem;">🎨</span>
+                            <span style="width: 30px; font-size: 0.8rem; color: var(--text-secondary);">CRE</span>
+                            <div style="flex: 1; height: 8px; background: rgba(168, 85, 247, 0.15); border-radius: 4px; overflow: hidden;">
+                                <div style="height: 100%; width: ${(currentPet.ivs.creativity / 15) * 100}%; background: linear-gradient(90deg, #a855f7, #c084fc); border-radius: 4px; transition: width 0.5s ease;"></div>
+                            </div>
+                            <span style="width: 30px; text-align: right; font-weight: 600; color: #a855f7;">${currentPet.ivs.creativity}</span>
+                        </div>
+                        <div class="iv-bar-row" style="display: flex; align-items: center; gap: 0.75rem;">
+                            <span style="font-size: 1.25rem;">💖</span>
+                            <span style="width: 30px; font-size: 0.8rem; color: var(--text-secondary);">SOC</span>
+                            <div style="flex: 1; height: 8px; background: rgba(236, 72, 153, 0.15); border-radius: 4px; overflow: hidden;">
+                                <div style="height: 100%; width: ${(currentPet.ivs.social / 15) * 100}%; background: linear-gradient(90deg, #ec4899, #f472b6); border-radius: 4px; transition: width 0.5s ease;"></div>
+                            </div>
+                            <span style="width: 30px; text-align: right; font-weight: 600; color: #ec4899;">${currentPet.ivs.social}</span>
+                        </div>
+                    </div>
+                    <div class="pet-iv-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.75rem; padding: 0.5rem 0;">
+                        <span style="font-size: 0.8rem; color: var(--text-secondary);">Total IVs</span>
+                        <span style="font-size: 1.1rem; font-weight: 700; background: linear-gradient(135deg, #f59e0b, #f97316); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">${getTotalIVs(currentPet.ivs)}/45</span>
+                    </div>
+                </div>
+                ` : ''}
+            </div>
+            
+            <div class="pet-flavor-text">
+                <p>"${flavorText}"</p>
+            </div>
+
+            ${petDefinition && petDefinition.evolution && (currentPet.level >= (typeof EVOLUTION_LEVELS !== 'undefined' ? EVOLUTION_LEVELS.FIRST : 16)) ? `
+            <div class="pet-action-footer" style="margin-top: 1.5rem; text-align: center;">
+                <button onclick="handleEvolutionClick()" class="btn-evolution-glow">
+                    ✨ Faire évoluer !
+                </button>
+            </div>
+            ` : ''}
+
+
+        </div>
+
+        <!-- STATS INFO MODAL -->
+    <div id="stats-info-modal" class="modal-overlay" style="display:none;" onclick="if(event.target===this)this.style.display='none'">
+        <div class="modal-content" style="max-width: 500px;">
+            <h3 style="margin-top:0;">Comprendre les Stats de votre Compagnon</h3>
+            <div class="stats-explanation-list">
+                <div class="stat-explain-item" style="margin-bottom: 1rem; display: flex; gap: 0.8rem; align-items: flex-start;">
+                    <span style="font-size: 1.5rem;">🧠</span>
+                    <div>
+                        <strong>Intelligence</strong>
+                        <p style="margin:0.2rem 0 0; font-size: 0.9rem; color: var(--text-secondary);">Augmente l'expérience (XP) gagnée par votre compagnon à chaque bon quiz. Plus il est intelligent, plus il évolue vite !</p>
+                    </div>
+                </div>
+                <div class="stat-explain-item" style="margin-bottom: 1rem; display: flex; gap: 0.8rem; align-items: flex-start;">
+                    <span style="font-size: 1.5rem;">🎨</span>
+                    <div>
+                        <strong>Créativité</strong>
+                        <p style="margin:0.2rem 0 0; font-size: 0.9rem; color: var(--text-secondary);">Augmente la chance de trouver des pièces (Coins) bonus aléatoires en naviguant sur le site.</p>
+                    </div>
+                </div>
+                <div class="stat-explain-item" style="margin-bottom: 1rem; display: flex; gap: 0.8rem; align-items: flex-start;">
+                    <span style="font-size: 1.5rem;">🤝</span>
+                    <div>
+                        <strong>Social</strong>
+                        <p style="margin:0.2rem 0 0; font-size: 0.9rem; color: var(--text-secondary);">Multiplie votre bonus de connexion quotidien. Un compagnon sociable vous rapporte plus de pièces chaque jour !</p>
+                    </div>
+                </div>
+            </div>
+            <button class="btn-primary" onclick="document.getElementById('stats-info-modal').style.display='none'" style="width:100%; margin-top:1rem;">Compris !</button>
+        </div>
+    </div>
+`;
+
+    // Filter out the current pet AND its pre-evolution form if evolved
+    const filteredCompanions = ownedCompanions.filter(p => {
+        // ABSOLUTE RULE: If it's equipped, it's the current pet. Don't show it in "Other Companions".
+        if (p.equipped) return false;
+
+        // If we have instance IDs (new system), rely on them for exact matching
+        if (currentPet.instanceId && p.instanceId) {
+            // If instance IDs match, it's the same pet
+            if (currentPet.instanceId === p.instanceId) return false;
+        }
+
+        // Check by Inventory Document ID (itemId) if available - most robust
+        if (currentPet.itemId && p.itemId && currentPet.itemId === p.itemId) {
+            return false;
+        }
+
+        // Fallback for legacy pets or mixed cases:
+        // Identify pets by their "species" ID (e.g. "ombrage" from "pet_ombrage")
+        const petIdFromItem = p.id.replace('pet_', '');
+        const itemPetId = p.itemId?.replace('pet_', '') || petIdFromItem;
+
+        // Also check if species matches AND we don't have instance IDs differentiation
+        // (This prevents showing duplicates if logic above fails, but allows multiple Ombrage if they are distinct instances)
+        if (!p.instanceId && !currentPet.instanceId && (itemPetId === currentPet.id || petIdFromItem === currentPet.id)) {
+            return false;
+        }
+
+        return true;
+    });
+
+    if (filteredCompanions.length > 0) {
+        html += `
+    <div class="other-pets-section">
+                <h3>Mes Compagnons</h3>
+                <div class="pets-grid">
+                    ${filteredCompanions.map(p => {
+            let petImage = p.image;
+            if (!petImage && p.id.startsWith('pet_')) {
+                petImage = `/images/pets/${p.id.replace('pet_', '')}.png`;
+            }
+
+            // Get level and IVs if available
+            const petLevel = p.level || 1;
+            const petIVs = p.ivs || null;
+            const ivTotal = petIVs ? (petIVs.intelligence + petIVs.creativity + petIVs.social) : null;
+
+            // Get quality tier
+            let qualityEmoji = '';
+            let qualityColor = '#9ca3af';
+            let qualityName = 'Commun';
+            if (ivTotal !== null) {
+                if (ivTotal >= 41) { qualityEmoji = '🌟'; qualityColor = '#f59e0b'; qualityName = 'Légendaire'; }
+                else if (ivTotal >= 31) { qualityEmoji = '⭐⭐⭐'; qualityColor = '#a855f7'; qualityName = 'Épique'; }
+                else if (ivTotal >= 16) { qualityEmoji = '⭐⭐'; qualityColor = '#3b82f6'; qualityName = 'Rare'; }
+                else { qualityEmoji = '⭐'; qualityColor = '#9ca3af'; qualityName = 'Commun'; }
+            }
+
+            // Build custom tooltip HTML
+            const ivTooltipHTML = petIVs ? `
+                <div class="iv-tooltip">
+                    <div class="iv-tooltip-content">
+                        <div class="iv-tooltip-header">
+                            <span class="iv-tooltip-title">🧬 Potentiel Génétique</span>
+                            <span class="iv-tooltip-quality" style="background: ${qualityColor}30; color: ${qualityColor};">${qualityName}</span>
+                        </div>
+                        <div class="iv-stats-grid">
+                            <div class="iv-stat-row" data-stat="intelligence">
+                                <span class="iv-stat-icon">🧠</span>
+                                <span class="iv-stat-name">INT</span>
+                                <div class="iv-stat-bar">
+                                    <div class="iv-stat-fill" style="width: ${(petIVs.intelligence / 15) * 100}%;"></div>
+                                </div>
+                                <span class="iv-stat-value">${petIVs.intelligence}</span>
+                            </div>
+                            <div class="iv-stat-row" data-stat="creativity">
+                                <span class="iv-stat-icon">🎨</span>
+                                <span class="iv-stat-name">CRE</span>
+                                <div class="iv-stat-bar">
+                                    <div class="iv-stat-fill" style="width: ${(petIVs.creativity / 15) * 100}%;"></div>
+                                </div>
+                                <span class="iv-stat-value">${petIVs.creativity}</span>
+                            </div>
+                            <div class="iv-stat-row" data-stat="social">
+                                <span class="iv-stat-icon">💖</span>
+                                <span class="iv-stat-name">SOC</span>
+                                <div class="iv-stat-bar">
+                                    <div class="iv-stat-fill" style="width: ${(petIVs.social / 15) * 100}%;"></div>
+                                </div>
+                                <span class="iv-stat-value">${petIVs.social}</span>
+                            </div>
+                        </div>
+                        <div class="iv-tooltip-footer">
+                            <span class="iv-total-label">Total</span>
+                            <span class="iv-total-value">${ivTotal}/45</span>
+                        </div>
+                    </div>
+                </div>
+            ` : `
+                <div class="iv-tooltip">
+                    <div class="iv-tooltip-content">
+                        <div class="iv-tooltip-legacy">
+                            <div class="iv-tooltip-legacy-icon">📦</div>
+                            <div class="iv-tooltip-legacy-text">
+                                Pet legacy<br>
+                                <small>IVs non disponibles</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Badge for IV display (show legacy badge if no IVs)
+            const ivBadge = petIVs
+                ? `<span class="pet-iv-badge" style="font-size: 0.7rem; padding: 0.1rem 0.3rem; background: ${qualityColor}20; color: ${qualityColor}; border-radius: 4px;">
+                    ${qualityEmoji} IV
+                    ${ivTooltipHTML}
+                   </span>`
+                : `<span class="pet-iv-badge" style="font-size: 0.65rem; padding: 0.1rem 0.3rem; background: #64748b20; color: #64748b; border-radius: 4px;">
+                    📦 Legacy
+                    ${ivTooltipHTML}
+                   </span>`;
+
+            return `
+                        <div class="pet-card-small" onclick="switchPet('${p.id}')">
+                            <div class="pet-card-icon">
+                                ${petImage ? `<img src="${petImage}" alt="${p.itemName}">` : (p.icon || '🐾')}
+                            </div>
+                            <div class="pet-card-info">
+                                <h4>${p.itemName || p.name}</h4>
+                                <div class="pet-card-meta" style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.25rem;">
+                                    <span class="pet-level-small" style="font-size: 0.75rem; color: var(--text-secondary);">Lvl ${petLevel}</span>
+                                    ${ivBadge}
+                                </div>
+                            </div>
+                            <button class="btn-switch">Choisir</button>
+                        </div>
+                        `;
+        }).join('')}
+                </div>
+            </div >
+    `;
+    }
+
+    container.innerHTML = html;
+
+    // Attach switch handler to window for onclick access (simplest path)
+    window.switchPet = async (petId) => {
+        try {
+            const res = await equipItem(petId);
+            if (res.success) {
+                notyf.success("Compagnon changé !");
+                // Reload dashboard
+                loadUserPet();
+                // Reload inventory to update equipped status
+                loadInventory();
+            } else {
+                notyf.error(res.error || "Erreur lors du changement.");
+            }
+        } catch (e) {
+            console.error(e);
+            notyf.error("Erreur technique.");
+        }
+    };
+
+    // Add debug button for admins
+    if (state.isAdmin) {
+        const debugSection = document.createElement('div');
+        debugSection.className = 'pet-debug-section';
+        debugSection.style.cssText = 'margin-top: 2rem; padding: 1rem; background: rgba(255,0,0,0.05); border: 1px dashed #ff6b6b; border-radius: 8px; display: flex; justify-content: center;';
+        debugSection.innerHTML = `
+            <button id="btn-add-xp" class="btn-secondary" style="font-size: 0.75rem; padding: 0.3rem 0.6rem;">
+                ✨ +100 XP (Debug)
+            </button>
+`;
+        container.appendChild(debugSection);
+
+        // Add XP button
+        document.getElementById('btn-add-xp').onclick = async () => {
+            try {
+                const { processXPGain } = await import('./utils/pet-utils.js');
+                const result = processXPGain(currentPet.level || 1, currentPet.xp || 0, 100);
+
+                await updateDoc(doc(db, 'pets', currentPet.docId), {
+                    level: result.newLevel,
+                    xp: result.newXP
+                });
+
+                if (result.levelsGained > 0) {
+                    notyf.success(`Level up! Niveau ${result.newLevel} `);
+                } else {
+                    notyf.success(`+ 100 XP`);
+                }
+                loadUserPet();
+            } catch (e) {
+                console.error(e);
+                notyf.error('Erreur');
+            }
+        };
+    }
+
+
+
+}
+
+// ============================================
 // INVENTORY SECTION
 // ============================================
 
@@ -611,6 +1168,63 @@ async function loadInventory() {
 
         // Load inventory items
         const inventory = await getUserInventory();
+
+        // [HOTFIX] Fetch shop items to ensure images are up to date even if not saved in inventory
+        // (Fixes display for items bought before the image patch)
+        try {
+            const shopItemsRef = collection(db, 'shopItems');
+            const shopSnapshot = await getDocs(shopItemsRef);
+            const shopImageMap = new Map();
+
+            shopSnapshot.forEach(doc => {
+                const data = doc.data();
+                if (data.image) {
+                    shopImageMap.set(doc.id, data.image);
+                }
+            });
+
+            // Enrich inventory items
+            inventory.forEach(item => {
+                if (!item.image && shopImageMap.has(item.itemId)) {
+                    item.image = shopImageMap.get(item.itemId);
+                }
+            });
+        } catch (e) {
+            console.warn("Could not fetch shop images for enrichment:", e);
+        }
+
+        // [SELF-REPAIR] Fix "Ghost Equipped" items
+        // If an item is marked equipped in inventory but is NOT the currently active pet,
+        // it means it was left in a dirty state (e.g. by debug tools). Fix it.
+        try {
+            // Fetch the current active pet from pets collection
+            const petsCollection = collection(db, 'pets');
+            const petsQuery = query(petsCollection, where('userId', '==', auth.currentUser.uid), where('isActive', '==', true));
+            const petsSnap = await getDocs(petsQuery);
+
+            if (!petsSnap.empty) {
+                const currentPet = petsSnap.docs[0].data();
+                const currentInstanceId = currentPet.instanceId;
+                const currentItemId = currentPet.itemId;
+
+                inventory.forEach(item => {
+                    if (item.equipped) {
+                        const matchesInstance = currentInstanceId && item.instanceId === currentInstanceId;
+                        const matchesItem = currentItemId && item.itemId === currentItemId;
+
+                        if (!matchesInstance && !matchesItem) {
+                            console.warn("Auto-fixing ghost equipped item:", item.itemName);
+                            updateDoc(doc(db, 'users', auth.currentUser.uid, 'inventory', item.itemId), { equipped: false });
+                            item.equipped = false;
+                        }
+                    }
+                });
+            }
+        } catch (err) {
+            console.error("Self-repair error:", err);
+        }
+
+
         renderInventoryItems(inventory);
 
         // Initialize inventory filters
@@ -644,51 +1258,213 @@ function renderInventoryItems(items) {
         return;
     }
 
-    grid.innerHTML = filteredItems.map(item => `
-        <div class="inventory-item-card" data-item-id="${item.id}">
-            <div class="inventory-item-icon">${item.icon || '🎁'}</div>
+    grid.innerHTML = filteredItems.map(item => {
+        let actionBtn = '';
+        if (item.category === 'consumable') {
+            const sName = (item.itemName || 'Objet').replace(/'/g, "\\'");
+            const sImage = (item.image || '').replace(/'/g, "\\'");
+            actionBtn = `<button class="btn-primary" onclick="window.confirmUse('${item.id}', '${sName}', ${item.quantity || 1}, '${sImage}')" style="width:100%; margin-top:0.5rem; padding:0.4rem; font-size:0.9rem;">Utiliser</button>`;
+        }
+
+        // Admin: Add Delete Button
+        let adminBtn = '';
+        let itemDetails = '';
+
+        // Companion stats for display
+        if (item.category === 'companion' && item.level) {
+            const ivTotal = item.ivs ? (item.ivs.intelligence + item.ivs.creativity + item.ivs.social) : 0;
+            const ivText = item.ivs ? `${ivTotal} IV` : '';
+            itemDetails = `Lvl ${item.level} ${ivText ? '• ' + ivText : ''} `;
+        }
+
+        if (state.isAdmin) {
+            const detailStr = itemDetails || '';
+            adminBtn = `<button class="btn-secondary" onclick="event.stopPropagation(); window.deleteItem('${item.id}', '${(item.itemName || '').replace(/'/g, "\\'")}', '${detailStr}')" style="width:100%; margin-top:0.5rem; padding:0.4rem; font-size:0.8rem; background:#fee2e2; color:#ef4444; border:1px solid #fecaca;">🗑️ Supprimer (Admin)</button>`;
+        }
+
+        // Quantity badge
+        const qtyBadge = item.quantity && item.quantity > 1
+            ? `<div style="position:absolute; top:5px; right:5px; background:var(--primary-color); color:white; border-radius:12px; padding:2px 8px; font-size:0.8rem; font-weight:bold; box-shadow:0 2px 5px rgba(0,0,0,0.2);">x${item.quantity}</div>`
+            : '';
+
+        return `
+        <div class="inventory-item-card" style="position:relative;">
+            ${qtyBadge}
+            <div class="inventory-item-icon ${item.category === 'consumable' ? 'consumable-icon' : ''}">
+                ${item.image ? `<img src="${item.image}" alt="${item.itemName}" style="width:100%; height:100%; object-fit:contain;">` : (item.icon || '🎁')}
+            </div>
             <div class="inventory-item-info">
                 <div class="inventory-item-name">${item.itemName || item.name || 'Article'}</div>
                 <div class="inventory-item-category">${getCategoryLabel(item.category)}</div>
+                ${itemDetails ? `<div style="font-size:0.85rem; color:var(--primary-color); font-weight:bold; margin-bottom:0.3rem;">${itemDetails}</div>` : ''}
+                ${actionBtn}
+                ${adminBtn}
             </div>
-            ${item.category !== 'boost' ? `
-                <button class="btn-equip ${item.equipped ? 'equipped' : ''}" data-item-id="${item.id}">
-                    ${item.equipped ? '✓ Équipé' : 'Équiper'}
-                </button>
-            ` : ''}
         </div>
-    `).join('');
+        `;
+    }).join('');
 
-    // Add equip listeners
-    grid.querySelectorAll('.btn-equip').forEach(btn => {
-        btn.addEventListener('click', async () => {
-            const itemId = btn.dataset.itemId;
-            const item = items.find(i => i.id === itemId);
+    // ============================================
+    // CUSTOM CONSUME MODAL LOGIC
+    // ============================================
 
-            try {
-                if (item.equipped) {
-                    await unequipItem(itemId);
-                    notyf.success('Article déséquipé');
-                } else {
-                    await equipItem(itemId);
-                    notyf.success('Article équipé !');
+    let consumeState = { itemId: null, itemName: null, maxQty: 1, currentQty: 1 };
+
+    window.openConsumeModal = (itemId, itemName, maxQty, imageUrl) => {
+        const modal = document.getElementById('consume-modal');
+        if (!modal) {
+            // Fallback to legacy if modal missing
+            window.confirmUseLegacy(itemId, itemName, maxQty);
+            return;
+        }
+
+        consumeState = { itemId, itemName, maxQty, currentQty: 1 };
+
+        document.getElementById('consume-item-name').textContent = itemName;
+        document.getElementById('consume-qty-display').textContent = '1';
+
+        // Preview image
+        const previewContainer = document.getElementById('consume-item-preview');
+        if (imageUrl) {
+            previewContainer.innerHTML = `<div class="consumable-icon" style="width:100px;height:100px;display:flex;align-items:center;justify-content:center;overflow:hidden;"><img src="${imageUrl}" style="width:100%;height:100%;object-fit:contain;transform:scale(3.5);"></div>`;
+        } else {
+            previewContainer.innerHTML = `<div style="font-size:3rem;">🎁</div>`;
+        }
+
+        modal.style.display = 'flex';
+    };
+
+    window.closeConsumeModal = () => {
+        const modal = document.getElementById('consume-modal');
+        if (modal) modal.style.display = 'none';
+    };
+
+    window.adjustConsumeQty = (delta) => {
+        let newQty = consumeState.currentQty + delta;
+        newQty = Math.max(1, Math.min(newQty, consumeState.maxQty));
+
+        consumeState.currentQty = newQty;
+        document.getElementById('consume-qty-display').textContent = newQty;
+    };
+
+    const attachConsumeListener = () => {
+        const btn = document.getElementById('btn-confirm-consume');
+        if (btn) {
+            btn.onclick = async () => {
+                const btnRef = document.getElementById('btn-confirm-consume');
+                btnRef.disabled = true;
+                btnRef.textContent = '...';
+                try {
+                    const res = await useConsumable(consumeState.itemId, consumeState.currentQty);
+                    if (res.success) {
+                        notyf.success(res.message);
+                        showStatBoostAnimation(res.message);
+                        loadInventory();
+                        if (typeof loadUserPet === 'function') loadUserPet();
+                        window.closeConsumeModal();
+                    } else {
+                        notyf.error(res.error);
+                    }
+                } catch (e) {
+                    console.error(e);
+                    notyf.error("Erreur.");
+                } finally {
+                    btnRef.disabled = false;
+                    btnRef.textContent = 'Confirmer';
                 }
-                // Reload inventory
-                const updatedInventory = await getUserInventory();
-                renderInventoryItems(updatedInventory);
-            } catch (error) {
-                notyf.error('Erreur lors de l\'équipement');
+            };
+        }
+    };
+    setTimeout(attachConsumeListener, 100);
+
+    window.confirmUse = (itemId, itemName, maxQty = 1, imageUrl = '') => {
+        if (maxQty > 1) {
+            window.openConsumeModal(itemId, itemName, maxQty, imageUrl);
+            attachConsumeListener();
+        } else {
+            if (confirm(`Utiliser ${itemName} ?`)) {
+                useConsumable(itemId, 1).then(res => {
+                    if (res.success) {
+                        notyf.success(res.message);
+                        loadInventory();
+                        if (typeof loadUserPet === 'function') loadUserPet();
+                    } else {
+                        notyf.error(res.error);
+                    }
+                });
             }
-        });
-    });
+        }
+    };
+
+    // Legacy Handler (renamed)
+    window.confirmUseLegacy = async (itemId, itemName, maxQty = 1) => {
+        let qtyToUse = 1;
+
+        if (maxQty > 1) {
+            const input = prompt(`Combien de "${itemName}" voulez-vous utiliser ? (Max: ${maxQty})`, "1");
+            if (input === null) return; // Cancelled
+
+            qtyToUse = parseInt(input);
+            if (isNaN(qtyToUse) || qtyToUse < 1) {
+                notyf.error("Quantité invalide.");
+                return;
+            }
+            if (qtyToUse > maxQty) {
+                notyf.error(`Vous n'en avez que ${maxQty}.`);
+                return;
+            }
+        } else {
+            if (!confirm(`Voulez-vous utiliser ${itemName} ?`)) return;
+        }
+
+        try {
+            const res = await useConsumable(itemId, qtyToUse);
+            if (res.success) {
+                notyf.success(res.message || "Objet utilisé !");
+                loadInventory(); // Reload inventory
+                // Refresh pet stats visually if possible (requires page reload or re-fetching stats)
+                if (typeof loadUserPet === 'function') loadUserPet();
+            } else {
+                notyf.error(res.error || "Erreur lors de l'utilisation.");
+            }
+        } catch (e) {
+            console.error(e);
+            notyf.error("Erreur technique.");
+        }
+    };
 }
+
+// Admin Cleanup Tool
+window.deleteItem = async (itemId, itemName, details = '') => {
+    console.log('[Debug] deleteItem called with:', itemId, itemName);
+    if (!itemId) {
+        notyf.error('ID de l\'objet manquant.');
+        return;
+    }
+
+    const detailMsg = details ? `\n(${details})` : '';
+    if (!confirm(`ADMIN: Supprimer définitivement "${itemName}"${detailMsg} de l'inventaire ?`)) return;
+
+    try {
+        const userId = auth.currentUser.uid;
+        await deleteDoc(doc(db, 'users', userId, 'inventory', itemId));
+        notyf.success(`Item supprimé: ${itemName}`);
+        loadInventory();
+        if (typeof loadUserPet === 'function') loadUserPet();
+    } catch (e) {
+        console.error("Error deleting item:", e);
+        notyf.error("Erreur lors de la suppression.");
+    }
+};
 
 function getCategoryLabel(category) {
     const labels = {
         'theme': '🎨 Thème',
         'frame': '🖼️ Cadre',
         'badge': '🏅 Badge',
-        'boost': '⚡ Boost'
+        'boost': '⚡ Boost',
+        'consumable': '🍬 Consommable',
+        'companion': '🐾 Compagnon'
     };
     return labels[category] || category;
 }
@@ -783,3 +1559,322 @@ function renderTransactions(transactions) {
         `;
     }).join('');
 }
+
+function showStatBoostAnimation(message) {
+    if (!message) return;
+    const match = message.match(/([+-]\d+)\s+(\w+)/);
+    if (!match) return;
+
+    const amount = match[1];
+    const stat = match[2];
+
+    let icon = '⭐';
+    let statClass = 'stat-boost-default';
+
+    if (stat.includes('social')) { icon = '💖'; statClass = 'stat-boost-social'; }
+    else if (stat.includes('creativity') || stat.includes('créativité')) { icon = '✨'; statClass = 'stat-boost-creativity'; }
+    else if (stat.includes('intelligence')) { icon = '🧠'; statClass = 'stat-boost-intelligence'; }
+
+    const animContainer = document.createElement('div');
+    animContainer.className = `stat-boost-anim ${statClass}`;
+    animContainer.innerHTML = `
+        <div class="stat-boost-icon">${icon}</div>
+        <div class="stat-boost-text">${amount} ${stat.charAt(0).toUpperCase() + stat.slice(1)}</div>
+    `;
+
+    document.body.appendChild(animContainer);
+
+    setTimeout(() => {
+        animContainer.remove();
+    }, 2600);
+}
+
+// ============================================
+// PET EVOLUTION SYSTEM
+// ============================================
+
+function getPetDefinition(petId) {
+    return STARTER_PETS.find(p => p.id === petId);
+}
+
+export async function checkEvolutionAvailable() {
+    if (!auth.currentUser) return null;
+
+    try {
+        // Fetch the current active pet from pets collection
+        const petsCollection = collection(db, 'pets');
+        const petsQuery = query(petsCollection, where('userId', '==', auth.currentUser.uid), where('isActive', '==', true));
+        const petsSnap = await getDocs(petsQuery);
+
+        if (petsSnap.empty) return null;
+
+        const petData = petsSnap.docs[0].data();
+        const petDocId = petsSnap.docs[0].id;
+
+        console.log('[Evolution] petData:', petData);
+        console.log('[Evolution] petData.evolved:', petData.evolved);
+        console.log('[Evolution] petData.name:', petData.name);
+
+        // CRITICAL: If pet is already evolved, don't allow re-evolution
+        if (petData.evolved === true) {
+            console.log('[Evolution] Pet is already evolved. No further evolution available.');
+            return null;
+        }
+
+        // CRITICAL CHECK 2: Block known evolved names (Failsafe)
+        // This prevents evolved pets from evolving again even if ID/evolved flag is somehow wrong
+        const EVOLVED_NAMES = ['Célestiale', 'Lunombre', 'Voltonnerre'];
+        if (EVOLVED_NAMES.includes(petData.name)) {
+            console.log('[Evolution] Pet is a known evolved form (name check). Blocking.');
+            return null;
+        }
+
+        // Normalize ID similar to renderPetDashboard
+        const rawId = petData?.id || '';
+        const speciesId = petData?.itemId ? petData.itemId.replace('pet_', '') : rawId.replace('pet_', '');
+
+        console.log('[Evolution] Normalized ID:', speciesId, 'petData.level:', petData?.level);
+
+        // Robust definition lookup - only in STARTER_PETS base forms
+        let petDef = STARTER_PETS.find(p => p.id === speciesId);
+
+        // Fallback: Match by NAME if ID failed - but only for base forms
+        if (!petDef && petData.name) {
+            console.log('[Evolution] ID lookup failed. Trying fallback by Name:', petData.name);
+            petDef = STARTER_PETS.find(p => p.name === petData.name);
+
+            // If still not found, the pet might be an evolved form stored with wrong data
+            if (!petDef) {
+                console.log('[Evolution] Pet not found in STARTER_PETS - might be evolved form.');
+                return null;
+            }
+        }
+
+        console.log('[Evolution] petDef:', petDef?.name, 'evolution:', petDef?.evolution);
+
+        if (!petDef || !petDef.evolution) {
+            console.log('[Evolution] No evolution definition found for this pet.');
+            return null; // No evolution available
+        }
+
+        // Use new level-based evolution check
+        const evolutionLevel = Number(EVOLUTION_LEVELS?.FIRST || STAT_CONFIG.FIRST_EVOLUTION_LEVEL || 16);
+        const petLevel = Number(petData.level || 1);
+
+        if (petLevel >= evolutionLevel) {
+            // Also merge config properties (flavor text etc) which might be needed
+            return { petData, petDef: { ...petDef, ...petData } };
+        }
+
+        return null;
+    } catch (e) {
+        console.error("Error checking evolution:", e);
+        return null;
+    }
+}
+
+let evolutionDialogueIndex = 0;
+let currentEvolutionData = null;
+
+function startEvolutionSequence(evolutionData) {
+    currentEvolutionData = evolutionData;
+    evolutionDialogueIndex = 0;
+
+    const modal = document.getElementById('evolution-modal');
+    const dialoguePhase = document.getElementById('evolution-dialogue-phase');
+    const animPhase = document.getElementById('evolution-animation-phase');
+    const resultPhase = document.getElementById('evolution-result-phase');
+
+    // Reset phases
+    dialoguePhase.style.display = 'flex';
+    animPhase.style.display = 'none';
+    resultPhase.style.display = 'none';
+
+    // Reset next button text
+    const nextBtn = document.getElementById('evolution-next-btn');
+    if (nextBtn) nextBtn.textContent = '▼';
+
+    // Show first dialogue
+    showNextEvolutionDialogue();
+
+    // Ensure listeners are attached (fix for stuck button)
+    initEvolutionListeners();
+
+    // Show modal with animation
+    modal.style.display = 'flex';
+    setTimeout(() => modal.classList.add('active'), 50);
+}
+
+function showNextEvolutionDialogue() {
+    const dialogues = PROFESSOR.dialogues.evolution;
+    const textEl = document.getElementById('evolution-dialogue-text');
+    const nextBtn = document.getElementById('evolution-next-btn');
+
+    if (evolutionDialogueIndex < dialogues.length) {
+        textEl.textContent = dialogues[evolutionDialogueIndex];
+        evolutionDialogueIndex++;
+
+        if (evolutionDialogueIndex >= dialogues.length) {
+            nextBtn.textContent = "C'est parti !";
+        }
+    } else {
+        // Start animation phase
+        startEvolutionAnimation();
+    }
+}
+
+function startEvolutionAnimation() {
+    const dialoguePhase = document.getElementById('evolution-dialogue-phase');
+    const animPhase = document.getElementById('evolution-animation-phase');
+
+    dialoguePhase.style.display = 'none';
+    animPhase.style.display = 'flex';
+
+    // After animation plays (e.g., 4 seconds), show result
+    setTimeout(() => {
+        completeEvolution();
+    }, 4000);
+}
+
+async function completeEvolution() {
+    const animPhase = document.getElementById('evolution-animation-phase');
+    const resultPhase = document.getElementById('evolution-result-phase');
+
+    const { petData, petDef } = currentEvolutionData;
+    const evolvedForm = petDef.evolution;
+
+    // Apply evolution with random stat boost
+    const evolvedPetData = applyEvolution(petData, evolvedForm);
+
+    // Log the boost for debugging
+    console.log('[Evolution] Stat boost applied:', evolvedPetData.lastEvolutionBoost);
+
+    // Update Firestore - pets collection
+    try {
+        // Get the active pet document from pets collection
+        const petsCollection = collection(db, 'pets');
+        const petsQuery = query(petsCollection, where('userId', '==', auth.currentUser.uid), where('isActive', '==', true));
+        const petsSnap = await getDocs(petsQuery);
+
+        if (!petsSnap.empty) {
+            const petDocId = petsSnap.docs[0].id;
+
+            // Update the pet in pets collection
+            await updateDoc(doc(db, 'pets', petDocId), {
+                id: evolvedPetData.id,
+                name: evolvedPetData.name,
+                image: evolvedPetData.image,
+                evolved: true,
+                evolutionBonus: evolvedPetData.evolutionBonus,
+                level: evolvedPetData.level,
+                xp: evolvedPetData.xp,
+                stats: evolvedPetData.stats,
+                lastEvolutionBoost: evolvedPetData.lastEvolutionBoost
+            });
+
+            console.log('[Evolution] Updated pet in pets collection:', petDocId);
+        }
+
+        // CORRECTION INVENTORY MANAGEMENT:
+        // 1. Unequip the OLD form (e.g. pet_voltor) so other Voltors typically appear available
+        // 2. Create/Update the NEW form (e.g. pet_voltonnerre) as equipped
+
+        const oldInventoryId = petData.itemId || `pet_${petData.id}`;
+        const newInventoryId = `pet_${evolvedPetData.id}`;
+
+        // 1. Unequip old
+        if (oldInventoryId !== newInventoryId) {
+            try {
+                const oldInvRef = doc(db, 'users', auth.currentUser.uid, 'inventory', oldInventoryId);
+                await deleteDoc(oldInvRef);
+                console.log(`[Evolution] Consumed (deleted) old inventory item: ${oldInventoryId}`);
+            } catch (e) {
+                console.warn('[Evolution] Failed to consume old item (may not exist):', e);
+            }
+        }
+
+        // 2. Create/Update new item
+        console.log('[Evolution] Creating/Updating new inventory item:', newInventoryId);
+        await setDoc(doc(db, 'users', auth.currentUser.uid, 'inventory', newInventoryId), {
+            itemId: newInventoryId,
+            itemName: evolvedPetData.name,
+            category: ECONOMY.CATEGORIES.COMPANION,
+            image: evolvedPetData.image,
+            level: evolvedPetData.level,
+            xp: evolvedPetData.xp,
+            stats: evolvedPetData.stats,
+            ivs: evolvedPetData.ivs || null,
+            evolutionBonus: evolvedPetData.evolutionBonus || null,
+            evolved: true,
+            equipped: true, // It remains equipped
+            type: evolvedPetData.type || 'Compagnon',
+            lastUpdated: new Date()
+        }, { merge: true });
+
+        // Show boost notification
+        const boost = evolvedPetData.lastEvolutionBoost;
+        notyf.success(`Boost d'évolution: +${boost.intelligence} INT, +${boost.creativity} CRE, +${boost.social} SOC`);
+    } catch (e) {
+        console.error("Error saving evolution:", e);
+        notyf.error("Erreur lors de la sauvegarde de l'évolution.");
+    }
+
+    // Show result
+    document.getElementById('evolution-new-pet-img').src = evolvedForm.image;
+    document.getElementById('evolution-new-pet-name').textContent = evolvedForm.name;
+    document.getElementById('evolution-new-pet-flavor').textContent = evolvedForm.flavorText;
+
+    animPhase.style.display = 'none';
+    resultPhase.style.display = 'flex';
+}
+
+function closeEvolutionModal() {
+    const modal = document.getElementById('evolution-modal');
+    modal.classList.remove('active');
+    setTimeout(() => {
+        modal.style.display = 'none';
+        loadUserPet(); // Reload pet display
+    }, 500);
+}
+
+// Attach event listeners for evolution modal
+function initEvolutionListeners() {
+    const nextBtn = document.getElementById('evolution-next-btn');
+    const closeBtn = document.getElementById('evolution-close-btn');
+
+    if (nextBtn) nextBtn.onclick = showNextEvolutionDialogue;
+    if (closeBtn) closeBtn.onclick = closeEvolutionModal;
+}
+
+
+
+// Expose globally
+window.startEvolutionSequence = startEvolutionSequence;
+window.closeEvolutionModal = closeEvolutionModal;
+
+window.handleEvolutionClick = async () => {
+    const btn = document.querySelector('.btn-evolution-glow');
+    if (btn) {
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.style.opacity = '0.8';
+        btn.innerHTML = '⏳ Chargement...';
+
+        try {
+            const evolutionData = await checkEvolutionAvailable();
+            if (evolutionData) {
+                startEvolutionSequence(evolutionData);
+            } else {
+                notyf.error("L'évolution n'est plus disponible.");
+                setTimeout(() => window.location.reload(), 1500);
+            }
+        } catch (e) {
+            console.error(e);
+            notyf.error("Erreur technique.");
+        } finally {
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            btn.innerHTML = originalText;
+        }
+    }
+};

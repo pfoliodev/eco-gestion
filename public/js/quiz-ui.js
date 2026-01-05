@@ -10,9 +10,13 @@ import {
 import { checkAndUnlockBadges, updateStreakData, updatePerfectStreakData } from './badges.js';
 import { notyf, showPage } from './ui.js';
 import { state } from './state.js';
-import { auth } from './firebase.js';
+import { auth, db } from './firebase.js';
 import { addCoins, showCoinGainAnimation, updateBalanceDisplay } from './coins.js';
+
 import { calculateQuizReward } from './config/economy.js';
+import { processXPGain, calculatePetStats } from './utils/pet-utils.js';
+import { XP_CONFIG, STARTER_PETS } from './config/pets.js';
+import { doc, getDoc, updateDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js";
 
 // --- Global UI State ---
 let currentQuiz = null;
@@ -21,6 +25,7 @@ let currentQuestionIndex = 0;
 let userAnswers = {};
 let quizStartTime = null;
 let lastQuizCoinsEarned = null; // Store coins earned for display
+let lastQuizXPEarned = null; // Store XP earned for display
 
 // --- Admin: List & Manage Quizzes ---
 
@@ -201,6 +206,22 @@ export async function renderQuizList(courseId) {
     try {
         const quizzes = await getQuizzesByCourse(courseId);
 
+        if (state.isAdmin) {
+            quizzes.unshift({
+                id: 'debug-quiz-xp',
+                title: '⚡ [ADMIN] Test Rapide XP',
+                courseId: courseId,
+                questions: [
+                    {
+                        text: "Question Gratuite (Pour tester l'XP)",
+                        options: ["Réponse Correcte", "Mauvaise", "Mauvaise", "Mauvaise"],
+                        correctIndex: 0,
+                        explanation: "C'est cadeau pour tester les bonus !"
+                    }
+                ]
+            });
+        }
+
         if (quizzes.length === 0) {
             container.innerHTML = '<p class="text-muted">Aucun QCM disponible.</p>';
             return;
@@ -227,7 +248,26 @@ export async function renderQuizList(courseId) {
 }
 
 export async function startQuiz(quizId) {
-    const quiz = await getQuizById(quizId);
+    let quiz = null;
+
+    if (quizId === 'debug-quiz-xp') {
+        quiz = {
+            id: 'debug-quiz-xp',
+            title: '⚡ [ADMIN] Test Rapide XP',
+            courseId: state.currentCourseId, // Use current course
+            questions: [
+                {
+                    text: "Question Gratuite (Pour tester l'XP)",
+                    options: ["Réponse Correcte", "Mauvaise", "Mauvaise", "Mauvaise"],
+                    correctIndex: 0,
+                    explanation: "C'est cadeau pour tester les bonus !"
+                }
+            ]
+        };
+    } else {
+        quiz = await getQuizById(quizId);
+    }
+
     if (!quiz) return;
 
     currentQuiz = quiz;
@@ -309,6 +349,55 @@ function renderQuizPlayer() {
         // Calculate duration in seconds
         const duration = quizStartTime ? Math.floor((Date.now() - quizStartTime) / 1000) : null;
 
+        // Fetch user's active pet EARLY for reward calculations
+        let activePet = null;
+        let petStats = null;
+        let petDocId = null;
+
+        try {
+            const petsCollection = collection(db, 'pets');
+            const petsQuery = query(petsCollection, where('userId', '==', auth.currentUser.uid), where('isActive', '==', true));
+            const petsSnap = await getDocs(petsQuery);
+
+            if (!petsSnap.empty) {
+                const petData = petsSnap.docs[0].data();
+                petDocId = petsSnap.docs[0].id;
+
+                // Resolve Pet Definition to get base stats
+                let speciesId = petData.itemId ? petData.itemId.replace('pet_', '') : petData.id;
+                let petDefinition = STARTER_PETS.find(p => p.id === speciesId);
+
+                if (!petDefinition) {
+                    petDefinition = STARTER_PETS.find(p => p.name === petData.name || p.name === petData.nickname);
+                }
+
+                // Handle evolution definition match
+                if (petDefinition && petDefinition.evolution && petData.evolved && petData.evolutionId) {
+                    if (petDefinition.evolution.id === petData.evolutionId) {
+                        petDefinition = petDefinition.evolution;
+                    }
+                }
+
+                // Fallback for direct evolution match
+                if (!petDefinition) {
+                    const directMatch = STARTER_PETS.find(p => p.evolution && p.evolution.id === speciesId);
+                    if (directMatch) petDefinition = directMatch.evolution;
+                }
+
+                if (petDefinition) {
+                    // Calculate Real Stats (IVs + Level + Base)
+                    petStats = calculatePetStats(petDefinition, petData);
+                } else {
+                    // Fallback to stored stats
+                    petStats = petData.stats || { intelligence: 0, creativity: 0, social: 0 };
+                }
+
+                activePet = petData;
+            }
+        } catch (e) {
+            console.error("Error fetching pet for rewards:", e);
+        }
+
         // Save result and check for badges
         try {
             await submitQuizResult(currentQuiz.id, currentQuiz.courseId, score, currentQuizQuestions.length, userAnswers, duration);
@@ -321,7 +410,9 @@ function renderQuizPlayer() {
 
             // Award IFH Coins for quiz completion
             const userStreak = state.user?.quizStreak || 0;
-            const reward = calculateQuizReward(score, currentQuizQuestions.length, duration, userStreak);
+
+            // PASS PET STATS HERE for Creativity Bonus
+            const reward = calculateQuizReward(score, currentQuizQuestions.length, duration, userStreak, petStats);
             lastQuizCoinsEarned = reward;
 
             const result = await addCoins(reward.total, 'quiz_complete', currentQuiz.id, {
@@ -337,6 +428,37 @@ function renderQuizPlayer() {
             }
         } catch (e) {
             console.error("Failed to save result", e);
+        }
+
+        // --- PET XP REWARD ---
+        if (activePet && petDocId && petStats) {
+            try {
+                // Calculate XP: Base + Intelligence Bonus
+                const intelligence = petStats.intelligence || 0;
+                const baseXP = XP_CONFIG.REWARDS.QUIZ_COMPLETE;
+                const bonusMultiplier = 1 + (intelligence / 100);
+
+                const totalXP = Math.floor(baseXP * bonusMultiplier);
+                const bonusXP = totalXP - baseXP;
+
+                lastQuizXPEarned = { total: totalXP, base: baseXP, bonus: bonusXP, multiplier: bonusMultiplier };
+
+                // Process Level Up
+                const currentLevel = activePet.level || 1;
+                const currentXP = activePet.xp || 0;
+                const result = processXPGain(currentLevel, currentXP, totalXP);
+
+                // Update Pet in pets collection
+                const petRef = doc(db, 'pets', petDocId);
+                const updateData = {
+                    'level': result.newLevel,
+                    'xp': result.newXP
+                };
+
+                await updateDoc(petRef, updateData);
+            } catch (e) {
+                console.error("Failed to award Pet XP", e);
+            }
         }
 
         showQuizResults(score, currentQuizQuestions.length);
@@ -403,6 +525,19 @@ async function showQuizResults(score, total) {
                             <span class="breakdown-amount">+${b.amount}</span>
                         </div>
                     `).join('')}
+                </div>
+            </div>
+            </div>
+            ` : ''}
+
+            ${lastQuizXPEarned ? `
+            <div class="xp-earned-card">
+                <div class="xp-earned-header">
+                    <span class="xp-icon-large">🐾</span>
+                    <span class="xp-total">+${lastQuizXPEarned.total} XP Compagnon</span>
+                </div>
+                <div class="xp-bonus-info">
+                   Base: ${lastQuizXPEarned.base} XP | Bonus INT: +${lastQuizXPEarned.bonus} XP
                 </div>
             </div>
             ` : ''}

@@ -363,3 +363,55 @@
         font-size: 1.5rem;
     }
 }
+
+/* ============================================
+   XP EARNED CARD (Pet Reward)
+   ============================================ */
+
+.xp-earned-card {
+    margin: 1.5rem 0;
+    padding: 1.25rem 1.5rem;
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.12) 0%, rgba(147, 51, 234, 0.08) 100%);
+    border: 1px solid rgba(168, 85, 247, 0.3);
+    border-radius: 1rem;
+    animation: coins-slide-in 0.5s ease-out 0.4s both;
+    text-align: center;
+}
+
+.xp-earned-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.xp-icon-large {
+    font-size: 2rem;
+    animation: coin-bounce 0.6s ease-out 0.6s both;
+}
+
+.xp-total {
+    font-size: 1.75rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #d8b4fe 0%, #a855f7 50%, #7e22ce 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: coins-glow 1.5s ease-in-out infinite alternate;
+}
+
+.xp-bonus-info {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    font-style: italic;
+    opacity: 0.8;
+}
+
+@media (min-width: 768px) {
+    .xp-earned-card {
+        max-width: 400px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+}

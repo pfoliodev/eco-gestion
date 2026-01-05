@@ -1,0 +1,1121 @@
+/* Pet Dashboard in Account */
+.pet-profile-card {
+    background: rgba(255, 255, 255, 0.05);
+    /* Light glass effect if dark mode, adjust for light theme later */
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    padding: 2rem;
+    max-width: 800px;
+    margin: 0 auto;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+body.light-theme .pet-profile-card {
+    background: white;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+}
+
+.pet-header {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.pet-visual-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    width: 200px;
+    height: 220px;
+}
+
+.pet-avatar-large {
+    width: 150px;
+    height: 150px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+}
+
+.pet-image-anim {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    /* Default animation for all pets */
+    animation: pet-float 3s ease-in-out infinite;
+    filter: drop-shadow(0 5px 15px rgba(0, 0, 0, 0.2));
+}
+
+.pet-shadow {
+    width: 80px;
+    height: 15px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 50%;
+    filter: blur(5px);
+    margin-top: 10px;
+    animation: shadow-pulse 3s ease-in-out infinite;
+}
+
+/* Animations */
+@keyframes pet-float {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-15px);
+    }
+}
+
+@keyframes shadow-pulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+        opacity: 0.6;
+    }
+
+    50% {
+        transform: scale(0.8);
+        opacity: 0.3;
+    }
+}
+
+/* Specific Ombrage Aura */
+.pet-theme-ombrage .pet-image-anim {
+    animation: pet-float 3s ease-in-out infinite, aura-glow 3s ease-in-out infinite;
+}
+
+@keyframes aura-glow {
+
+    0%,
+    100% {
+        filter: drop-shadow(0 0 10px rgba(119, 96, 162, 0.4));
+    }
+
+    50% {
+        filter: drop-shadow(0 0 25px rgba(150, 100, 255, 0.8));
+    }
+}
+
+/* --- GENERIC PARTICLE SYSTEM --- */
+.effect-particle {
+    display: none;
+    /* Hidden by default */
+    position: absolute;
+    pointer-events: none;
+    z-index: 3;
+}
+
+/* OMBRAGE: Shadow Orbs */
+.pet-theme-ombrage .effect-particle {
+    display: block;
+    border-radius: 50%;
+    background: #4a148c;
+    box-shadow: 0 0 10px #7c43bd, 0 0 20px #9c27b0;
+    opacity: 0.8;
+}
+
+.pet-theme-ombrage .p1 {
+    width: 20px;
+    height: 20px;
+    top: 30%;
+    left: 20%;
+    animation: orbit-1 4s linear infinite;
+}
+
+.pet-theme-ombrage .p2 {
+    width: 15px;
+    height: 15px;
+    bottom: 35%;
+    right: 25%;
+    animation: orbit-2 5s ease-in-out infinite alternate;
+}
+
+.pet-theme-ombrage .p3 {
+    width: 18px;
+    height: 18px;
+    top: 25%;
+    right: 30%;
+    animation: orbit-3 6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes flash {
+
+    0%,
+    90% {
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 0;
+    }
+}
+
+/* Keeping empty flash just in case to prevent error, or remove it */
+
+@keyframes orbit-1 {
+    0% {
+        transform: translate(0, 0) scale(1);
+    }
+
+    33% {
+        transform: translate(80px, 20px) scale(0.8);
+    }
+
+    66% {
+        transform: translate(40px, 100px) scale(1.1);
+    }
+
+    100% {
+        transform: translate(0, 0) scale(1);
+    }
+}
+
+@keyframes orbit-2 {
+    from {
+        transform: translate(0, 0);
+    }
+
+    to {
+        transform: translate(-30px, -60px);
+    }
+}
+
+@keyframes orbit-3 {
+    0% {
+        transform: rotate(0deg) translateX(50px) rotate(0deg);
+        opacity: 0.6;
+    }
+
+    50% {
+        opacity: 1;
+    }
+
+    100% {
+        transform: rotate(360deg) translateX(50px) rotate(-360deg);
+        opacity: 0.6;
+    }
+}
+
+/* Dark theme adaptation for shadow */
+@media (prefers-color-scheme: dark) {
+    .pet-shadow {
+        background: rgba(0, 0, 0, 0.5);
+    }
+}
+
+.pet-identity {
+    flex: 1;
+}
+
+/* ... Existing CSS ... */
+.pet-name-large {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(135deg, var(--primary-color), #818cf8);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 800;
+}
+
+/* OTHER PETS SECTION */
+.other-pets-section {
+    margin-top: 3rem;
+    border-top: 1px solid var(--border-color);
+    padding-top: 2rem;
+}
+
+.other-pets-section h3 {
+    font-size: 1.25rem;
+    color: var(--text-main);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.other-pets-section h3::before {
+    content: "🐾";
+}
+
+.pets-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1rem;
+}
+
+.pet-card-small {
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.pet-card-small:hover {
+    transform: translateY(-3px);
+    border-color: var(--primary-color);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.pet-card-icon img {
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.pet-card-info h4 {
+    font-size: 1rem;
+    color: var(--text-main);
+    margin: 0;
+}
+
+.btn-switch {
+    width: 100%;
+    padding: 0.5rem;
+    background: transparent;
+    border: 1px solid var(--primary-color);
+    color: var(--primary-color);
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.pet-card-small:hover .btn-switch {
+    background: var(--primary-color);
+    color: white;
+}
+
+.pet-badges {
+    display: flex;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+}
+
+.pet-type-badge,
+.pet-level-badge {
+    padding: 0.4rem 1rem;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.pet-type-badge {
+    background: rgba(74, 158, 255, 0.1);
+    color: var(--primary-color);
+    border: 1px solid rgba(74, 158, 255, 0.2);
+}
+
+.pet-level-badge {
+    background: rgba(255, 235, 59, 0.1);
+    color: #f59e0b;
+    border: 1px solid rgba(255, 235, 59, 0.3);
+}
+
+.pet-stats-container {
+    background: rgba(0, 0, 0, 0.02);
+    border-radius: 15px;
+    padding: 1.5rem;
+}
+
+.pet-progress-section {
+    margin-bottom: 2rem;
+}
+
+.progress-label {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.pet-xp-bar {
+    height: 12px;
+    background: rgba(128, 128, 128, 0.2);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.pet-xp-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4aec8c, #26d0ce);
+    border-radius: 6px;
+    transition: width 1s ease-out;
+}
+
+.pet-attributes-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+.pet-stat-item {
+    background: var(--card-bg, #ffffff);
+    padding: 1rem;
+    border-radius: 12px;
+    text-align: center;
+    border: 1px solid var(--border-color);
+    transition: transform 0.2s;
+}
+
+.pet-stat-item:hover {
+    transform: translateY(-3px);
+}
+
+.stat-icon {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.stat-name {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.2rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stat-value {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.2rem;
+}
+
+.stat-effect {
+    font-size: 0.75rem;
+    color: var(--primary-color);
+    font-weight: 600;
+    background: rgba(74, 158, 255, 0.1);
+    padding: 2px 6px;
+    border-radius: 10px;
+    display: inline-block;
+}
+
+.pet-flavor-text {
+    margin-top: 2rem;
+    text-align: center;
+    font-style: italic;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    padding: 1rem;
+    border-left: 3px solid var(--primary-color);
+    background: linear-gradient(90deg, rgba(74, 158, 255, 0.05), transparent);
+}
+
+@media (max-width: 600px) {
+    .pet-header {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .pet-badges {
+        justify-content: center;
+    }
+
+    .pet-attributes-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Info Button */
+.pet-info-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--surface-hover);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    font-size: 1rem;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0;
+    margin-left: 0.5rem;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.pet-info-btn:hover {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+    transform: scale(1.1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Modal Enhancements */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 1rem;
+}
+
+.modal-content {
+    background: var(--surface-color);
+    padding: 2rem;
+    border-radius: 20px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    width: 100%;
+    max-width: 500px;
+    animation: modal-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes modal-pop {
+    0% {
+        transform: scale(0.9);
+        opacity: 0;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.stats-explanation-list {
+    margin-top: 1.5rem;
+}
+
+.stat-explain-item {
+    background: var(--background-color);
+    padding: 1rem;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+}
+
+.stat-explain-item strong {
+    color: var(--primary-color);
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+/* ============================================
+   EVOLUTION ANIMATION SYSTEM (CSS-based)
+   ============================================ */
+
+.evolution-effect-container {
+    position: relative;
+    width: 300px;
+    height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Central Glow */
+.evolution-glow {
+    position: absolute;
+    width: 150px;
+    height: 150px;
+    background: radial-gradient(circle, rgba(255, 215, 0, 1) 0%, rgba(255, 165, 0, 0.8) 30%, transparent 70%);
+    border-radius: 50%;
+    animation: evolution-glow-pulse 1.5s ease-in-out infinite;
+    box-shadow:
+        0 0 60px 30px rgba(255, 215, 0, 0.6),
+        0 0 100px 60px rgba(255, 140, 0, 0.4),
+        0 0 140px 90px rgba(255, 100, 0, 0.2);
+}
+
+@keyframes evolution-glow-pulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    50% {
+        transform: scale(1.3);
+        opacity: 0.8;
+    }
+}
+
+/* Expanding Rings */
+.evolution-ring {
+    position: absolute;
+    border: 3px solid rgba(255, 215, 0, 0.8);
+    border-radius: 50%;
+    animation: evolution-ring-expand 2s ease-out infinite;
+}
+
+.ring-1 {
+    width: 100px;
+    height: 100px;
+    animation-delay: 0s;
+}
+
+.ring-2 {
+    width: 100px;
+    height: 100px;
+    animation-delay: 0.6s;
+}
+
+.ring-3 {
+    width: 100px;
+    height: 100px;
+    animation-delay: 1.2s;
+}
+
+@keyframes evolution-ring-expand {
+    0% {
+        width: 100px;
+        height: 100px;
+        opacity: 1;
+        border-width: 3px;
+    }
+
+    100% {
+        width: 280px;
+        height: 280px;
+        opacity: 0;
+        border-width: 1px;
+    }
+}
+
+/* Sparkle Particles */
+.evolution-sparkle {
+    position: absolute;
+    font-size: 2rem;
+    animation: evolution-sparkle-float 2s ease-in-out infinite;
+    filter: drop-shadow(0 0 10px gold);
+}
+
+.s1 {
+    top: 10%;
+    left: 20%;
+    animation-delay: 0s;
+}
+
+.s2 {
+    top: 15%;
+    right: 15%;
+    animation-delay: 0.3s;
+}
+
+.s3 {
+    bottom: 20%;
+    left: 10%;
+    animation-delay: 0.6s;
+}
+
+.s4 {
+    bottom: 10%;
+    right: 20%;
+    animation-delay: 0.9s;
+}
+
+.s5 {
+    top: 50%;
+    left: 0%;
+    animation-delay: 1.2s;
+}
+
+.s6 {
+    top: 50%;
+    right: 0%;
+    animation-delay: 1.5s;
+}
+
+@keyframes evolution-sparkle-float {
+    0% {
+        transform: translateY(0) scale(1) rotate(0deg);
+        opacity: 0;
+    }
+
+    25% {
+        opacity: 1;
+    }
+
+    50% {
+        transform: translateY(-30px) scale(1.3) rotate(180deg);
+        opacity: 1;
+    }
+
+    75% {
+        opacity: 1;
+    }
+
+    100% {
+        transform: translateY(0) scale(1) rotate(360deg);
+        opacity: 0;
+    }
+}
+
+/* ============================================
+   EVOLUTION MODAL SPECIFIC STYLES
+   ============================================ */
+
+/* Container overrides for evolution */
+.evolution-container {
+    justify-content: center;
+    padding: 2rem;
+}
+
+.evolution-professor-area {
+    height: auto;
+    margin-bottom: 0;
+    max-width: 900px;
+    width: 100%;
+}
+
+.evolution-professor-area .professor-image {
+    max-height: 280px;
+    transform: none;
+    opacity: 1;
+}
+
+.evolution-professor-area .dialogue-box {
+    transform: none;
+    opacity: 1;
+}
+
+/* Animation wrapper */
+.evolution-animation-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2rem;
+    width: 100%;
+    height: 100%;
+}
+
+.evolution-title {
+    color: #1a202c;
+    font-size: 2rem;
+    text-align: center;
+    font-weight: 800;
+    background: linear-gradient(135deg, #ffd700, #ff8c00);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: none;
+    filter: drop-shadow(0 2px 4px rgba(255, 215, 0, 0.3));
+}
+
+/* Result wrapper */
+.evolution-result-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+    width: 100%;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+.evolution-result-wrapper .result-mode {
+    height: auto;
+    margin-bottom: 1.5rem;
+}
+
+.evolution-result-wrapper .result-mode .professor-image {
+    max-height: 180px;
+}
+
+.evolution-result-wrapper .result-dialogue {
+    text-align: left;
+}
+
+/* Result card (like pet card) */
+.evolution-result-card {
+    background: rgba(255, 255, 255, 0.95);
+    border: 2px solid #ffd700;
+    border-radius: 24px;
+    padding: 2rem;
+    width: 100%;
+    max-width: 400px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow:
+        0 0 0 4px rgba(255, 215, 0, 0.15),
+        0 20px 40px rgba(255, 215, 0, 0.15),
+        0 10px 20px rgba(0, 0, 0, 0.05);
+    animation: result-card-appear 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes result-card-appear {
+    0% {
+        transform: scale(0.8) translateY(30px);
+        opacity: 0;
+    }
+
+    100% {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+    }
+}
+
+.result-header {
+    margin-bottom: 1rem;
+}
+
+.result-badge {
+    background: linear-gradient(135deg, #ffd700, #ff8c00);
+    color: white;
+    padding: 0.5rem 1.5rem;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 1rem;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 10px rgba(255, 165, 0, 0.3);
+}
+
+.evolution-result-card .pet-image-container {
+    width: 200px;
+    height: 200px;
+    margin-bottom: 1rem;
+}
+
+.evolved-pet-image {
+    animation: evolved-pet-float 3s ease-in-out infinite;
+}
+
+@keyframes evolved-pet-float {
+
+    0%,
+    100% {
+        transform: translateY(0) scale(1);
+    }
+
+    50% {
+        transform: translateY(-15px) scale(1.05);
+    }
+}
+
+.evolution-result-card .pet-name {
+    background: linear-gradient(135deg, #ffd700, #ff8c00);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-size: 1.8rem;
+    margin-bottom: 0.5rem;
+}
+
+.evolution-result-card .pet-description {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    font-style: italic;
+}
+
+.evolution-result-card .pet-select-btn {
+    background: linear-gradient(135deg, #ffd700, #ff8c00);
+    color: white;
+    font-weight: 700;
+    font-size: 1.1rem;
+    padding: 1rem 2rem;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(255, 165, 0, 0.4);
+    transition: all 0.3s ease;
+}
+
+.evolution-result-card .pet-select-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 165, 0, 0.5);
+}
+
+/* Mobile responsiveness for evolution modal */
+@media (max-width: 768px) {
+    .evolution-professor-area {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .evolution-professor-area .professor-image {
+        max-height: 150px;
+        margin-right: 0;
+        margin-bottom: 1rem;
+    }
+
+    .evolution-result-wrapper .result-mode {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .evolution-result-wrapper .result-mode .professor-image {
+        max-height: 120px;
+        margin-bottom: 1rem;
+        margin-right: 0;
+    }
+
+    .evolution-result-card {
+        padding: 1.5rem;
+    }
+
+    .evolution-result-card .pet-image-container {
+        width: 150px;
+        height: 150px;
+    }
+}
+
+/* ============================================
+   CUSTOM IV TOOLTIP
+   ============================================ */
+
+.pet-iv-badge {
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.pet-iv-badge:hover {
+    transform: scale(1.05);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Custom Tooltip Container */
+.iv-tooltip {
+    position: absolute;
+    bottom: calc(100% + 12px);
+    left: 50%;
+    transform: translateX(-50%) scale(0.9);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    z-index: 1000;
+    transition: all 0.25s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.pet-iv-badge:hover .iv-tooltip,
+.pet-card-small:hover .iv-tooltip {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) scale(1);
+}
+
+/* Tooltip Content */
+.iv-tooltip-content {
+    background: linear-gradient(145deg, rgba(30, 30, 45, 0.98), rgba(20, 20, 35, 0.98));
+    border-radius: 12px;
+    padding: 1rem;
+    min-width: 200px;
+    box-shadow:
+        0 10px 40px rgba(0, 0, 0, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+}
+
+/* Light theme */
+body.light-theme .iv-tooltip-content {
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.98));
+    box-shadow:
+        0 10px 40px rgba(0, 0, 0, 0.15),
+        0 0 0 1px rgba(0, 0, 0, 0.05);
+}
+
+/* Tooltip Arrow */
+.iv-tooltip-content::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 8px 8px 0 8px;
+    border-style: solid;
+    border-color: rgba(30, 30, 45, 0.98) transparent transparent transparent;
+}
+
+body.light-theme .iv-tooltip-content::after {
+    border-color: rgba(255, 255, 255, 0.98) transparent transparent transparent;
+}
+
+/* Tooltip Header */
+.iv-tooltip-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+body.light-theme .iv-tooltip-header {
+    border-bottom-color: rgba(0, 0, 0, 0.08);
+}
+
+.iv-tooltip-title {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+body.light-theme .iv-tooltip-title {
+    color: #1e293b;
+}
+
+.iv-tooltip-quality {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 20px;
+    font-weight: 600;
+}
+
+/* IV Stats Grid */
+.iv-stats-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.iv-stat-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.iv-stat-icon {
+    font-size: 1rem;
+    width: 24px;
+    text-align: center;
+}
+
+.iv-stat-name {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.7);
+    flex: 1;
+}
+
+body.light-theme .iv-stat-name {
+    color: #64748b;
+}
+
+.iv-stat-bar {
+    flex: 2;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    overflow: hidden;
+    position: relative;
+}
+
+body.light-theme .iv-stat-bar {
+    background: rgba(0, 0, 0, 0.08);
+}
+
+.iv-stat-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.3s ease;
+    background: linear-gradient(90deg, var(--stat-color), var(--stat-color-light));
+}
+
+.iv-stat-value {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #fff;
+    width: 24px;
+    text-align: right;
+}
+
+body.light-theme .iv-stat-value {
+    color: #1e293b;
+}
+
+/* IV Total Footer */
+.iv-tooltip-footer {
+    margin-top: 0.75rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+body.light-theme .iv-tooltip-footer {
+    border-top-color: rgba(0, 0, 0, 0.08);
+}
+
+.iv-total-label {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+body.light-theme .iv-total-label {
+    color: #64748b;
+}
+
+.iv-total-value {
+    font-size: 0.9rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #f59e0b, #f97316);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Legacy Badge Tooltip */
+.iv-tooltip-legacy {
+    text-align: center;
+    padding: 0.5rem;
+}
+
+.iv-tooltip-legacy-icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.iv-tooltip-legacy-text {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.7);
+    line-height: 1.4;
+}
+
+body.light-theme .iv-tooltip-legacy-text {
+    color: #64748b;
+}
+
+/* Stat Colors */
+.iv-stat-row[data-stat="intelligence"] .iv-stat-fill {
+    --stat-color: #3b82f6;
+    --stat-color-light: #60a5fa;
+}
+
+.iv-stat-row[data-stat="creativity"] .iv-stat-fill {
+    --stat-color: #a855f7;
+    --stat-color-light: #c084fc;
+}
+
+.iv-stat-row[data-stat="social"] .iv-stat-fill {
+    --stat-color: #ec4899;
+    --stat-color-light: #f472b6;
+}

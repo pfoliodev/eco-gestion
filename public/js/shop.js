@@ -17,11 +17,13 @@ import {
     where,
     orderBy,
     serverTimestamp,
-    increment
+    increment,
+    addDoc
 } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js";
 import { spendCoins, getUserBalance, updateBalanceDisplay } from './coins.js';
 import { ECONOMY } from './config/economy.js';
 import { notyf } from './ui.js';
+import { generateRandomIVs, generateInstanceId, getQualityTier, getTotalIVs } from './utils/pet-utils.js';
 
 // ============================================
 // SHOP ITEMS MANAGEMENT
@@ -108,10 +110,14 @@ export function isItemAvailable(item) {
  * @param {string} itemId - Item ID to purchase
  * @returns {Promise<{success: boolean, error?: string}>}
  */
-export async function purchaseItem(itemId) {
+export async function purchaseItem(itemId, qty = 1) {
     if (!auth.currentUser) {
         return { success: false, error: 'Non authentifié' };
     }
+
+    // Ensure qty is valid
+    qty = parseInt(qty);
+    if (isNaN(qty) || qty < 1) qty = 1;
 
     try {
         // Get item details
@@ -125,8 +131,17 @@ export async function purchaseItem(itemId) {
             return { success: false, error: 'Article non disponible' };
         }
 
-        // Check if user already owns this item (for non-consumable items)
-        if (item.category !== 'boost') {
+        // Stock check for limited items
+        if (item.stock !== undefined && item.stock !== null && item.stock < qty) {
+            return { success: false, error: `Stock insuffisant (${item.stock} restants)` };
+        }
+
+        // Check if user already owns it (unless it's a consumable or companion)
+        // Consumables can be bought multiple times
+        // Companions can also be bought multiple times (each has unique IVs)
+        if (item.category !== ECONOMY.CATEGORIES.CONSUMABLE && item.category !== ECONOMY.CATEGORIES.COMPANION) {
+            if (qty > 1) return { success: false, error: "Impossible d'acheter plusieurs exemplaires de cet objet." };
+
             const hasItem = await userOwnsItem(itemId);
             if (hasItem) {
                 return { success: false, error: 'Vous possédez déjà cet article' };
@@ -134,15 +149,17 @@ export async function purchaseItem(itemId) {
         }
 
         // Check balance
+        const totalCost = item.price * qty;
         const balance = await getUserBalance();
-        if (balance < item.price) {
-            return { success: false, error: 'Solde insuffisant', balance, price: item.price };
+        if (balance < totalCost) {
+            return { success: false, error: 'Solde insuffisant', balance, price: totalCost };
         }
 
         // Deduct coins
-        const spendResult = await spendCoins(item.price, 'shop_purchase', itemId, {
+        const spendResult = await spendCoins(totalCost, 'shop_purchase', itemId, {
             itemName: item.name,
-            category: item.category
+            category: item.category,
+            quantity: qty
         });
 
         if (!spendResult.success) {
@@ -151,21 +168,79 @@ export async function purchaseItem(itemId) {
 
         // Add item to user's inventory
         const userId = auth.currentUser.uid;
-        const inventoryRef = doc(db, 'users', userId, 'inventory', itemId);
 
-        await setDoc(inventoryRef, {
-            itemId,
-            itemName: item.name,
-            category: item.category,
-            purchasedAt: serverTimestamp(),
-            equipped: false
-        });
+        // Handle companions specially - each purchase creates a unique instance with IVs
+        if (item.category === ECONOMY.CATEGORIES.COMPANION) {
+            const instanceId = generateInstanceId();
+            const ivs = generateRandomIVs();
+            const qualityTier = getQualityTier(ivs);
+
+            const inventoryData = {
+                itemId,
+                instanceId,
+                itemName: item.name,
+                category: item.category,
+                purchasedAt: serverTimestamp(),
+                equipped: false,
+                quantity: 1,
+                // Pet-specific data
+                level: 1,
+                xp: 0,
+                ivs: ivs,
+                evolutionBonus: { intelligence: 0, creativity: 0, social: 0 },
+                evolved: false,
+                stats: item.stats || { intelligence: 1, creativity: 1, social: 1 },
+                nickname: item.name,
+                type: item.type || 'Compagnon',
+                image: item.image
+            };
+
+            // Use instanceId as the document ID to allow multiple of same pet
+            const inventoryRef = doc(db, 'users', userId, 'inventory', instanceId);
+            await setDoc(inventoryRef, inventoryData);
+
+            // Log the quality for the user
+            console.log(`[Shop] New ${item.name} acquired with quality: ${qualityTier.name} (IVs: ${getTotalIVs(ivs)}/45)`);
+
+            // Show quality notification
+            notyf.success(`Nouveau compagnon: ${item.name} (${qualityTier.emoji} ${qualityTier.name})`);
+
+        } else {
+            // Non-companion items
+            const inventoryRef = doc(db, 'users', userId, 'inventory', itemId);
+            const inventorySnap = await getDoc(inventoryRef);
+
+            if (item.category === ECONOMY.CATEGORIES.CONSUMABLE && inventorySnap.exists()) {
+                // Stack consumables
+                await updateDoc(inventoryRef, {
+                    quantity: increment(qty),
+                    updatedAt: serverTimestamp(),
+                    image: item.image // Update image in case it changed or was missing
+                });
+            } else {
+                // Create new inventory item
+                const inventoryData = {
+                    itemId,
+                    itemName: item.name,
+                    category: item.category,
+                    purchasedAt: serverTimestamp(),
+                    equipped: false,
+                    quantity: qty
+                };
+
+                // Only add optional fields if they exist
+                if (item.image) inventoryData.image = item.image;
+                if (item.icon) inventoryData.icon = item.icon;
+
+                await setDoc(inventoryRef, inventoryData);
+            }
+        }
 
         // Decrease stock if limited
         if (item.stock !== undefined && item.stock !== null) {
             const itemRef = doc(db, 'shopItems', itemId);
             await updateDoc(itemRef, {
-                stock: increment(-1)
+                stock: increment(-qty)
             });
         }
 
@@ -198,9 +273,40 @@ export async function getUserInventory(category = null) {
     try {
         const userId = auth.currentUser.uid;
         const inventoryRef = collection(db, 'users', userId, 'inventory');
-        const snapshot = await getDocs(inventoryRef);
+        const [inventorySnap, petsSnap] = await Promise.all([
+            getDocs(inventoryRef),
+            getDocs(query(collection(db, 'pets'), where('userId', '==', userId), where('isActive', '==', true)))
+        ]);
 
-        let items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        let items = inventorySnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        // Add current active pet as an inventory item
+        if (!petsSnap.empty) {
+            const currentPet = petsSnap.docs[0].data();
+            const shopItemId = `pet_${currentPet.id}`; // Convention: shop ID = pet_ + petId
+
+            // Remove the static inventory item if it exists (to replace with dynamic one)
+            // Strategy: Remove any item marked as 'equipped' OR matching the current pet ID
+            // This handles cases where ID changed after evolution (e.g. pet_feerale -> pet_celestiale)
+            items = items.filter(i => !i.equipped && i.id !== shopItemId && i.itemId !== shopItemId);
+
+            // Add virtual inventory item with full pet data
+            items.push({
+                id: shopItemId,
+                itemId: shopItemId,
+                itemName: currentPet.name,
+                category: ECONOMY.CATEGORIES.COMPANION,
+                equipped: true, // It's their current pet
+                // Include all pet stats for display
+                level: currentPet.level || 1,
+                xp: currentPet.xp || 0,
+                ivs: currentPet.ivs || null,
+                evolutionBonus: currentPet.evolutionBonus || null,
+                evolved: currentPet.evolved || false,
+                image: currentPet.image,
+                type: currentPet.type
+            });
+        }
 
         if (category && category !== 'all') {
             items = items.filter(item => item.category === category);
@@ -223,9 +329,26 @@ export async function userOwnsItem(itemId) {
 
     try {
         const userId = auth.currentUser.uid;
+
+        // Parallel check: Inventory AND pets collection (for active pet)
         const inventoryRef = doc(db, 'users', userId, 'inventory', itemId);
-        const snapshot = await getDoc(inventoryRef);
-        return snapshot.exists();
+
+        const [inventorySnap, petsSnap] = await Promise.all([
+            getDoc(inventoryRef),
+            getDocs(query(collection(db, 'pets'), where('userId', '==', userId), where('isActive', '==', true)))
+        ]);
+
+        if (inventorySnap.exists()) return true;
+
+        // Check if it's the active pet
+        if (!petsSnap.empty) {
+            const petId = petsSnap.docs[0].data().id;
+            if (itemId === `pet_${petId}`) {
+                return true;
+            }
+        }
+
+        return false;
     } catch (error) {
         console.error('Error checking item ownership:', error);
         return false;
@@ -255,25 +378,117 @@ export async function equipItem(itemId) {
         const category = itemData.category;
 
         // Unequip all other items in the same category
-        const allInventory = await getUserInventory(category);
-        for (const item of allInventory) {
-            if (item.equipped && item.id !== itemId) {
-                const otherRef = doc(db, 'users', userId, 'inventory', item.id);
-                await updateDoc(otherRef, { equipped: false });
+        // SKIP this for COMPANIONS because we handle swap specifically below (and starter pets might not exist as docs yet)
+        if (category !== ECONOMY.CATEGORIES.COMPANION) {
+            const allInventory = await getUserInventory(category);
+            for (const item of allInventory) {
+                if (item.equipped && item.id !== itemId) {
+                    const otherRef = doc(db, 'users', userId, 'inventory', item.id);
+                    await updateDoc(otherRef, { equipped: false });
+                }
             }
         }
-
         // Equip this item
-        await updateDoc(inventoryRef, { equipped: true });
+        // Note: For companions, we handle the update differently (swap logic below)
+        if (category !== ECONOMY.CATEGORIES.COMPANION) {
+            await updateDoc(inventoryRef, { equipped: true });
+        }
 
         // Update user document with equipped item reference
         const userRef = doc(db, 'users', userId);
+        const userSnap = await getDoc(userRef);
+        const userData = userSnap.data();
         const updateData = {};
 
         if (category === ECONOMY.CATEGORIES.THEME) {
             updateData.equippedTheme = itemId;
         } else if (category === ECONOMY.CATEGORIES.FRAME) {
             updateData.equippedFrame = itemId;
+        } else if (category === ECONOMY.CATEGORIES.COMPANION) {
+            // ============================================
+            // COMPANION SWAP LOGIC (Persistent Stats)
+            // ============================================
+
+            // 1. Save CURRENT active pet state to pets collection and inventory
+            const petsCollection = collection(db, 'pets');
+            const activePetsQuery = query(petsCollection, where('userId', '==', userId), where('isActive', '==', true));
+            const activePetsSnap = await getDocs(activePetsQuery);
+
+            if (!activePetsSnap.empty) {
+                const currentPetDocId = activePetsSnap.docs[0].id;
+                const currentPet = activePetsSnap.docs[0].data();
+
+                // Mark the current pet as inactive in pets collection
+                await updateDoc(doc(db, 'pets', currentPetDocId), {
+                    isActive: false
+                });
+
+                // Also save to inventory if not already there
+                let currentPetInventoryId = currentPet.itemId || `pet_${currentPet.id}`;
+                const currentPetRef = doc(db, 'users', userId, 'inventory', currentPetInventoryId);
+                const safeImage = currentPet.image || `/images/pets/${currentPet.id}.png`;
+                const safeType = currentPet.type || 'Compagnon';
+
+                await setDoc(currentPetRef, {
+                    itemId: currentPetInventoryId,
+                    category: ECONOMY.CATEGORIES.COMPANION,
+                    equipped: false,
+                    // Save progress
+                    level: currentPet.level || 1,
+                    xp: currentPet.xp || 0,
+                    stats: currentPet.stats || {},
+                    nickname: currentPet.nickname || currentPet.name,
+                    // Identity
+                    itemName: currentPet.name,
+                    image: safeImage,
+                    type: safeType,
+                    // New IV system data
+                    ivs: currentPet.ivs || null,
+                    evolutionBonus: currentPet.evolutionBonus || null,
+                    evolved: currentPet.evolved || false,
+                    instanceId: currentPet.instanceId || null
+                }, { merge: true });
+            }
+
+            // 2. Load NEW pet state from inventory or create new pet in pets collection
+            const newPetInventoryData = inventorySnap.data();
+
+            // 3. Mark new pet as equipped in inventory
+            await updateDoc(inventoryRef, { equipped: true });
+
+            // 4. Create/Update pet in pets collection and mark as active
+            const speciesId = newPetInventoryData.itemId ? newPetInventoryData.itemId.replace('pet_', '') : itemId.replace('pet_', '');
+
+            // Check if this pet already exists in pets collection (from previous usage)
+            const existingPetQuery = query(petsCollection, where('userId', '==', userId), where('instanceId', '==', newPetInventoryData.instanceId || itemId));
+            const existingPetSnap = await getDocs(existingPetQuery);
+
+            const petData = {
+                userId: userId,
+                id: speciesId.toLowerCase(),
+                itemId: itemId,
+                name: newPetInventoryData.itemName || newPetInventoryData.name,
+                nickname: newPetInventoryData.nickname || newPetInventoryData.itemName,
+                image: newPetInventoryData.image,
+                type: newPetInventoryData.type || 'Compagnon',
+                level: newPetInventoryData.level || 1,
+                xp: newPetInventoryData.xp || 0,
+                stats: newPetInventoryData.stats || { intelligence: 1, creativity: 1, social: 1 },
+                ivs: newPetInventoryData.ivs || null,
+                evolutionBonus: newPetInventoryData.evolutionBonus || null,
+                evolved: newPetInventoryData.evolved || false,
+                instanceId: newPetInventoryData.instanceId || null,
+                isActive: true,
+                obtainedAt: newPetInventoryData.purchasedAt || serverTimestamp()
+            };
+
+            if (!existingPetSnap.empty) {
+                // Update existing pet doc
+                await updateDoc(doc(db, 'pets', existingPetSnap.docs[0].id), petData);
+            } else {
+                // Create new pet doc
+                await addDoc(petsCollection, petData);
+            }
         }
 
         if (Object.keys(updateData).length > 0) {
@@ -503,6 +718,67 @@ export async function seedDefaultShopItems() {
             isLimited: true,
             stock: 100,
             availableUntil: new Date('2026-01-31')
+        },
+
+        // Compagnons
+        {
+            id: 'pet_feerale',
+            name: 'Féerale',
+            description: 'Un esprit de la nature bienveillant.',
+            price: 2000,
+            category: ECONOMY.CATEGORIES.COMPANION,
+            icon: '<img src="/images/pets/feerale.png" class="shop-item-icon-img" alt="Féerale" />',
+            image: '/images/pets/feerale.png',
+            stats: { intelligence: 2, creativity: 5, social: 3 }
+        },
+        {
+            id: 'pet_voltor',
+            name: 'Voltor',
+            description: 'Une boule d\'énergie pure en lévitation.',
+            price: 2000,
+            category: ECONOMY.CATEGORIES.COMPANION,
+            icon: '<img src="/images/pets/voltor.png" class="shop-item-icon-img" alt="Voltor" />',
+            image: '/images/pets/voltor.png',
+            stats: { intelligence: 4, creativity: 2, social: 4 }
+        },
+        {
+            id: 'pet_ombrage',
+            name: 'Ombrage',
+            description: 'Un spectre mystérieux aux pouvoirs obscurs.',
+            price: 2000,
+            category: ECONOMY.CATEGORIES.COMPANION,
+            icon: '<img src="/images/pets/ombrage.png" class="shop-item-icon-img" alt="Ombrage" />',
+            image: '/images/pets/ombrage.png',
+            stats: { intelligence: 5, creativity: 2, social: 3 }
+        },
+
+        // Consumables
+        {
+            id: 'biscuit_charisme',
+            name: "Biscuit de Charisme",
+            description: "Un délicieux biscuit qui vous rend irrésistible. +1 Social.",
+            price: 500,
+            category: ECONOMY.CATEGORIES.CONSUMABLE,
+            image: "/images/shop/biscuit_charisme.png",
+            effect: { stat: 'social', value: 1 }
+        },
+        {
+            id: 'potion_imagination',
+            name: "Potion d'Imagination",
+            description: "Une gorgée et les idées fusent ! +1 Créativité.",
+            price: 500,
+            category: ECONOMY.CATEGORIES.CONSUMABLE,
+            image: "/images/shop/potion_imagination.png",
+            effect: { stat: 'creativity', value: 1 }
+        },
+        {
+            id: 'fiole_savoir',
+            name: "Fiole de Savoir",
+            description: "Concentré de connaissances pur. +1 Intelligence.",
+            price: 500,
+            category: ECONOMY.CATEGORIES.CONSUMABLE,
+            image: "/images/shop/fiole_savoir.png",
+            effect: { stat: 'intelligence', value: 1 }
         }
     ];
 
@@ -536,4 +812,96 @@ export async function seedDefaultShopItems() {
 // Expose for admin console
 if (typeof window !== 'undefined') {
     window.seedDefaultShopItems = seedDefaultShopItems;
+}
+
+/**
+ * Use a consumable item
+ * @param {string} itemId - Item ID to use
+ * @returns {Promise<{success: boolean, message?: string, error?: string}>}
+ */
+export async function useConsumable(itemId, qty = 1) {
+    if (!auth.currentUser) return { success: false, error: 'Non connecté' };
+
+    qty = parseInt(qty);
+    if (isNaN(qty) || qty < 1) qty = 1;
+
+    try {
+        const userId = auth.currentUser.uid;
+        const userRef = doc(db, 'users', userId);
+        const inventoryRef = doc(db, 'users', userId, 'inventory', itemId);
+
+        const [userSnap, inventorySnap] = await Promise.all([
+            getDoc(userRef),
+            getDoc(inventoryRef)
+        ]);
+
+        if (!inventorySnap.exists()) {
+            return { success: false, error: "Vous ne possédez pas cet objet." };
+        }
+
+        const item = inventorySnap.data();
+        if (item.category !== ECONOMY.CATEGORIES.CONSUMABLE) {
+            return { success: false, error: "Cet objet n'est pas consommable." };
+        }
+
+        const currentQty = item.quantity || 1;
+        if (currentQty < qty) {
+            return { success: false, error: `Vous n'en avez que ${currentQty}.` };
+        }
+
+        // Get effect stat based on item ID
+        let statToBoost = null;
+        let boostAmount = 1;
+
+        if (item.itemId === 'biscuit_charisme') statToBoost = 'social';
+        else if (item.itemId === 'potion_imagination') statToBoost = 'creativity';
+        else if (item.itemId === 'fiole_savoir') statToBoost = 'intelligence';
+
+        if (!statToBoost) {
+            return { success: false, error: "Effet inconnu pour cet objet." };
+        }
+
+        // Apply Effect (multiplied by qty)
+        const totalBoost = boostAmount * qty;
+
+        // Fetch active pet from pets collection
+        const petsCollection = collection(db, 'pets');
+        const activePetsQuery = query(petsCollection, where('userId', '==', userId), where('isActive', '==', true));
+        const activePetsSnap = await getDocs(activePetsQuery);
+
+        if (activePetsSnap.empty) {
+            return { success: false, error: "Aucun compagnon actif trouvé." };
+        }
+
+        const petDocId = activePetsSnap.docs[0].id;
+        const petData = activePetsSnap.docs[0].data();
+        const petStats = petData.stats || { intelligence: 1, creativity: 1, social: 1 };
+
+        if (petStats[statToBoost] !== undefined) {
+            petStats[statToBoost] += totalBoost;
+        } else {
+            petStats[statToBoost] = totalBoost; // Init if missing
+        }
+
+        // Update pet in pets collection
+        await updateDoc(doc(db, 'pets', petDocId), {
+            stats: petStats
+        });
+
+        // Decrease Quantity or Remove from inventory
+        if (currentQty > qty) {
+            await updateDoc(inventoryRef, {
+                quantity: increment(-qty)
+            });
+        } else {
+            // Remove item
+            await deleteDoc(inventoryRef);
+        }
+
+        return { success: true, message: `Miam ! +${totalBoost} ${statToBoost}` };
+
+    } catch (error) {
+        console.error("Error using consumable:", error);
+        return { success: false, error: "Erreur technique." };
+    }
 }

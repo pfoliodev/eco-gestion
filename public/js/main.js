@@ -14,8 +14,9 @@ import { initQuizEditor } from './quiz-ui.js';
 import { initFeatures, applyFeatureFlags } from './features.js';
 import { downloadCourseAsPdf } from './pdf-export.js';
 import { initShopPage } from './shop-ui.js';
-
-// Global exports for inline HTML handlers
+// import './verify_items.js';
+// import { seedConsumables } from './seed_items.js';
+// seedConsumables().then(() => console.log('Seeding finished'));
 window.viewCourse = viewCourse;
 window.showPage = showPage;
 
@@ -172,25 +173,25 @@ async function initApp() {
     try {
         // Load all templates first
         await loadMultipleTemplates([
-            { containerId: 'header-container', path: 'templates/components/header.html' },
-            { containerId: 'modals-container', path: 'templates/components/modals.html' },
-            { containerId: 'footer-container', path: 'templates/components/footer.html' },
-            { containerId: 'cookie-banner-container', path: 'templates/components/cookie-banner.html' },
-            { containerId: 'page-accueil', path: 'templates/pages/home.html' },
-            { containerId: 'page-cours', path: 'templates/pages/courses.html' },
-            { containerId: 'page-ajouter', path: 'templates/pages/course-form.html' },
-            { containerId: 'page-course-detail', path: 'templates/pages/course-detail.html' },
-            { containerId: 'page-flashcards', path: 'templates/pages/flashcards.html' },
-            { containerId: 'page-flashcards-study', path: 'templates/pages/flashcards-study.html' },
-            { containerId: 'page-flashcards-admin', path: 'templates/pages/flashcards-admin.html' },
-            { containerId: 'page-quiz-player', path: 'templates/pages/quiz-player.html' },
-            { containerId: 'page-login', path: 'templates/pages/login.html' },
-            { containerId: 'page-register', path: 'templates/pages/register.html' },
-            { containerId: 'page-admin', path: 'templates/pages/admin.html' },
-            { containerId: 'page-mon-compte', path: 'templates/pages/account.html' },
-            { containerId: 'page-privacy-policy', path: 'templates/pages/privacy-policy.html' },
-            { containerId: 'page-legal-notice', path: 'templates/pages/legal-notice.html' },
-            { containerId: 'page-shop', path: 'templates/pages/shop.html' }
+            { containerId: 'header-container', path: '/templates/components/header.html' },
+            { containerId: 'modals-container', path: '/templates/components/modals.html' },
+            { containerId: 'footer-container', path: '/templates/components/footer.html' },
+            { containerId: 'cookie-banner-container', path: '/templates/components/cookie-banner.html' },
+            { containerId: 'page-accueil', path: '/templates/pages/home.html' },
+            { containerId: 'page-cours', path: '/templates/pages/courses.html' },
+            { containerId: 'page-ajouter', path: '/templates/pages/course-form.html' },
+            { containerId: 'page-course-detail', path: '/templates/pages/course-detail.html' },
+            { containerId: 'page-flashcards', path: '/templates/pages/flashcards.html' },
+            { containerId: 'page-flashcards-study', path: '/templates/pages/flashcards-study.html' },
+            { containerId: 'page-flashcards-admin', path: '/templates/pages/flashcards-admin.html' },
+            { containerId: 'page-quiz-player', path: '/templates/pages/quiz-player.html' },
+            { containerId: 'page-login', path: '/templates/pages/login.html' },
+            { containerId: 'page-register', path: '/templates/pages/register.html' },
+            { containerId: 'page-admin', path: '/templates/pages/admin.html' },
+            { containerId: 'page-mon-compte', path: '/templates/pages/account.html' },
+            { containerId: 'page-privacy-policy', path: '/templates/pages/privacy-policy.html' },
+            { containerId: 'page-legal-notice', path: '/templates/pages/legal-notice.html' },
+            { containerId: 'page-shop', path: '/templates/pages/shop.html' }
         ]);
 
         // Initialize app after templates are loaded

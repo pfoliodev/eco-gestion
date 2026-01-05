@@ -1,0 +1,307 @@
+/* Pet Selection Modal - Light Theme */
+.pet-selection-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(240, 242, 245, 0.85);
+    /* Light backdrop */
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(15px);
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+
+.pet-selection-overlay.active {
+    opacity: 1;
+}
+
+.pet-selection-container {
+    width: 90%;
+    max-width: 1000px;
+    height: 80vh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    color: #1a1a2e;
+    /* Dark text */
+}
+
+/* Professor Area */
+.professor-area {
+    display: flex;
+    align-items: flex-end;
+    margin-bottom: 2rem;
+    height: 40%;
+}
+
+.professor-image {
+    height: 100%;
+    max-height: 350px;
+    object-fit: contain;
+    margin-right: 2rem;
+    filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.15));
+    transform: translateX(-50px);
+    opacity: 0;
+    transition: all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.professor-image.visible {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.dialogue-box {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    border-radius: 20px;
+    padding: 2rem;
+    position: relative;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.08), 0 5px 15px rgba(0, 0, 0, 0.05);
+    transform: translateY(20px);
+    opacity: 0;
+    transition: all 0.5s ease 0.3s;
+}
+
+.dialogue-box.visible {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.dialogue-box::after {
+    content: '';
+    position: absolute;
+    left: -15px;
+    bottom: 40px;
+    border-top: 15px solid transparent;
+    border-bottom: 15px solid transparent;
+    border-right: 15px solid rgba(255, 255, 255, 0.95);
+    filter: drop-shadow(-2px 0 2px rgba(0, 0, 0, 0.05));
+    /* Subtle shadow for the arrow */
+}
+
+.professor-name {
+    color: var(--primary-color, #4a9eff);
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    display: block;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.dialogue-text {
+    font-size: 1.15rem;
+    line-height: 1.6;
+    min-height: 60px;
+    color: #2d3748;
+    font-weight: 500;
+}
+
+.dialogue-next-btn {
+    position: absolute;
+    bottom: 1rem;
+    right: 2rem;
+    background: none;
+    border: none;
+    color: var(--primary-color, #4a9eff);
+    cursor: pointer;
+    font-weight: bold;
+    animation: bounce 1s infinite;
+    font-size: 1.2rem;
+}
+
+/* Pets Area */
+.pets-selection-area {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    opacity: 0;
+    transform: translateY(30px);
+    transition: all 0.8s ease;
+    pointer-events: none;
+}
+
+.pets-selection-area.visible {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: all;
+}
+
+.pet-card {
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    border-radius: 24px;
+    padding: 1.5rem;
+    width: 280px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
+}
+
+.pet-card:hover {
+    transform: translateY(-8px);
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(255, 255, 255, 1);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08), 0 10px 20px rgba(0, 0, 0, 0.05);
+}
+
+.pet-card.selected {
+    border: 2px solid var(--primary-color, #4a9eff);
+    box-shadow: 0 0 0 4px rgba(74, 158, 255, 0.15), 0 20px 40px rgba(74, 158, 255, 0.1);
+    background: rgba(255, 255, 255, 1);
+}
+
+.pet-image-container {
+    width: 200px;
+    height: 200px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 1rem;
+    position: relative;
+}
+
+.pet-image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.1));
+}
+
+.pet-card:hover .pet-image {
+    transform: scale(1.15) translateY(-5px);
+}
+
+.pet-info {
+    text-align: center;
+    width: 100%;
+}
+
+.pet-name {
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+    color: #1a202c;
+    /* Dark text for name */
+}
+
+.pet-type {
+    font-size: 0.85rem;
+    color: #4a5568;
+    margin-bottom: 1rem;
+    display: inline-block;
+    padding: 0.4rem 1rem;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 20px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.pet-description {
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: #718096;
+    display: block;
+    margin-top: 0.5rem;
+}
+
+.pet-select-btn {
+    margin-top: auto;
+    background: var(--primary-color, #4a9eff);
+    color: white;
+    border: none;
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    width: 100%;
+    box-shadow: 0 4px 10px rgba(74, 158, 255, 0.3);
+}
+
+.pet-card:hover .pet-select-btn,
+.pet-card.selected .pet-select-btn {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.pet-select-btn:hover {
+    background: #3182ce;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(74, 158, 255, 0.4);
+}
+
+/* Animations */
+@keyframes bounce {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(5px);
+    }
+}
+
+@media (max-width: 768px) {
+    .pet-selection-container {
+        height: 100vh;
+        width: 100%;
+        padding: 1rem;
+        overflow-y: auto;
+    }
+
+    .professor-area {
+        height: auto;
+        flex-direction: column;
+        align-items: center;
+        margin-top: 2rem;
+    }
+
+    .professor-image {
+        height: 180px;
+        margin-right: 0;
+        margin-bottom: 1.5rem;
+        transform: translateX(0);
+    }
+
+    .dialogue-box::after {
+        left: 50%;
+        top: -15px;
+        bottom: auto;
+        border-right: 15px solid transparent;
+        border-left: 15px solid transparent;
+        border-bottom: 15px solid rgba(255, 255, 255, 0.95);
+        transform: translateX(-50%);
+        filter: drop-shadow(0 -2px 2px rgba(0, 0, 0, 0.05));
+    }
+
+    .pets-selection-area {
+        flex-direction: column;
+        align-items: center;
+        padding-bottom: 4rem;
+        gap: 1.5rem;
+    }
+
+    .pet-card {
+        width: 100%;
+        max-width: 320px;
+    }
+}

@@ -142,11 +142,26 @@ export function initAuth() {
             setIsAdmin(userRole === 'admin');
             setUser(user); // Set user in state
 
+            // --- DAILY BONUS & PET LOGIC ---
+            import('./gamification.js').then(module => {
+                module.checkDailyBonus(user);
+            });
+
+            // Check for Pet Selection
+            import('./pet-selection.js').then(module => {
+                const petSelection = new module.PetSelection(user);
+                petSelection.checkAndTrigger();
+            });
+
             if (userRole === 'admin') {
                 seedDefaultBadges().catch(err => console.error("Error seeding badges:", err));
+                // Seed shop items (including new companions)
+                import('./shop.js').then(module => {
+                    module.seedDefaultShopItems().then(res => console.log("Shop seeded:", res));
+                });
             }
 
-            loginNavLink.style.display = 'none';
+            if (loginNavLink) loginNavLink.style.display = 'none';
             if (profileDropdown) profileDropdown.style.display = 'block';
 
             // Update avatar
@@ -199,7 +214,7 @@ export function initAuth() {
             setIsAdmin(false);
             setUser(null); // Clear user from state
 
-            loginNavLink.style.display = 'flex';
+            if (loginNavLink) loginNavLink.style.display = 'flex';
             if (profileDropdown) profileDropdown.style.display = 'none';
             if (adminActions) adminActions.style.display = 'none';
             if (addCourseBtn) addCourseBtn.style.display = 'none';
