@@ -430,6 +430,10 @@
                 <button id="add-shop-item-btn" class="btn-view" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
                     ➕ Nouvel Article
                 </button>
+                <button id="fix-shop-images-btn" class="btn-secondary"
+                    style="background: #eab308; color: white; border: none; padding: 0.5rem 1rem; font-size: 0.85rem; border-radius: 6px; cursor: pointer;">
+                    🔧 Réparer Images
+                </button>
             </div>
 
             <!-- Shop Stats -->
@@ -476,84 +480,84 @@
                 </table>
             </div>
         </div>
-<!-- Pets Management Section -->
-<div id="admin-section-pets" class="admin-section">
-    <h2>🐾 Gestion des Compagnons</h2>
+        <!-- Pets Management Section -->
+        <div id="admin-section-pets" class="admin-section">
+            <h2>🐾 Gestion des Compagnons</h2>
 
-    <!-- Pets Statistics -->
-    <div class="stats-overview-grid" style="margin-bottom: 2rem;">
-        <div class="stat-card">
-            <div class="stat-icon">🐾</div>
-            <div class="stat-content">
-                <span class="stat-value" id="stat-total-pets">-</span>
-                <span class="stat-label">Compagnons totaux</span>
+            <!-- Pets Statistics -->
+            <div class="stats-overview-grid" style="margin-bottom: 2rem;">
+                <div class="stat-card">
+                    <div class="stat-icon">🐾</div>
+                    <div class="stat-content">
+                        <span class="stat-value" id="stat-total-pets">-</span>
+                        <span class="stat-label">Compagnons totaux</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">⭐</div>
+                    <div class="stat-content">
+                        <span class="stat-value" id="stat-evolved-pets">-</span>
+                        <span class="stat-label">Évolués</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🎯</div>
+                    <div class="stat-content">
+                        <span class="stat-value" id="stat-avg-level">-</span>
+                        <span class="stat-label">Niveau moyen</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">❤️</div>
+                    <div class="stat-content">
+                        <span class="stat-value" id="stat-avg-affection">-</span>
+                        <span class="stat-label">Affection moyenne</span>
+                    </div>
+                </div>
             </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon">⭐</div>
-            <div class="stat-content">
-                <span class="stat-value" id="stat-evolved-pets">-</span>
-                <span class="stat-label">Évolués</span>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon">🎯</div>
-            <div class="stat-content">
-                <span class="stat-value" id="stat-avg-level">-</span>
-                <span class="stat-label">Niveau moyen</span>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon">❤️</div>
-            <div class="stat-content">
-                <span class="stat-value" id="stat-avg-affection">-</span>
-                <span class="stat-label">Affection moyenne</span>
-            </div>
-        </div>
-    </div>
 
-    <!-- Filters -->
-    <div class="pets-filters" style="margin-bottom: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap;">
-        <select id="filter-pet-type" class="filter-select">
-            <option value="all">Tous les types</option>
-            <option value="feerale">Féerale</option>
-            <option value="celestiale">Célestiale</option>
-            <option value="voltor">Voltor</option>
-            <option value="voltonnerre">Voltonnerre</option>
-            <option value="ombrage">Ombrage</option>
-            <option value="lunombre">Lunombre</option>
-        </select>
-        <select id="filter-pet-evolution" class="filter-select">
-            <option value="all">Tous</option>
-            <option value="base">Non évolués</option>
-            <option value="evolved">Évolués</option>
-        </select>
-        <button id="reset-pets-filters" class="btn-view" style="padding: 0.5rem 1rem;">
-            🔄 Réinitialiser
-        </button>
-    </div>
+            <!-- Filters -->
+            <div class="pets-filters" style="margin-bottom: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap;">
+                <select id="filter-pet-type" class="filter-select">
+                    <option value="all">Tous les types</option>
+                    <option value="feerale">Féerale</option>
+                    <option value="celestiale">Célestiale</option>
+                    <option value="voltor">Voltor</option>
+                    <option value="voltonnerre">Voltonnerre</option>
+                    <option value="ombrage">Ombrage</option>
+                    <option value="lunombre">Lunombre</option>
+                </select>
+                <select id="filter-pet-evolution" class="filter-select">
+                    <option value="all">Tous</option>
+                    <option value="base">Non évolués</option>
+                    <option value="evolved">Évolués</option>
+                </select>
+                <button id="reset-pets-filters" class="btn-view" style="padding: 0.5rem 1rem;">
+                    🔄 Réinitialiser
+                </button>
+            </div>
 
-    <!-- Pets Table -->
-    <div class="pets-table-container">
-        <table class="users-table">
-            <thead>
-                <tr>
-                    <th>Compagnon</th>
-                    <th>Propriétaire</th>
-                    <th>Type</th>
-                    <th>Niveau</th>
-                    <th>XP</th>
-                    <th>Affection</th>
-                    <th>Obtenu le</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody id="pets-table-body">
-                <!-- Pets will be loaded here -->
-            </tbody>
-        </table>
-    </div>
-</div>
+            <!-- Pets Table -->
+            <div class="pets-table-container">
+                <table class="users-table">
+                    <thead>
+                        <tr>
+                            <th>Compagnon</th>
+                            <th>Propriétaire</th>
+                            <th>Type</th>
+                            <th>Niveau</th>
+                            <th>XP</th>
+                            <th>Affection</th>
+                            <th>Obtenu le</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pets-table-body">
+                        <!-- Pets will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
 
         <!-- Database Visualization Section -->

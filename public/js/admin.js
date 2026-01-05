@@ -1762,7 +1762,13 @@ function renderShopItemsAdmin(items) {
             <tr class="${!isActive ? 'inactive-row' : ''}">
                 <td>
                     <div style="display: flex; align-items: center; gap: 0.75rem;">
-                        <span style="font-size: 1.75rem;">${item.icon || '🎁'}</span>
+                        <div style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; font-size: 1.75rem;">
+                            ${item.image
+                ? `<img src="${item.image}" alt="${item.name}" style="width: 100%; height: 100%; object-fit: contain;">`
+                : (item.icon && item.icon.includes('/')
+                    ? `<img src="${item.icon}" alt="${item.name}" style="width: 100%; height: 100%; object-fit: contain;">`
+                    : (item.icon || '🎁'))}
+                        </div>
                         <div>
                             <strong>${escapeHtml(item.name)}</strong>
                             ${item.isLimited ? '<span class="badge-limited" style="margin-left: 0.5rem; font-size: 0.7rem; background: #ef4444; color: white; padding: 0.15rem 0.4rem; border-radius: 4px;">Limité</span>' : ''}
@@ -1847,6 +1853,35 @@ function initShopAdminListeners() {
                     loadShopAdmin();
                 } catch (error) {
                     notyf.error('Erreur lors de la création');
+                }
+            }
+        });
+    }
+
+    // Fix Images Button (Hotfix)
+    const fixImgBtn = document.getElementById('fix-shop-images-btn');
+    if (fixImgBtn && !fixImgBtn.dataset.listenerAdded) {
+        fixImgBtn.dataset.listenerAdded = 'true';
+        fixImgBtn.addEventListener('click', async () => {
+            if (confirm('Réparer les chemins des images des compagnons ?')) {
+                try {
+                    const updates = [
+                        { id: 'pet_feerale', image: '/images/pets/feerale.png', icon: '<img src="/images/pets/feerale.png" class="shop-item-icon-img" alt="Féerale" />' },
+                        { id: 'pet_voltor', image: '/images/pets/voltor.png', icon: '<img src="/images/pets/voltor.png" class="shop-item-icon-img" alt="Voltor" />' },
+                        { id: 'pet_ombrage', image: '/images/pets/ombrage.png', icon: '<img src="/images/pets/ombrage.png" class="shop-item-icon-img" alt="Ombrage" />' }
+                    ];
+
+                    for (const item of updates) {
+                        await updateShopItem(item.id, {
+                            image: item.image,
+                            icon: item.icon
+                        });
+                    }
+                    notyf.success('Images réparées !');
+                    loadShopAdmin();
+                } catch (error) {
+                    console.error('Fix error:', error);
+                    notyf.error('Erreur lors de la réparation');
                 }
             }
         });
