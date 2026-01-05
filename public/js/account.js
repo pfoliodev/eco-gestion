@@ -8,6 +8,7 @@ import { getUserBadges, getAllBadgeDefinitions, getUserBadgeStats, unlockBadge, 
 import { getUserInventory, equipItem, unequipItem, useConsumable } from './shop.js';
 import { getUserBalance, formatCoins, getTransactionHistory } from './coins.js';
 import { STARTER_PETS, PROFESSOR, XP_CONFIG, EVOLUTION_LEVELS } from './config/pets.js';
+import { ECONOMY } from './config/economy.js';
 import {
     calculatePetStats,
     getQualityTier,
@@ -98,6 +99,11 @@ function initAccountSidebar() {
                 // Reload stats when entering stats section
                 if (section === 'stats') {
                     loadUserStats();
+                }
+
+                // Reload inventory when entering inventory section
+                if (section === 'inventory') {
+                    loadInventory();
                 }
             }
         });
@@ -1092,6 +1098,8 @@ async function renderPetDashboard(petData) {
                 notyf.success("Compagnon changé !");
                 // Reload dashboard
                 loadUserPet();
+                // Reload inventory to update equipped status
+                loadInventory();
             } else {
                 notyf.error(res.error || "Erreur lors du changement.");
             }
@@ -1105,100 +1113,13 @@ async function renderPetDashboard(petData) {
     if (state.isAdmin) {
         const debugSection = document.createElement('div');
         debugSection.className = 'pet-debug-section';
-        debugSection.style.cssText = 'margin-top: 2rem; padding: 1rem; background: rgba(255,0,0,0.05); border: 1px dashed #ff6b6b; border-radius: 8px;';
+        debugSection.style.cssText = 'margin-top: 2rem; padding: 1rem; background: rgba(255,0,0,0.05); border: 1px dashed #ff6b6b; border-radius: 8px; display: flex; justify-content: center;';
         debugSection.innerHTML = `
-            <p style="font-size: 0.8rem; color: #ff6b6b; margin-bottom: 0.75rem; text-align: center;">🔧 Debug Admin</p>
-            <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; margin-bottom: 0.75rem;">
-                <button class="btn-debug-pet" data-pet="feerale" style="font-size: 0.8rem; padding: 0.4rem 0.8rem; background: #ffdef0; border: 1px solid #ff9fc4; border-radius: 6px; cursor: pointer;">
-                    🧚 Féerale Lvl 16
-                </button>
-                <button class="btn-debug-pet" data-pet="voltor" style="font-size: 0.8rem; padding: 0.4rem 0.8rem; background: #ffeb3b; border: 1px solid #fdd835; border-radius: 6px; cursor: pointer;">
-                    ⚡ Voltor Lvl 16
-                </button>
-                <button class="btn-debug-pet" data-pet="ombrage" style="font-size: 0.8rem; padding: 0.4rem 0.8rem; background: #5c5470; color: white; border: 1px solid #3d3554; border-radius: 6px; cursor: pointer;">
-                    🌑 Ombrage Lvl 16
-                </button>
-            </div>
-            <div style="display: flex; gap: 0.5rem; justify-content: center;">
-                <button id="btn-set-level" class="btn-secondary" style="font-size: 0.75rem; padding: 0.3rem 0.6rem;">
-                    📊 Modifier niveau
-                </button>
-                <button id="btn-add-xp" class="btn-secondary" style="font-size: 0.75rem; padding: 0.3rem 0.6rem;">
-                    ✨ +100 XP
-                </button>
-            </div>
+            <button id="btn-add-xp" class="btn-secondary" style="font-size: 0.75rem; padding: 0.3rem 0.6rem;">
+                ✨ +100 XP (Debug)
+            </button>
 `;
         container.appendChild(debugSection);
-
-        // Pet reset buttons
-        debugSection.querySelectorAll('.btn-debug-pet').forEach(btn => {
-            btn.onclick = async () => {
-                const petId = btn.dataset.pet;
-                const petConfig = STARTER_PETS.find(p => p.id === petId);
-                if (!petConfig) return;
-
-                try {
-                    const { generateRandomIVs, generateInstanceId } = await import('./utils/pet-utils.js');
-                    const randomIVs = generateRandomIVs();
-
-                    // SAFETY: Unequip current inventory items to prevent "ghost" equipped pets
-                    // when forcing a debug pet overwrite.
-                    const qInv = query(collection(db, 'users', auth.currentUser.uid, 'inventory'), where('equipped', '==', true));
-                    const snap = await getDocs(qInv);
-                    const updates = [];
-                    snap.forEach(doc => {
-                        updates.push(updateDoc(doc.ref, { equipped: false }));
-                    });
-                    await Promise.all(updates);
-
-                    await setDoc(doc(db, 'users', auth.currentUser.uid), {
-                        pet: {
-                            id: petConfig.id,
-                            name: petConfig.name,
-                            type: petConfig.type,
-                            image: petConfig.image,
-                            color: petConfig.color,
-                            level: 16,
-                            xp: 0,
-                            ivs: randomIVs,
-                            evolutionBonus: { intelligence: 0, creativity: 0, social: 0 },
-                            evolved: false,
-                            instanceId: generateInstanceId(),
-                            obtainedAt: new Date().toISOString()
-                        }
-                    }, { merge: true });
-
-                    const hasEvolution = petConfig.evolution !== null;
-                    notyf.success(`${petConfig.name} Lvl 16! ${hasEvolution ? '(peut évoluer)' : '(pas d\'évolution)'} `);
-                    loadUserPet();
-                } catch (e) {
-                    console.error(e);
-                    notyf.error('Erreur lors de la réinitialisation.');
-                }
-            };
-        });
-
-        // Set level button
-        document.getElementById('btn-set-level').onclick = async () => {
-            const newLevel = prompt('Nouveau niveau (1-100) :', currentPet.level || 1);
-            if (!newLevel) return;
-
-            const level = parseInt(newLevel);
-            if (isNaN(level) || level < 1 || level > 100) {
-                notyf.error('Niveau invalide (1-100)');
-                return;
-            }
-
-            try {
-                await setDoc(doc(db, 'users', auth.currentUser.uid), {
-                    pet: { level: level, xp: 0 }
-                }, { merge: true });
-                notyf.success(`Niveau changé à ${level} `);
-                loadUserPet();
-            } catch (e) {
-                notyf.error('Erreur');
-            }
-        };
 
         // Add XP button
         document.getElementById('btn-add-xp').onclick = async () => {
@@ -1206,9 +1127,10 @@ async function renderPetDashboard(petData) {
                 const { processXPGain } = await import('./utils/pet-utils.js');
                 const result = processXPGain(currentPet.level || 1, currentPet.xp || 0, 100);
 
-                await setDoc(doc(db, 'users', auth.currentUser.uid), {
-                    pet: { level: result.newLevel, xp: result.newXP }
-                }, { merge: true });
+                await updateDoc(doc(db, 'pets', currentPet.docId), {
+                    level: result.newLevel,
+                    xp: result.newXP
+                });
 
                 if (result.levelsGained > 0) {
                     notyf.success(`Level up! Niveau ${result.newLevel} `);
@@ -1217,10 +1139,14 @@ async function renderPetDashboard(petData) {
                 }
                 loadUserPet();
             } catch (e) {
+                console.error(e);
                 notyf.error('Erreur');
             }
         };
     }
+
+
+
 }
 
 // ============================================
@@ -1353,7 +1279,7 @@ function renderInventoryItems(items) {
 
         if (state.isAdmin) {
             const detailStr = itemDetails || '';
-            adminBtn = `<button class="btn-secondary" onclick="event.stopPropagation(); window.deleteItem('${item.itemId}', '${(item.itemName || '').replace(/'/g, "\\'")}', '${detailStr}')" style="width:100%; margin-top:0.5rem; padding:0.4rem; font-size:0.8rem; background:#fee2e2; color:#ef4444; border:1px solid #fecaca;">🗑️ Supprimer (Admin)</button>`;
+            adminBtn = `<button class="btn-secondary" onclick="event.stopPropagation(); window.deleteItem('${item.id}', '${(item.itemName || '').replace(/'/g, "\\'")}', '${detailStr}')" style="width:100%; margin-top:0.5rem; padding:0.4rem; font-size:0.8rem; background:#fee2e2; color:#ef4444; border:1px solid #fecaca;">🗑️ Supprimer (Admin)</button>`;
         }
 
         // Quantity badge
@@ -1510,6 +1436,12 @@ function renderInventoryItems(items) {
 
 // Admin Cleanup Tool
 window.deleteItem = async (itemId, itemName, details = '') => {
+    console.log('[Debug] deleteItem called with:', itemId, itemName);
+    if (!itemId) {
+        notyf.error('ID de l\'objet manquant.');
+        return;
+    }
+
     const detailMsg = details ? `\n(${details})` : '';
     if (!confirm(`ADMIN: Supprimer définitivement "${itemName}"${detailMsg} de l'inventaire ?`)) return;
 
@@ -1854,10 +1786,10 @@ async function completeEvolution() {
         if (oldInventoryId !== newInventoryId) {
             try {
                 const oldInvRef = doc(db, 'users', auth.currentUser.uid, 'inventory', oldInventoryId);
-                await updateDoc(oldInvRef, { equipped: false });
-                console.log(`[Evolution] Unequipped old inventory item: ${oldInventoryId}`);
+                await deleteDoc(oldInvRef);
+                console.log(`[Evolution] Consumed (deleted) old inventory item: ${oldInventoryId}`);
             } catch (e) {
-                console.warn('[Evolution] Failed to unequip old item (may not exist):', e);
+                console.warn('[Evolution] Failed to consume old item (may not exist):', e);
             }
         }
 
