@@ -1116,16 +1116,16 @@ async function renderPetDashboard(petData) {
         debugSection.style.cssText = 'margin-top: 2rem; padding: 1rem; background: rgba(255,0,0,0.05); border: 1px dashed #ff6b6b; border-radius: 8px; display: flex; justify-content: center;';
         debugSection.innerHTML = `
             <button id="btn-add-xp" class="btn-secondary" style="font-size: 0.75rem; padding: 0.3rem 0.6rem;">
-                ✨ +100 XP (Debug)
+                ✨ +1500 XP (Debug)
             </button>
-`;
+        `;
         container.appendChild(debugSection);
 
         // Add XP button
         document.getElementById('btn-add-xp').onclick = async () => {
             try {
                 const { processXPGain } = await import('./utils/pet-utils.js');
-                const result = processXPGain(currentPet.level || 1, currentPet.xp || 0, 100);
+                const result = processXPGain(currentPet.level || 1, currentPet.xp || 0, 1500);
 
                 await updateDoc(doc(db, 'pets', currentPet.docId), {
                     level: result.newLevel,
@@ -1135,7 +1135,7 @@ async function renderPetDashboard(petData) {
                 if (result.levelsGained > 0) {
                     notyf.success(`Level up! Niveau ${result.newLevel} `);
                 } else {
-                    notyf.success(`+ 100 XP`);
+                    notyf.success(`+ 1500 XP`);
                 }
                 loadUserPet();
             } catch (e) {
@@ -1144,6 +1144,8 @@ async function renderPetDashboard(petData) {
             }
         };
     }
+
+
 
 
 

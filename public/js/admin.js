@@ -1,5 +1,5 @@
 import { db, usersCollection, bugsCollection, coursesCollection } from './firebase.js';
-import { getDocs, doc, updateDoc, deleteDoc, query, orderBy, where, serverTimestamp, collection, limit, getCountFromServer } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js";
+import { getDocs, getDoc, doc, updateDoc, deleteDoc, query, orderBy, where, serverTimestamp, collection, limit, getCountFromServer, increment } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js";
 import { state } from './state.js';
 import { auth } from './firebase.js';
 import { notyf } from './ui.js';
@@ -12,6 +12,7 @@ import { adminGiftCoins } from './coins.js';
 
 export async function loadUsers() {
     if (!state.isAdmin) return;
+    console.log("Admin JS Updated - vFixFilters");
     try {
         const snap = await getDocs(usersCollection);
         const allUsers = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -1123,10 +1124,50 @@ export async function loadPetsAdmin() {
             });
         });
 
+        // 3. [NEW] Fetch Inventories to validate ownership (Strict Mode)
+        const userInventoryValidated = new Map(); // userId -> Set<speciesId>
+
+        const inventoryPromises = usersSnap.docs.map(async (userDoc) => {
+            const uid = userDoc.id;
+            const inventoryRef = collection(db, 'users', uid, 'inventory');
+            const invSnap = await getDocs(inventoryRef);
+
+            const ownedSpecies = new Set();
+            invSnap.docs.forEach(invDoc => {
+                const invId = invDoc.id;
+                // Inventory IDs are usually 'pet_lunombre' or just 'lunombre'
+                // We normalize by removing 'pet_' prefix to match pet.petId
+                const species = invId.replace(/^pet_/, '').toLowerCase();
+                ownedSpecies.add(species);
+
+                // Also check 'itemId' field if present (sometimes different from doc ID)
+                const data = invDoc.data();
+                if (data.itemId) {
+                    ownedSpecies.add(data.itemId.replace(/^pet_/, '').toLowerCase());
+                }
+            });
+            userInventoryValidated.set(uid, ownedSpecies);
+        });
+
+        await Promise.all(inventoryPromises);
+
         petsSnap.docs.forEach(doc => {
             const pet = doc.data();
             const petId = doc.id;
             const userId = pet.userId;
+            const speciesId = (pet.petId || pet.id || 'unknown').toLowerCase();
+
+            // [STRICT FILTER] Check if user actually owns this pet species
+            // Allow if:
+            // 1. Pet is Active (Equipped)
+            // 2. Species exists in User's Inventory
+            const userOwned = userInventoryValidated.get(userId);
+            const isOwned = userOwned && (userOwned.has(speciesId) || userOwned.has(petId)); // Check species or direct ID
+
+            if (!pet.isActive && !isOwned) {
+                // Skip this pet (Ghost/Stale record)
+                return;
+            }
 
             // Get owner name from users map
             const owner = usersMap.get(userId) || { firstname: 'Unknown', lastname: '' };
@@ -1136,18 +1177,83 @@ export async function loadPetsAdmin() {
                 userId: userId,
                 ownerName: `${owner.firstname} ${owner.lastname}`.trim(),
                 name: pet.name || 'Sans nom',
-                petId: pet.petId || pet.id || 'unknown',
+                petId: speciesId,
                 level: pet.level || 1,
                 xp: pet.xp || 0,
                 affectionLevel: pet.affectionLevel || 0,
+                isActive: pet.isActive,
                 adoptedAt: pet.adoptedAt,
                 // Include full pet data for potential future use
                 petData: pet
             });
         });
 
+        // ===================================
+        // DEDUPLICATION & FILTERING LOGIC
+        // ===================================
+
+        // 1. Group pets by User + Type (Normalized)
+        const petsByOwnerAndType = new Map();
+        const knownSpecies = new Set(['feerale', 'celestiale', 'voltor', 'voltonnerre', 'ombrage', 'lunombre']);
+
+        currentPets.forEach(pet => {
+            let speciesKey = pet.petId;
+
+            // Normalize key if it looks like a unique ID (long string) or isn't a known species
+            if (!knownSpecies.has(speciesKey) || speciesKey.length > 20) {
+                // Fallback: Map name to species key (basic approximation)
+                const lowerName = (pet.name || '').toLowerCase();
+                if (lowerName.includes('lum')) speciesKey = 'lunombre'; // Catch typo/variations
+                else if (lowerName.includes('lunombre')) speciesKey = 'lunombre';
+                else if (lowerName.includes('celestiale')) speciesKey = 'celestiale';
+                else if (lowerName.includes('feerale')) speciesKey = 'feerale';
+                else if (lowerName.includes('voltonnerre')) speciesKey = 'voltonnerre';
+                else if (lowerName.includes('voltor')) speciesKey = 'voltor';
+                else if (lowerName.includes('ombrage')) speciesKey = 'ombrage';
+            }
+
+            const key = `${pet.userId}_${speciesKey}`;
+
+            if (!petsByOwnerAndType.has(key)) {
+                petsByOwnerAndType.set(key, []);
+            }
+            petsByOwnerAndType.get(key).push(pet);
+        });
+
+        // 2. Select the "Best" candidate for each group
+        const uniquePets = [];
+        let hiddenDuplicatesCount = 0;
+
+        petsByOwnerAndType.forEach((group) => {
+            if (group.length === 1) {
+                uniquePets.push(group[0]);
+            } else {
+                // Sorting priorities:
+                // 1. isActive (Equipped)
+                // 2. Highest Level
+                // 3. Highest XP
+                // 4. Most recently Adopted/Created
+                group.sort((a, b) => {
+                    if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
+                    if (a.level !== b.level) return b.level - a.level;
+                    if (a.xp !== b.xp) return b.xp - a.xp;
+                    // Fallback to time (assuming newer is better/active)
+                    const timeA = a.adoptedAt?.seconds || 0;
+                    const timeB = b.adoptedAt?.seconds || 0;
+                    return timeB - timeA;
+                });
+
+                // Keep the best one
+                uniquePets.push(group[0]);
+                hiddenDuplicatesCount += (group.length - 1);
+            }
+        });
+
+        // Update the main list to only use unique pets
+        currentPets = uniquePets;
+
         // Calculate and display statistics
-        displayPetsStats(currentPets);
+        displayPetsStats(currentPets, hiddenDuplicatesCount);
 
         // Render table
         filteredPets = [...currentPets];
@@ -1161,8 +1267,11 @@ export async function loadPetsAdmin() {
     }
 }
 
-function displayPetsStats(pets) {
-    document.getElementById('stat-total-pets').textContent = pets.length;
+function displayPetsStats(pets, hiddenCount = 0) {
+    document.getElementById('stat-total-pets').innerHTML = `
+        ${pets.length} 
+        ${hiddenCount > 0 ? `<span style="font-size: 0.8rem; color: var(--text-secondary); display: block; margin-top: 0.2rem;">(+${hiddenCount} masqués)</span>` : ''}
+    `;
 
     // Count evolved pets (those with petId that ends in evolution forms)
     const evolvedPets = pets.filter(p =>
@@ -1214,6 +1323,9 @@ function renderPetsTable(pets) {
                 <td>${adoptedDate}</td>
                 <td>
                     <div style="display: flex; gap: 0.5rem;">
+                        <button class="btn-icon-action" onclick="givePetXP('${sanitizeAttribute(pet.id)}')" title="Donner 1500 XP" style="background: #eab308; color: white;">
+                            ⚡
+                        </button>
                         <button class="btn-delete" onclick="deletePet('${sanitizeAttribute(pet.id)}')" title="Supprimer">
                             🗑️
                         </button>
@@ -1267,6 +1379,43 @@ function applyPetsFilters() {
     renderPetsTable(filteredPets);
 }
 
+async function givePetXP(petId) {
+    if (!confirm('Donner 1500 XP à ce compagnon ?')) return;
+
+    try {
+        // [FIX] Read current pet data to calculate level up
+        const petRef = doc(db, 'pets', petId);
+        const petSnap = await getDoc(petRef); // Ensure getDoc is imported if not already, or use getDocs if needed but getDoc is better
+
+        if (!petSnap.exists()) {
+            notyf.error("Compagnon introuvable.");
+            return;
+        }
+
+        const currentPet = petSnap.data();
+
+        // Dynamically import utility to avoid top-level dependency issues if any
+        const { processXPGain } = await import('./utils/pet-utils.js');
+        const result = processXPGain(currentPet.level || 1, currentPet.xp || 0, 1500);
+
+        await updateDoc(petRef, {
+            level: result.newLevel,
+            xp: result.newXP
+        });
+
+        if (result.levelsGained > 0) {
+            notyf.success(`1500 XP ajoutés ! Level UP -> ${result.newLevel}`);
+        } else {
+            notyf.success('1500 XP ajoutés !');
+        }
+
+        loadPetsAdmin();
+    } catch (error) {
+        console.error('Error giving XP:', error);
+        notyf.error("Erreur lors de l'ajout d'XP.");
+    }
+}
+
 async function deletePet(petId) {
     if (!confirm('Êtes-vous sûr de vouloir supprimer ce compagnon ?')) return;
 
@@ -1280,6 +1429,7 @@ async function deletePet(petId) {
     }
 }
 
+window.givePetXP = givePetXP;
 window.deletePet = deletePet;
 
 // ============================================

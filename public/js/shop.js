@@ -453,8 +453,8 @@ export async function equipItem(itemId) {
             // 2. Load NEW pet state from inventory or create new pet in pets collection
             const newPetInventoryData = inventorySnap.data();
 
-            // 3. Mark new pet as equipped in inventory
-            await updateDoc(inventoryRef, { equipped: true });
+            // 3. Mark new pet as equipped in inventory (use setDoc to create if missing)
+            await setDoc(inventoryRef, { equipped: true }, { merge: true });
 
             // 4. Create/Update pet in pets collection and mark as active
             const speciesId = newPetInventoryData.itemId ? newPetInventoryData.itemId.replace('pet_', '') : itemId.replace('pet_', '');

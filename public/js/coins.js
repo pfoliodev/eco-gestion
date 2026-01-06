@@ -78,6 +78,7 @@ export function initBalanceListener(callback) {
     if (!auth.currentUser) return () => { };
 
     const userRef = doc(db, 'users', auth.currentUser.uid);
+    console.log('[DEBUG] initBalanceListener for:', auth.currentUser.uid);
 
     return onSnapshot(userRef, (snap) => {
         if (snap.exists()) {
