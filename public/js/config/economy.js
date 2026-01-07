@@ -49,6 +49,7 @@ export const ECONOMY = {
     CATEGORIES: {
         THEME: 'theme',
         FRAME: 'frame',
+        BADGE: 'badge',
         SUCCES: 'succes',
         BOOST: 'boost',
         AVATAR: 'avatar',
