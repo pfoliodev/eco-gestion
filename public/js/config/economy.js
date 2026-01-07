@@ -21,7 +21,7 @@ export const ECONOMY = {
     FLASHCARD_SESSION: 5,       // Reward per flashcard study session
 
     // Achievement rewards
-    BADGE_UNLOCK: 50,           // Reward when unlocking a badge
+    SUCCES_UNLOCK: 50,          // Reward when unlocking a succes
     FIRST_LOGIN_BONUS: 100,     // One-time bonus for new users
 
     // Streak rewards
@@ -49,7 +49,7 @@ export const ECONOMY = {
     CATEGORIES: {
         THEME: 'theme',
         FRAME: 'frame',
-        BADGE: 'badge',
+        SUCCES: 'succes',
         BOOST: 'boost',
         AVATAR: 'avatar',
         BACKGROUND: 'background',

@@ -4,7 +4,7 @@ import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/fireba
 import { state } from './state.js';
 import { notyf } from './ui.js';
 import { loadUserFavorites } from './favorites.js';
-import { getUserBadges, getAllBadgeDefinitions, getUserBadgeStats, unlockBadge, removeUserBadge, showBadgeUnlockedPopup, getBadgeById } from './badges.js';
+import { getUserSucces, getAllSuccesDefinitions, getUserSuccesStats, unlockSucces, removeUserSucces, showSuccesUnlockedPopup, getSuccesById } from './succes.js';
 import { getUserInventory, equipItem, unequipItem, useConsumable } from './shop.js';
 import { getUserBalance, formatCoins, getTransactionHistory } from './coins.js';
 import { STARTER_PETS, PROFESSOR, XP_CONFIG, EVOLUTION_LEVELS } from './config/pets.js';
@@ -20,10 +20,10 @@ import {
     STAT_CONFIG
 } from './utils/pet-utils.js';
 
-let allBadgesCache = [];
-let userBadgesCache = [];
+let allSuccesCache = [];
+let userSuccesCache = [];
 let userStatsCache = null;
-let currentBadgeFilter = 'all';
+let currentSuccesFilter = 'all';
 
 export async function loadAccount() {
     if (!auth.currentUser) return;
@@ -62,14 +62,14 @@ export async function loadAccount() {
 
     await loadUserBugs();
     await loadUserFavorites();
-    await loadUserBadges();
+    await loadUserSucces();
     await loadUserStats();
     await loadUserStats();
     await loadInventory();
     await loadUserPet();
     initProfileForm();
     initAccountSidebar();
-    initBadgeFilters();
+    initSuccesFilters();
 }
 
 // Initialize account sidebar navigation
@@ -92,7 +92,7 @@ function initAccountSidebar() {
                 targetSection.classList.add('active');
 
                 // Dragon Egg Discovery! 🐉
-                if (section === 'badges') {
+                if (section === 'succes') {
                     showDragonInConsole();
                 }
 
@@ -135,31 +135,31 @@ function showDragonInConsole() {
 
 // F12 Listener for the Dragon Badge
 document.addEventListener('keydown', async (e) => {
-    // We check if we are on the account page AND in the badges section
+    // We check if we are on the account page AND in the succes section
     const accountPage = document.getElementById('page-mon-compte');
-    const badgesSection = document.getElementById('account-section-badges');
+    const succesSection = document.getElementById('account-section-succes');
 
     const isVisible = accountPage && accountPage.classList.contains('active') &&
-        badgesSection && badgesSection.classList.contains('active');
+        succesSection && succesSection.classList.contains('active');
 
     if (e.key === 'F12' && isVisible) {
         if (!auth.currentUser) return;
 
         try {
-            const res = await unlockBadge('code_guardian');
+            const res = await unlockSucces('code_guardian');
             if (res && !res.alreadyUnlocked) {
                 console.log("%c✨ LE PACTE EST SCELLÉ ! ✨", "color: #10b981; font-weight: bold;");
 
                 // Show standard celebratory popup
-                const badge = await getBadgeById('code_guardian');
-                if (badge) {
-                    showBadgeUnlockedPopup(badge);
+                const succes = await getSuccesById('code_guardian');
+                if (succes) {
+                    showSuccesUnlockedPopup(succes);
                 }
 
-                notyf.success("Badge 'Gardien du Code' débloqué ! 🐉");
-                // Refresh badges display
-                allBadgesCache = []; // Force refresh
-                await loadUserBadges();
+                notyf.success("Succès 'Gardien du Code' débloqué ! 🐉");
+                // Refresh succes display
+                allSuccesCache = []; // Force refresh
+                await loadUserSucces();
             }
         } catch (error) {
             console.error("Erreur lors du déblocage f12:", error);
@@ -167,10 +167,10 @@ document.addEventListener('keydown', async (e) => {
     }
 });
 
-// Refresh badges when navigating to account page
+// Refresh succes when navigating to account page
 document.addEventListener('pageChange', (e) => {
     if (e.detail.pageId === 'mon-compte' || e.detail.pageId === 'page-mon-compte') {
-        loadUserBadges(true); // Force refresh
+        loadUserSucces(true); // Force refresh
     }
 });
 
@@ -289,11 +289,11 @@ async function loadUserStats() {
 
     try {
         // Fetch all data in parallel
-        const [coursesViewed, quizHistory, favorites, badges] = await Promise.all([
+        const [coursesViewed, quizHistory, favorites, succes] = await Promise.all([
             getCoursesViewedCount(userId),
             getQuizHistory(userId),
             getFavoritesCount(userId),
-            getUserBadges()
+            getUserSucces()
         ]);
 
         // Calculate stats from quiz history
@@ -309,15 +309,12 @@ async function loadUserStats() {
             ? Math.min(...quizHistory.filter(q => q.duration).map(q => q.duration))
             : null;
 
-        // Debug: Log calculated stats
-        console.log('User stats calculated:', { coursesViewed, quizCount, avgScore, badgesCount: badges.length, favoritesCount: favorites, bestTime });
-
         // Render stats cards
         renderUserStats({
             coursesViewed,
             quizCount,
             avgScore,
-            badgesCount: badges.length,
+            succesCount: succes.length,
             favoritesCount: favorites,
             bestTime
         });
@@ -388,7 +385,7 @@ function renderUserStats(stats) {
         ? stats.avgScore + '%'
         : '-';
     setStatValue('user-stat-avg-score', avgScoreDisplay);
-    setStatValue('user-stat-badges-count', stats.badgesCount);
+    setStatValue('user-stat-succes-count', stats.succesCount);
     setStatValue('user-stat-favorites-count', stats.favoritesCount);
     setStatValue('user-stat-best-time', stats.bestTime ? formatDuration(stats.bestTime) : '-');
 }
@@ -436,60 +433,60 @@ function renderQuizHistory(quizzes) {
 }
 
 // ============================================
-// BADGES SECTION
+// SUCCES SECTION
 // ============================================
 
-async function loadUserBadges(forceRefresh = false) {
-    const container = document.getElementById('badges-container');
+async function loadUserSucces(forceRefresh = false) {
+    const container = document.getElementById('succes-container');
     if (!container) return;
 
     try {
-        // Load badge definitions only once (cache them)
-        if (!allBadgesCache || allBadgesCache.length === 0) {
-            allBadgesCache = await getAllBadgeDefinitions();
+        // Load succes definitions only once (cache them)
+        if (!allSuccesCache || allSuccesCache.length === 0) {
+            allSuccesCache = await getAllSuccesDefinitions();
         }
 
         // Always fetch fresh user data if forceRefresh is true or if not yet loaded
-        if (forceRefresh || !userStatsCache || userBadgesCache.length === 0) {
-            const [userBadges, stats] = await Promise.all([
-                getUserBadges(),
-                getUserBadgeStats()
+        if (forceRefresh || !userStatsCache || userSuccesCache.length === 0) {
+            const [userSucces, stats] = await Promise.all([
+                getUserSucces(),
+                getUserSuccesStats()
             ]);
-            userBadgesCache = userBadges;
+            userSuccesCache = userSucces;
             userStatsCache = stats;
         }
 
-        renderBadges();
+        renderSucces();
     } catch (error) {
-        console.error("Error loading badges:", error);
-        container.innerHTML = '<div class="error-msg">Erreur de chargement des badges.</div>';
+        console.error("Error loading succes:", error);
+        container.innerHTML = '<div class="error-msg">Erreur de chargement des succès.</div>';
     }
 }
 
-function renderBadges() {
-    const container = document.getElementById('badges-container');
-    const unlockedBadgeIds = new Set(userBadgesCache.map(ub => ub.badgeId));
+function renderSucces() {
+    const container = document.getElementById('succes-container');
+    const unlockedSuccesIds = new Set(userSuccesCache.map(us => us.succesId));
 
-    const filteredBadges = allBadgesCache.filter(badge => {
-        const isUnlocked = unlockedBadgeIds.has(badge.id);
-        const progress = calculateProgress(badge, userStatsCache);
+    const filteredSucces = allSuccesCache.filter(succes => {
+        const isUnlocked = unlockedSuccesIds.has(succes.id);
+        const progress = calculateProgress(succes, userStatsCache);
         const isInProgress = !isUnlocked && progress.percent > 0;
 
-        if (currentBadgeFilter === 'unlocked') return isUnlocked;
-        if (currentBadgeFilter === 'locked') return !isUnlocked && !isInProgress;
-        if (currentBadgeFilter === 'in-progress') return isInProgress;
+        if (currentSuccesFilter === 'unlocked') return isUnlocked;
+        if (currentSuccesFilter === 'locked') return !isUnlocked && !isInProgress;
+        if (currentSuccesFilter === 'in-progress') return isInProgress;
         return true;
     });
 
-    if (filteredBadges.length === 0) {
-        container.innerHTML = `<div class="empty-badges">Aucun badge trouvé pour ce filtre.</div>`;
+    if (filteredSucces.length === 0) {
+        container.innerHTML = `<div class="empty-succes">Aucun succès trouvé pour ce filtre.</div>`;
         return;
     }
 
     // Sort: unlocked first, then in-progress, then locked
-    const sortedFiltered = [...filteredBadges].sort((a, b) => {
-        const aUnlocked = unlockedBadgeIds.has(a.id);
-        const bUnlocked = unlockedBadgeIds.has(b.id);
+    const sortedFiltered = [...filteredSucces].sort((a, b) => {
+        const aUnlocked = unlockedSuccesIds.has(a.id);
+        const bUnlocked = unlockedSuccesIds.has(b.id);
         if (aUnlocked && !bUnlocked) return -1;
         if (!aUnlocked && bUnlocked) return 1;
 
@@ -498,38 +495,38 @@ function renderBadges() {
         return bProg - aProg;
     });
 
-    container.innerHTML = sortedFiltered.map(badge => {
-        const isUnlocked = unlockedBadgeIds.has(badge.id);
-        const userBadge = userBadgesCache.find(ub => ub.badgeId === badge.id);
-        const unlockedDate = userBadge?.unlockedAt
-            ? new Date(userBadge.unlockedAt.seconds * 1000).toLocaleDateString('fr-FR')
+    container.innerHTML = sortedFiltered.map(succes => {
+        const isUnlocked = unlockedSuccesIds.has(succes.id);
+        const userSucces = userSuccesCache.find(us => us.succesId === succes.id);
+        const unlockedDate = userSucces?.unlockedAt
+            ? new Date(userSucces.unlockedAt.seconds * 1000).toLocaleDateString('fr-FR')
             : null;
 
-        const progress = calculateProgress(badge, userStatsCache);
+        const progress = calculateProgress(succes, userStatsCache);
 
-        const isSecret = badge.secret && !isUnlocked;
-        const displayName = isSecret ? '???' : badge.name;
-        const displayDescription = isSecret ? (badge.hint || 'Un badge mystérieux... Continuez à explorer !') : (badge.description || '');
+        const isSecret = succes.secret && !isUnlocked;
+        const displayName = isSecret ? '???' : succes.name;
+        const displayDescription = isSecret ? (succes.hint || 'Un succès mystérieux... Continuez à explorer !') : (succes.description || '');
 
         return `
-            <div class="badge-card ${isUnlocked ? 'unlocked' : 'locked'} ${isSecret ? 'secret' : ''}">
-                <div class="badge-icon">
-                    ${isSecret ? '❓' : (badge.icon && badge.icon.includes('/')
-                ? `<img src="${badge.icon}" alt="${badge.name}">`
-                : (badge.icon || '🏆'))}
+            <div class="succes-card ${isUnlocked ? 'unlocked' : 'locked'} ${isSecret ? 'secret' : ''}">
+                <div class="succes-icon">
+                    ${isSecret ? '❓' : (succes.icon && succes.icon.includes('/')
+                ? `<img src="${succes.icon}" alt="${succes.name}">`
+                : (succes.icon || '🏆'))}
                 </div>
-                <div class="badge-info">
-                    <h4 class="badge-name">${displayName}</h4>
-                    <p class="badge-description">${displayDescription}</p>
+                <div class="succes-info">
+                    <h4 class="succes-name">${displayName}</h4>
+                    <p class="succes-description">${displayDescription}</p>
                     
                     ${isUnlocked
-                ? `<span class="badge-date">Débloqué le ${unlockedDate}</span>`
+                ? `<span class="succes-date">Débloqué le ${unlockedDate}</span>`
                 : `
-                        <div class="badge-progress-container">
-                            <div class="badge-progress-bar" style="width: ${progress.percent}%"></div>
-                            <span class="badge-progress-text">${progress.current} / ${progress.target}</span>
+                        <div class="succes-progress-container">
+                            <div class="succes-progress-bar" style="width: ${progress.percent}%"></div>
+                            <span class="succes-progress-text">${progress.current} / ${progress.target}</span>
                         </div>
-                        <span class="badge-locked-label">🔒 ${progress.percent > 0 ? 'En cours...' : 'Verrouillé'}</span>
+                        <span class="succes-locked-label">🔒 ${progress.percent > 0 ? 'En cours...' : 'Verrouillé'}</span>
                         `
             }
                 </div>
@@ -599,14 +596,14 @@ function calculateProgress(badge, stats) {
     return { percent, current, target };
 }
 
-function initBadgeFilters() {
-    const filters = document.querySelectorAll('[data-badge-filter]');
+function initSuccesFilters() {
+    const filters = document.querySelectorAll('[data-succes-filter]');
     filters.forEach(btn => {
         btn.onclick = () => {
             filters.forEach(f => f.classList.remove('active'));
             btn.classList.add('active');
-            currentBadgeFilter = btn.dataset.badgeFilter;
-            renderBadges();
+            currentSuccesFilter = btn.dataset.succesFilter;
+            renderSucces();
         };
     });
 }
@@ -668,7 +665,6 @@ async function renderPetDashboard(petData) {
         'Lunombre': 'lunombre'
     };
     if (EVOLVED_ID_MAP[currentPet.name] && currentPet.id !== EVOLVED_ID_MAP[currentPet.name]) {
-        console.log(`[Dashboard] Fixing mismatched ID for ${currentPet.name}: ${currentPet.id} -> ${EVOLVED_ID_MAP[currentPet.name]}`);
         currentPet.id = EVOLVED_ID_MAP[currentPet.name];
         currentPet.evolved = true; // Ensure evolved flag is true
     }
@@ -721,11 +717,6 @@ async function renderPetDashboard(petData) {
             currentPet.type = currentPet.type || petDefinition.type;
             currentPet.color = currentPet.color || petDefinition.color;
         }
-    }
-
-    console.log(`[Dashboard Debug] Pet: ${currentPet.name}, ID: ${currentPet.id}, Def Found: ${!!petDefinition}`);
-    if (petDefinition) {
-        console.log(`[Dashboard Debug] Def Stats:`, petDefinition.baseStats, `Growth:`, petDefinition.statGrowth);
     }
 
     // Calculate stats using new system (if IVs exist and are valid) or fallback to legacy

@@ -43,8 +43,8 @@ export function applyFeatureFlags() {
     toggleElementById('flashcards-sidebar-section', features.flashcards);
 
     // 4. Account & Gamification
-    toggleElementById('account-section-badges', features.badges);
-    toggleElementBySelector('a[href="#pantheon"]', features.badges);
+    toggleElementById('account-section-succes', features.succes);
+    toggleElementBySelector('a[href="#pantheon"]', features.succes);
 
     // 5. Sidebar/Buttons
     toggleElementById('manage-course-flashcards', features.flashcards);

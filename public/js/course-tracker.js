@@ -1,4 +1,4 @@
-import { markCourseAsRead } from './badges.js';
+import { markCourseAsRead } from './succes.js';
 
 /**
  * Tracks if a user has scrolled to the bottom of the course content

@@ -18,134 +18,139 @@ import { getUserQuizHistory } from './quiz.js';
 import { addCoins, updateBalanceDisplay } from './coins.js';
 import { ECONOMY } from './config/economy.js';
 
-const badgesCollection = collection(db, 'badges');
+// Collection des définitions de succès
+const succesCollection = collection(db, 'succes');
 
 // ============================================
-// BADGE DEFINITIONS (Admin CRUD)
+// SUCCES DEFINITIONS (Admin CRUD)
 // ============================================
 
 /**
- * Get all badge definitions
+ * Get all succes definitions
  */
-export async function getAllBadgeDefinitions() {
-    const snapshot = await getDocs(badgesCollection);
+export async function getAllSuccesDefinitions() {
+    const snapshot = await getDocs(succesCollection);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 }
 
 /**
- * Get a single badge definition by ID
+ * Get a single succes definition by ID
  */
-export async function getBadgeById(badgeId) {
-    const docRef = doc(db, 'badges', badgeId);
+export async function getSuccesById(succesId) {
+    const docRef = doc(db, 'succes', succesId);
     const snapshot = await getDoc(docRef);
     if (!snapshot.exists()) return null;
     return { id: snapshot.id, ...snapshot.data() };
 }
 
 /**
- * Create a new badge definition (Admin only)
+ * Create a new succes definition (Admin only)
  */
-export async function createBadge(badgeData) {
+export async function createSucces(succesData) {
     if (!auth.currentUser) throw new Error("Unauthorized");
 
     const data = {
-        ...badgeData,
+        ...succesData,
         createdAt: serverTimestamp()
     };
 
-    return await addDoc(badgesCollection, data);
+    return await addDoc(succesCollection, data);
 }
 
 /**
- * Update a badge definition (Admin only)
+ * Update a succes definition (Admin only)
  */
-export async function updateBadge(badgeId, badgeData) {
+export async function updateSucces(succesId, succesData) {
     if (!auth.currentUser) throw new Error("Unauthorized");
-    const docRef = doc(db, 'badges', badgeId);
-    return await updateDoc(docRef, { ...badgeData, updatedAt: serverTimestamp() });
+    const docRef = doc(db, 'succes', succesId);
+    return await updateDoc(docRef, { ...succesData, updatedAt: serverTimestamp() });
 }
 
 /**
- * Delete a badge definition (Admin only)
+ * Delete a succes definition (Admin only)
  */
-export async function deleteBadge(badgeId) {
+export async function deleteSucces(succesId) {
     if (!auth.currentUser) throw new Error("Unauthorized");
-    return await deleteDoc(doc(db, 'badges', badgeId));
+    return await deleteDoc(doc(db, 'succes', succesId));
 }
 
 // ============================================
-// USER BADGES (Unlocking & Display)
+// USER SUCCES (Unlocking & Display)
 // ============================================
 
 /**
- * Get all badges unlocked by the current user
+ * Get all succes unlocked by the current user
  */
-export async function getUserBadges() {
+export async function getUserSucces() {
     if (!auth.currentUser) return [];
 
-    const userBadgesRef = collection(db, 'users', auth.currentUser.uid, 'userBadges');
-    const snapshot = await getDocs(userBadgesRef);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const userSuccesRef = collection(db, 'users', auth.currentUser.uid, 'userSucces');
+    const snapshot = await getDocs(userSuccesRef);
+    return snapshot.docs.map(doc => ({
+        id: doc.id,
+        succesId: doc.data().succesId || doc.id,
+        ...doc.data()
+    }));
 }
 
 /**
- * Check if user has a specific badge
+ * Check if user has a specific succes
  */
-export async function userHasBadge(badgeId) {
+export async function userHasSucces(succesId) {
     if (!auth.currentUser) return false;
 
-    const docRef = doc(db, 'users', auth.currentUser.uid, 'userBadges', badgeId);
+    const docRef = doc(db, 'users', auth.currentUser.uid, 'userSucces', succesId);
     const snapshot = await getDoc(docRef);
     return snapshot.exists();
 }
 
 /**
- * Unlock a badge for the current user
+ * Unlock a succes for the current user
  */
-export async function unlockBadge(badgeId, metadata = {}) {
+export async function unlockSucces(succesId, metadata = {}) {
     if (!auth.currentUser) throw new Error("User must be logged in");
 
     // Check if already unlocked
-    if (await userHasBadge(badgeId)) {
+    if (await userHasSucces(succesId)) {
         return { alreadyUnlocked: true };
     }
 
-    const docRef = doc(db, 'users', auth.currentUser.uid, 'userBadges', badgeId);
+    const docRef = doc(db, 'users', auth.currentUser.uid, 'userSucces', succesId);
     await setDoc(docRef, {
-        badgeId,
+        succesId,
         unlockedAt: serverTimestamp(),
         ...metadata
     });
 
-    // Award IFH Coins for badge unlock
+    // Award IFH Coins for succes unlock
     try {
-        const result = await addCoins(ECONOMY.BADGE_UNLOCK, 'badge_unlock', badgeId, {
-            badgeName: metadata.badgeName || badgeId
+        const result = await addCoins(ECONOMY.SUCCES_UNLOCK, 'succes_unlock', succesId, {
+            succesName: metadata.succesName || succesId
         });
         if (result.success) {
             updateBalanceDisplay(result.newBalance);
-            console.log(`🏅 Badge unlocked: +${ECONOMY.BADGE_UNLOCK} IFH`);
+            console.log(`🏅 Succès débloqué: +${ECONOMY.SUCCES_UNLOCK} IFH`);
         }
     } catch (error) {
-        console.error('Error awarding coins for badge:', error);
+        console.error('Error awarding coins for succes:', error);
     }
 
     return { alreadyUnlocked: false, success: true };
 }
 
 /**
- * Remove a badge for the current user (Debug/Test only)
+ * Remove a succes for the current user (Debug/Test only)
  */
-export async function removeUserBadge(badgeId) {
+export async function removeUserSucces(succesId) {
     if (!auth.currentUser) throw new Error("User must be logged in");
-    const docRef = doc(db, 'users', auth.currentUser.uid, 'userBadges', badgeId);
+    const docRef = doc(db, 'users', auth.currentUser.uid, 'userSucces', succesId);
     await deleteDoc(docRef);
     return { success: true };
 }
 
 // Expose tools to console for testing
-window.removeUserBadge = removeUserBadge;
-window.unlockBadge = unlockBadge;
+window.removeUserSucces = removeUserSucces;
+window.unlockSucces = unlockSucces;
 
 /**
  * Get user's quiz completion count (unique quizzes)
@@ -321,9 +326,9 @@ export async function getUserUniquePerfectCourseCount() {
 }
 
 /**
- * Get all user stats related to badges for progress display
+ * Get all user stats related to succes for progress display
  */
-export async function getUserBadgeStats() {
+export async function getUserSuccesStats() {
     if (!auth.currentUser) return null;
 
     const userRef = doc(db, 'users', auth.currentUser.uid);
@@ -350,7 +355,7 @@ export async function getUserBadgeStats() {
 }
 
 /**
- * Check and unlock badges after a quiz is completed
+ * Check and unlock succes after a quiz is completed
  * @param {string} quizId - The quiz ID
  * @param {number} score - User's score
  * @param {number} total - Total questions
@@ -358,11 +363,11 @@ export async function getUserBadgeStats() {
  * @param {string} courseId - Course ID
  * @param {Object} options - Additional data (duration, type, etc.)
  */
-export async function checkAndUnlockBadges(quizId, score, total, quizTitleValue = '', courseId = null, options = {}) {
+export async function checkAndUnlockSucces(quizId, score, total, quizTitleValue = '', courseId = null, options = {}) {
     if (!auth.currentUser) return [];
 
-    const unlockedBadges = [];
-    const allBadges = await getAllBadgeDefinitions();
+    const unlockedSucces = [];
+    const allSucces = await getAllSuccesDefinitions();
     const now = new Date();
     const currentHour = now.getHours();
 
@@ -375,14 +380,14 @@ export async function checkAndUnlockBadges(quizId, score, total, quizTitleValue 
     const currentPerfectStreak = userData.perfectStreak || 0;
     const readCourses = userData.readCourses || [];
 
-    // Check each badge's requirement
-    for (const badge of allBadges) {
-        if (!badge.requirement) continue;
+    // Check each succes's requirement
+    for (const succes of allSucces) {
+        if (!succes.requirement) continue;
 
         let shouldUnlock = false;
         const metadata = { quizId, quizTitle: quizTitleValue };
 
-        switch (badge.requirement.type) {
+        switch (succes.requirement.type) {
             case 'first_quiz':
                 const uniqueCount = await getUserUniqueQuizCount();
                 if (uniqueCount >= 1) shouldUnlock = true;
@@ -390,7 +395,7 @@ export async function checkAndUnlockBadges(quizId, score, total, quizTitleValue 
 
             case 'quiz_count':
                 const count = await getUserUniqueQuizCount();
-                if (count >= badge.requirement.value) shouldUnlock = true;
+                if (count >= succes.requirement.value) shouldUnlock = true;
                 break;
 
             case 'perfect_score':
@@ -399,11 +404,11 @@ export async function checkAndUnlockBadges(quizId, score, total, quizTitleValue 
 
             case 'perfect_count':
                 const perfectCount = await getUserPerfectScoreCount();
-                if (perfectCount >= badge.requirement.value) shouldUnlock = true;
+                if (perfectCount >= succes.requirement.value) shouldUnlock = true;
                 break;
 
             case 'streak':
-                if (currentStreak >= badge.requirement.value) shouldUnlock = true;
+                if (currentStreak >= succes.requirement.value) shouldUnlock = true;
                 break;
 
             case 'night_owl':
@@ -417,13 +422,13 @@ export async function checkAndUnlockBadges(quizId, score, total, quizTitleValue 
             case 'perfect_unique_count':
                 // Major de Promo: X constant perfect courses
                 const uniquePerfectCount = await getUserUniquePerfectCourseCount();
-                if (uniquePerfectCount >= badge.requirement.value) shouldUnlock = true;
+                if (uniquePerfectCount >= succes.requirement.value) shouldUnlock = true;
                 break;
 
             case 'perfect_streak':
                 // Sans Faute: X consecutive perfect scores
                 const streakVal = userData.perfectStreak || 0;
-                if (streakVal >= badge.requirement.value) shouldUnlock = true;
+                if (streakVal >= succes.requirement.value) shouldUnlock = true;
                 break;
 
             case 'course_read':
@@ -433,16 +438,16 @@ export async function checkAndUnlockBadges(quizId, score, total, quizTitleValue 
                 break;
 
             case 'favorite_count':
-                if (userData.favorites?.length >= badge.requirement.value || options.isFavoriteAction) {
+                if (userData.favorites?.length >= succes.requirement.value || options.isFavoriteAction) {
                     // Re-fetch user data if it's a trigger to be sure
                     const freshSnapshot = await getDoc(userRef);
                     const freshData = freshSnapshot.data();
-                    if (freshData.favorites?.length >= badge.requirement.value) shouldUnlock = true;
+                    if (freshData.favorites?.length >= succes.requirement.value) shouldUnlock = true;
                 }
                 break;
 
             case 'speed_perfect':
-                if (score === total && options.duration && options.duration <= badge.requirement.value) shouldUnlock = true;
+                if (score === total && options.duration && options.duration <= succes.requirement.value) shouldUnlock = true;
                 break;
 
             case 'comeback_perfect':
@@ -460,7 +465,7 @@ export async function checkAndUnlockBadges(quizId, score, total, quizTitleValue 
             case 'loyalty':
                 const ageDays = userData.createdAt ? Math.floor((new Date() - new Date(userData.createdAt.seconds * 1000)) / (1000 * 60 * 60 * 24)) : 0;
                 const uniqueQuizzes = await getUserUniqueQuizCount();
-                if (ageDays >= badge.requirement.days && uniqueQuizzes >= badge.requirement.quizzes) shouldUnlock = true;
+                if (ageDays >= succes.requirement.days && uniqueQuizzes >= succes.requirement.quizzes) shouldUnlock = true;
                 break;
 
             case 'sunday_warrior':
@@ -476,51 +481,51 @@ export async function checkAndUnlockBadges(quizId, score, total, quizTitleValue 
                         return compAt && (compAt.seconds * 1000) >= todayStart;
                     });
 
-                    if (todayQuizzes.length >= badge.requirement.value) shouldUnlock = true;
+                    if (todayQuizzes.length >= succes.requirement.value) shouldUnlock = true;
                 }
                 break;
         }
 
         if (shouldUnlock) {
-            const result = await unlockBadge(badge.id, metadata);
+            const result = await unlockSucces(succes.id, metadata);
             if (!result.alreadyUnlocked) {
-                unlockedBadges.push(badge);
+                unlockedSucces.push(succes);
             }
         }
     }
 
-    // Show popups for newly unlocked badges
-    for (const badge of unlockedBadges) {
-        await showBadgeUnlockedPopup(badge);
+    // Show popups for newly unlocked succes
+    for (const succes of unlockedSucces) {
+        await showSuccesUnlockedPopup(succes);
     }
 
-    return unlockedBadges;
+    return unlockedSucces;
 }
 
 // ============================================
-// BADGE UNLOCKED POPUP
+// SUCCES UNLOCKED POPUP
 // ============================================
 
 /**
- * Show a celebratory popup when a badge is unlocked
+ * Show a celebratory popup when a succes is unlocked
  */
-export function showBadgeUnlockedPopup(badge) {
+export function showSuccesUnlockedPopup(succes) {
     return new Promise((resolve) => {
         // Create overlay
         const overlay = document.createElement('div');
-        overlay.className = 'badge-popup-overlay';
+        overlay.className = 'succes-popup-overlay';
         overlay.innerHTML = `
-            <div class="badge-popup">
-                <div class="badge-popup-glow"></div>
-                <div class="badge-popup-icon">
-                    ${badge.icon && badge.icon.includes('/')
-                ? `<img src="${badge.icon}" alt="${badge.name}">`
-                : (badge.icon || '🏆')}
+            <div class="succes-popup">
+                <div class="succes-popup-glow"></div>
+                <div class="succes-popup-icon">
+                    ${succes.icon && succes.icon.includes('/')
+                ? `<img src="${succes.icon}" alt="${succes.name}">`
+                : (succes.icon || '🏆')}
                 </div>
-                <h3 class="badge-popup-title">Badge Débloqué !</h3>
-                <p class="badge-popup-name">${badge.name}</p>
-                <p class="badge-popup-description">${badge.description || ''}</p>
-                <button class="btn-primary badge-popup-close">Super !</button>
+                <h3 class="succes-popup-title">Succès Débloqué !</h3>
+                <p class="succes-popup-name">${succes.name}</p>
+                <p class="succes-popup-description">${succes.description || ''}</p>
+                <button class="btn-primary succes-popup-close">Super !</button>
             </div>
         `;
 
@@ -532,7 +537,7 @@ export function showBadgeUnlockedPopup(badge) {
         });
 
         // Close handler
-        const closeBtn = overlay.querySelector('.badge-popup-close');
+        const closeBtn = overlay.querySelector('.succes-popup-close');
         const closePopup = () => {
             overlay.classList.remove('visible');
             setTimeout(() => {
@@ -549,14 +554,14 @@ export function showBadgeUnlockedPopup(badge) {
 }
 
 // ============================================
-// SEED DEFAULT BADGES (One-time setup)
+// SEED DEFAULT SUCCES (One-time setup)
 // ============================================
 
 /**
- * Seed default badges without duplicating or breaking existing progress
+ * Seed default succes without duplicating or breaking existing progress
  */
-export async function seedDefaultBadges() {
-    const defaultBadges = [
+export async function seedDefaultSucces() {
+    const defaultSucces = [
         {
             id: 'first_steps',
             name: 'Premier Pas',
@@ -710,9 +715,9 @@ export async function seedDefaultBadges() {
     let createdCount = 0;
     let updatedCount = 0;
 
-    for (const badge of defaultBadges) {
-        const { id, ...data } = badge;
-        const docRef = doc(db, 'badges', id);
+    for (const succes of defaultSucces) {
+        const { id, ...data } = succes;
+        const docRef = doc(db, 'succes', id);
         const snap = await getDoc(docRef);
 
         if (!snap.exists()) {
@@ -732,31 +737,31 @@ export async function seedDefaultBadges() {
     }
 
     return {
-        message: `${createdCount} badges créés, ${updatedCount} badges mis à jour.`,
+        message: `${createdCount} succès créés, ${updatedCount} succès mis à jour.`,
         count: createdCount + updatedCount
     };
 }
 
 /**
- * Clean up old duplicate badges (with random IDs) that match default badge names
+ * Clean up old duplicate succes (with random IDs) that match default succes names
  */
-export async function cleanupDuplicateBadges() {
+export async function cleanupDuplicateSucces() {
     const fixedIds = ['first_steps', 'explorer', 'expert', 'perfectionist', 'winning_streak', 'assiduous', 'night_owl', 'early_bird', 'valedictorian', 'flawless', 'scholar'];
     const defaultNames = ['Premier Pas', 'Explorateur', 'Expert', 'Perfectionniste', 'Série Gagnante', 'Assidu', 'Oiseau de nuit', 'Lève-tôt', 'Major de Promo', 'Sans Faute', 'Érudit'];
 
-    const snapshot = await getDocs(badgesCollection);
+    const snapshot = await getDocs(succesCollection);
     let deletedCount = 0;
 
-    for (const badgeDoc of snapshot.docs) {
-        const id = badgeDoc.id;
-        const data = badgeDoc.data();
+    for (const succesDoc of snapshot.docs) {
+        const id = succesDoc.id;
+        const data = succesDoc.data();
 
         // If it's a random ID (not in fixedIds) AND the name matches a default
         if (!fixedIds.includes(id) && defaultNames.includes(data.name)) {
-            await deleteDoc(doc(db, 'badges', id));
+            await deleteDoc(doc(db, 'succes', id));
             deletedCount++;
         }
     }
 
-    return { message: `${deletedCount} badges en double supprimés.`, count: deletedCount };
+    return { message: `${deletedCount} succès en double supprimés.`, count: deletedCount };
 }

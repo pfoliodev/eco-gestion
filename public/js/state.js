@@ -9,7 +9,7 @@ export const state = {
     currentStudySession: null,
     features: {
         flashcards: true,
-        badges: true,
+        succes: true,
         reminders: true,
         quiz: true
     }
