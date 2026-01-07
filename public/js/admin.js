@@ -3,7 +3,7 @@ import { getDocs, getDoc, doc, updateDoc, deleteDoc, query, orderBy, where, serv
 import { state } from './state.js';
 import { auth } from './firebase.js';
 import { notyf } from './ui.js';
-import { getAllBadgeDefinitions, createBadge, updateBadge, deleteBadge, seedDefaultBadges, cleanupDuplicateBadges } from './badges.js';
+import { getAllSuccesDefinitions, createSucces, updateSucces, deleteSucces, seedDefaultSucces, cleanupDuplicateSucces } from './succes.js';
 import { updateFeatureFlag } from './features.js';
 import { escapeHtml, sanitizeAttribute } from './security.js';
 import { getOverviewStats, getAllCourseStats, getTopUsers } from './stats.js';
@@ -269,7 +269,7 @@ export function initAdminSidebar() {
             // Load data for section
             if (section === 'courses') loadCourseManagement();
             if (section === 'bugs') loadBugs();
-            if (section === 'badges') loadBadgesAdmin();
+            if (section === 'succes') loadSuccesAdmin();
             if (section === 'archived-courses') loadArchivedCourses();
             if (section === 'archived-users') loadArchivedUsers();
             if (section === 'reminders') {
@@ -786,21 +786,21 @@ export async function restoreUser(userId) {
 window.restoreUser = restoreUser;
 
 // ============================================
-// BADGES ADMIN MANAGEMENT
+// SUCCES ADMIN MANAGEMENT
 // ============================================
 
-let currentEditingBadgeId = null;
+let currentEditingSuccesId = null;
 
-export async function loadBadgesAdmin() {
+export async function loadSuccesAdmin() {
     if (!state.isAdmin) return;
 
     try {
-        const badges = await getAllBadgeDefinitions();
-        renderBadgesAdmin(badges);
-        initBadgeAdminListeners();
+        const succes = await getAllSuccesDefinitions();
+        renderSuccesAdmin(succes);
+        initSuccesAdminListeners();
     } catch (error) {
-        console.error("Error loading badges:", error);
-        notyf.error("Erreur de chargement des badges.");
+        console.error("Error loading succes:", error);
+        notyf.error("Erreur de chargement des succes.");
     }
 }
 
@@ -809,7 +809,7 @@ export async function loadBadgesAdmin() {
 // ============================================
 
 const KNOWN_COLLECTIONS = [
-    'users', 'courses', 'bugs', 'shop_items', 'badges',
+    'users', 'courses', 'bugs', 'shop_items', 'succes',
     'quiz_results', 'favorites', 'coin_transactions', 'pets'
 ];
 
@@ -916,7 +916,7 @@ function renderDatabaseStats(statsData) {
 function getCollectionIcon(name) {
     const map = {
         'users': '👥', 'courses': '📚', 'bugs': '🐞',
-        'shop_items': '🛒', 'badges': '🏆', 'quiz_results': '📝',
+        'shop_items': '🛒', 'succes': '🏆', 'quiz_results': '📝',
         'favorites': '❤️', 'coin_transactions': '🪙', 'pets': '🐾'
     };
     return map[name] || '📂';
@@ -1433,44 +1433,44 @@ window.givePetXP = givePetXP;
 window.deletePet = deletePet;
 
 // ============================================
-// BADGES ADMIN MANAGEMENT (RENDERING)
+// SUCCES ADMIN MANAGEMENT (RENDERING)
 // ============================================
 
-function renderBadgesAdmin(badges) {
-    const tbody = document.getElementById('badges-table-body');
+function renderSuccesAdmin(succesList) {
+    const tbody = document.getElementById('succes-table-body');
     if (!tbody) return;
 
-    if (badges.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem;">Aucun badge créé. Cliquez sur "Initialiser les badges par défaut" pour commencer.</td></tr>';
+    if (succesList.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem;">Aucun succès créé. Cliquez sur "Initialiser les succès par défaut" pour commencer.</td></tr>';
         return;
     }
 
-    tbody.innerHTML = badges.map(badge => {
+    tbody.innerHTML = succesList.map(succes => {
         const categoryLabel = {
             'progression': 'Progression',
             'excellence': 'Excellence',
             'special': 'Spécial'
-        }[badge.category] || badge.category;
+        }[succes.category] || succes.category;
 
-        const requirementLabel = formatRequirement(badge.requirement);
+        const requirementLabel = formatRequirement(succes.requirement);
 
         return `
             <tr>
                 <td style="width: 60px; text-align: center;">
-                    ${badge.icon && badge.icon.includes('/')
-                ? `<img src="${badge.icon}" alt="${badge.name}" style="width: 40px; height: 40px; object-fit: contain; display: block; margin: 0 auto;">`
-                : `<span style="font-size: 2rem; display: block;">${badge.icon || '🏆'}</span>`}
+                    ${succes.icon && succes.icon.includes('/')
+                ? `<img src="${succes.icon}" alt="${succes.name}" style="width: 40px; height: 40px; object-fit: contain; display: block; margin: 0 auto;">`
+                : `<span style="font-size: 2rem; display: block;">${succes.icon || '🏆'}</span>`}
                 </td>
-                <td><strong>${badge.name}</strong></td>
-                <td style="max-width: 200px; color: var(--text-secondary);">${badge.description || '-'}</td>
-                <td><span class="badge-category-tag category-${badge.category}">${categoryLabel}</span></td>
+                <td><strong>${succes.name}</strong></td>
+                <td style="max-width: 200px; color: var(--text-secondary);">${succes.description || '-'}</td>
+                <td><span class="succes-category-tag category-${succes.category}">${categoryLabel}</span></td>
                 <td><code style="font-size: 0.8rem;">${requirementLabel}</code></td>
                 <td>
                     <div class="table-actions">
-                        <button class="btn-icon-action btn-edit-badge" data-badge-id="${badge.id}" title="Modifier">
+                        <button class="btn-icon-action btn-edit-succes" data-succes-id="${succes.id}" title="Modifier">
                             ✏️
                         </button>
-                        <button class="btn-icon-action btn-delete-badge" data-badge-id="${badge.id}" title="Supprimer">
+                        <button class="btn-icon-action btn-delete-succes" data-succes-id="${succes.id}" title="Supprimer">
                             🗑️
                         </button>
                     </div>
@@ -1480,22 +1480,22 @@ function renderBadgesAdmin(badges) {
 
     // Add event listeners
     requestAnimationFrame(() => {
-        tbody.querySelectorAll('.btn-edit-badge').forEach(btn => {
+        tbody.querySelectorAll('.btn-edit-succes').forEach(btn => {
             btn.addEventListener('click', function () {
-                const badgeId = this.dataset.badgeId;
-                const badge = badges.find(b => b.id === badgeId);
-                openBadgeEditor(badge);
+                const succesId = this.dataset.succesId;
+                const succes = succesList.find(s => s.id === succesId);
+                openSuccesEditor(succes);
             });
         });
 
-        tbody.querySelectorAll('.btn-delete-badge').forEach(btn => {
+        tbody.querySelectorAll('.btn-delete-succes').forEach(btn => {
             btn.addEventListener('click', async function () {
-                const badgeId = this.dataset.badgeId;
-                if (confirm('Supprimer ce badge ?')) {
+                const succesId = this.dataset.succesId;
+                if (confirm('Supprimer ce succès ?')) {
                     try {
-                        await deleteBadge(badgeId);
-                        notyf.success('Badge supprimé');
-                        loadBadgesAdmin();
+                        await deleteSucces(succesId);
+                        notyf.success('Succès supprimé');
+                        loadSuccesAdmin();
                     } catch (error) {
                         notyf.error('Erreur de suppression');
                     }
@@ -1538,16 +1538,16 @@ function formatRequirement(requirement) {
     }
 }
 
-function initBadgeAdminListeners() {
-    // Seed badges button
-    const seedBtn = document.getElementById('seed-badges-btn');
+function initSuccesAdminListeners() {
+    // Seed succes button
+    const seedBtn = document.getElementById('seed-succes-btn');
     if (seedBtn && !seedBtn._listenerAdded) {
         seedBtn._listenerAdded = true;
         seedBtn.addEventListener('click', async () => {
             try {
-                const result = await seedDefaultBadges();
+                const result = await seedDefaultSucces();
                 notyf.success(result.message);
-                loadBadgesAdmin();
+                loadSuccesAdmin();
             } catch (error) {
                 notyf.error('Erreur lors de l\'initialisation');
             }
@@ -1555,15 +1555,15 @@ function initBadgeAdminListeners() {
     }
 
     // Cleanup duplicates button
-    const cleanupBtn = document.getElementById('cleanup-badges-btn');
+    const cleanupBtn = document.getElementById('cleanup-succes-btn');
     if (cleanupBtn && !cleanupBtn._listenerAdded) {
         cleanupBtn._listenerAdded = true;
         cleanupBtn.addEventListener('click', async () => {
-            if (!confirm('Voulez-vous supprimer les anciens badges en double ? (Cela ne supprimera que les versions avec des IDs aléatoires qui correspondent aux noms par défaut)')) return;
+            if (!confirm('Voulez-vous supprimer les anciens succès en double ? (Cela ne supprimera que les versions avec des IDs aléatoires qui correspondent aux noms par défaut)')) return;
             try {
-                const result = await cleanupDuplicateBadges();
+                const result = await cleanupDuplicateSucces();
                 notyf.success(result.message);
-                loadBadgesAdmin();
+                loadSuccesAdmin();
             } catch (error) {
                 console.error('Cleanup error:', error);
                 notyf.error('Erreur lors du nettoyage');
@@ -1571,20 +1571,20 @@ function initBadgeAdminListeners() {
         });
     }
 
-    // Add badge button
-    const addBtn = document.getElementById('add-badge-btn');
+    // Add succes button
+    const addBtn = document.getElementById('add-succes-btn');
     if (addBtn && !addBtn._listenerAdded) {
         addBtn._listenerAdded = true;
-        addBtn.addEventListener('click', () => openBadgeEditor(null));
+        addBtn.addEventListener('click', () => openSuccesEditor(null));
     }
 
     // Requirement type change
-    const reqTypeSelect = document.getElementById('badge-requirement-type');
+    const reqTypeSelect = document.getElementById('succes-requirement-type');
     if (reqTypeSelect && !reqTypeSelect._listenerAdded) {
         reqTypeSelect._listenerAdded = true;
         reqTypeSelect.addEventListener('change', function () {
-            const valueGroup = document.getElementById('badge-requirement-value-group');
-            const loyaltyGroup = document.getElementById('badge-requirement-loyalty-group');
+            const valueGroup = document.getElementById('succes-requirement-value-group');
+            const loyaltyGroup = document.getElementById('succes-requirement-loyalty-group');
 
             const typesWithValue = ['quiz_count', 'perfect_count', 'streak', 'perfect_unique_count', 'perfect_streak', 'favorite_count', 'speed_perfect', 'sunday_warrior'];
 
@@ -1593,91 +1593,91 @@ function initBadgeAdminListeners() {
         });
     }
 
-    // Badge form submit
-    const form = document.getElementById('badge-form');
+    // Succes form submit
+    const form = document.getElementById('succes-form');
     if (form && !form._listenerAdded) {
         form._listenerAdded = true;
-        form.addEventListener('submit', handleBadgeFormSubmit);
+        form.addEventListener('submit', handleSuccesFormSubmit);
     }
 
     // Cancel button
-    const cancelBtn = document.getElementById('cancel-badge-btn');
+    const cancelBtn = document.getElementById('cancel-succes-btn');
     if (cancelBtn && !cancelBtn._listenerAdded) {
         cancelBtn._listenerAdded = true;
-        cancelBtn.addEventListener('click', closeBadgeEditor);
+        cancelBtn.addEventListener('click', closeSuccesEditor);
     }
 }
 
-function openBadgeEditor(badge = null) {
-    const modal = document.getElementById('badge-editor-modal');
-    const title = document.getElementById('badge-modal-title');
-    const form = document.getElementById('badge-form');
+function openSuccesEditor(succes = null) {
+    const modal = document.getElementById('succes-editor-modal');
+    const title = document.getElementById('succes-modal-title');
+    const form = document.getElementById('succes-form');
 
-    currentEditingBadgeId = badge ? badge.id : null;
-    title.textContent = badge ? 'Modifier le Badge' : 'Nouveau Badge';
+    currentEditingSuccesId = succes ? succes.id : null;
+    title.textContent = succes ? 'Modifier le Succès' : 'Nouveau Succès';
     form.reset();
 
-    if (badge) {
-        document.getElementById('badge-id').value = badge.id;
-        document.getElementById('badge-name').value = badge.name || '';
-        document.getElementById('badge-icon').value = badge.icon || '';
-        document.getElementById('badge-description').value = badge.description || '';
-        document.getElementById('badge-category').value = badge.category || 'progression';
-        document.getElementById('badge-secret').checked = !!badge.secret;
-        document.getElementById('badge-hint').value = badge.hint || '';
+    if (succes) {
+        document.getElementById('succes-id').value = succes.id;
+        document.getElementById('succes-name').value = succes.name || '';
+        document.getElementById('succes-icon').value = succes.icon || '';
+        document.getElementById('succes-description').value = succes.description || '';
+        document.getElementById('succes-category').value = succes.category || 'progression';
+        document.getElementById('succes-secret').checked = !!succes.secret;
+        document.getElementById('succes-hint').value = succes.hint || '';
 
-        if (badge.requirement) {
-            const type = badge.requirement.type || 'first_quiz';
-            document.getElementById('badge-requirement-type').value = type;
+        if (succes.requirement) {
+            const type = succes.requirement.type || 'first_quiz';
+            document.getElementById('succes-requirement-type').value = type;
 
-            if (badge.requirement.value !== undefined) {
-                document.getElementById('badge-requirement-value').value = badge.requirement.value;
+            if (succes.requirement.value !== undefined) {
+                document.getElementById('succes-requirement-value').value = succes.requirement.value;
             }
             if (type === 'loyalty') {
-                document.getElementById('badge-requirement-days').value = badge.requirement.days || 30;
-                document.getElementById('badge-requirement-quizzes').value = badge.requirement.quizzes || 10;
+                document.getElementById('succes-requirement-days').value = succes.requirement.days || 30;
+                document.getElementById('succes-requirement-quizzes').value = succes.requirement.quizzes || 10;
             }
         }
     }
 
     // Show/hide fields based on requirement type
-    const reqType = document.getElementById('badge-requirement-type').value;
+    const reqType = document.getElementById('succes-requirement-type').value;
     const typesWithValue = ['quiz_count', 'perfect_count', 'streak', 'perfect_unique_count', 'perfect_streak', 'favorite_count', 'speed_perfect', 'sunday_warrior'];
 
-    document.getElementById('badge-requirement-value-group').style.display = typesWithValue.includes(reqType) ? 'block' : 'none';
-    document.getElementById('badge-requirement-loyalty-group').style.display = reqType === 'loyalty' ? 'block' : 'none';
+    document.getElementById('succes-requirement-value-group').style.display = typesWithValue.includes(reqType) ? 'block' : 'none';
+    document.getElementById('succes-requirement-loyalty-group').style.display = reqType === 'loyalty' ? 'block' : 'none';
 
     modal.style.display = 'flex';
 }
 
-function closeBadgeEditor() {
-    const modal = document.getElementById('badge-editor-modal');
+function closeSuccesEditor() {
+    const modal = document.getElementById('succes-editor-modal');
     if (modal) modal.style.display = 'none';
-    currentEditingBadgeId = null;
+    currentEditingSuccesId = null;
 }
 
-async function handleBadgeFormSubmit(e) {
+async function handleSuccesFormSubmit(e) {
     e.preventDefault();
 
-    const name = document.getElementById('badge-name').value.trim();
-    const icon = document.getElementById('badge-icon').value.trim() || '🏆';
-    const description = document.getElementById('badge-description').value.trim();
-    const category = document.getElementById('badge-category').value;
-    const secret = document.getElementById('badge-secret').checked;
-    const hint = document.getElementById('badge-hint').value.trim();
-    const requirementType = document.getElementById('badge-requirement-type').value;
+    const name = document.getElementById('succes-name').value.trim();
+    const icon = document.getElementById('succes-icon').value.trim() || '🏆';
+    const description = document.getElementById('succes-description').value.trim();
+    const category = document.getElementById('succes-category').value;
+    const secret = document.getElementById('succes-secret').checked;
+    const hint = document.getElementById('succes-hint').value.trim();
+    const requirementType = document.getElementById('succes-requirement-type').value;
 
     const requirement = { type: requirementType };
     const typesWithValue = ['quiz_count', 'perfect_count', 'streak', 'perfect_unique_count', 'perfect_streak', 'favorite_count', 'speed_perfect', 'sunday_warrior'];
 
     if (typesWithValue.includes(requirementType)) {
-        requirement.value = parseInt(document.getElementById('badge-requirement-value').value) || 1;
+        requirement.value = parseInt(document.getElementById('succes-requirement-value').value) || 1;
     } else if (requirementType === 'loyalty') {
-        requirement.days = parseInt(document.getElementById('badge-requirement-days').value) || 30;
-        requirement.quizzes = parseInt(document.getElementById('badge-requirement-quizzes').value) || 10;
+        requirement.days = parseInt(document.getElementById('succes-requirement-days').value) || 30;
+        requirement.quizzes = parseInt(document.getElementById('succes-requirement-quizzes').value) || 10;
     }
 
-    const badgeData = {
+    const succesData = {
         name,
         icon,
         description,
@@ -1688,29 +1688,29 @@ async function handleBadgeFormSubmit(e) {
     };
 
     try {
-        if (currentEditingBadgeId) {
-            await updateBadge(currentEditingBadgeId, badgeData);
-            notyf.success('Badge mis à jour');
+        if (currentEditingSuccesId) {
+            await updateSucces(currentEditingSuccesId, succesData);
+            notyf.success('Succès mis à jour');
         } else {
-            await createBadge(badgeData);
-            notyf.success('Badge créé');
+            await createSucces(succesData);
+            notyf.success('Succès créé');
         }
-        closeBadgeEditor();
-        loadBadgesAdmin();
+        closeSuccesEditor();
+        loadSuccesAdmin();
     } catch (error) {
-        console.error("Error saving badge:", error);
+        console.error("Error saving succes:", error);
         notyf.error("Erreur d'enregistrement");
     }
 }
 
-window.loadBadgesAdmin = loadBadgesAdmin;
+window.loadSuccesAdmin = loadSuccesAdmin;
 
 export function loadConfig() {
     const { features } = state;
 
     const checkboxes = {
         'feature-flashcards': features.flashcards,
-        'feature-badges': features.badges,
+        'feature-succes': features.succes,
         'feature-quiz': features.quiz,
         'feature-reminders': features.reminders
     };
@@ -1899,7 +1899,7 @@ function renderShopItemsAdmin(items) {
     const categoryLabels = {
         'theme': '🎨 Thème',
         'frame': '🖼️ Cadre',
-        'badge': '🏅 Badge',
+        'succes': '🏅 Succès',
         'boost': '⚡ Boost'
     };
 
@@ -2120,3 +2120,4 @@ async function handleShopItemFormSubmit(e) {
 }
 
 window.loadShopAdmin = loadShopAdmin;
+

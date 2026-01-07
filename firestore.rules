@@ -16,8 +16,8 @@ service cloud.firestore {
       // Admin can read, update, delete ANY user
       allow read, update, delete: if isAdmin();
       
-      // User badges subcollection
-      match /userBadges/{badgeId} {
+      // User succes subcollection
+      match /userSucces/{succesId} {
         allow read, create, delete: if request.auth != null && (request.auth.uid == userId || isAdmin());
       }
 
@@ -79,8 +79,8 @@ service cloud.firestore {
         allow create, update, delete: if isAdmin();
     }
 
-    // Badges collection (badge definitions)
-    match /badges/{badgeId} {
+    // Succes collection (succes definitions)
+    match /succes/{succesId} {
       allow read: if true;
       allow create, update, delete: if isAdmin();
     }

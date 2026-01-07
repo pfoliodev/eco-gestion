@@ -18,9 +18,9 @@
                 <span class="sidebar-icon">📚</span>
                 <span class="sidebar-text">Cours</span>
             </a>
-            <a href="#" class="sidebar-link" data-section="badges">
+            <a href="#" class="sidebar-link" data-section="succes">
                 <span class="sidebar-icon">🏆</span>
-                <span class="sidebar-text">Badges</span>
+                <span class="sidebar-text">Succès</span>
             </a>
             <a href="#" class="sidebar-link" data-section="reminders">
                 <span class="sidebar-icon">⏰</span>
@@ -220,30 +220,30 @@
             </div>
         </div>
 
-        <!-- Badges Section -->
-        <div id="admin-section-badges" class="admin-section">
-            <h2>Gestion des Badges</h2>
+        <!-- Succes Section -->
+        <div id="admin-section-succes" class="admin-section">
+            <h2>Gestion des Succès</h2>
 
-            <!-- Seed Badges Button -->
+            <!-- Seed Succes Button -->
             <div style="margin-bottom: 1.5rem; display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
-                <button id="seed-badges-btn" class="btn-primary">
-                    🌱 Initialiser les badges par défaut
+                <button id="seed-succes-btn" class="btn-primary">
+                    🌱 Initialiser les succès par défaut
                 </button>
-                <button id="add-badge-btn" class="btn-view" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
-                    ➕ Nouveau Badge
+                <button id="add-succes-btn" class="btn-view" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
+                    ➕ Nouveau Succès
                 </button>
-                <button id="cleanup-badges-btn" class="btn-delete"
+                <button id="cleanup-succes-btn" class="btn-delete"
                     style="padding: 0.5rem 1rem; font-size: 0.85rem; border-radius: var(--radius-md); border: none; cursor: pointer;">
                     🧹 Nettoyer les doublons
                 </button>
             </div>
 
-            <!-- Badges Table -->
-            <div class="badges-table-container">
-                <table class="badges-table">
+            <!-- Succes Table -->
+            <div class="succes-table-container">
+                <table class="succes-table">
                     <thead>
                         <tr>
-                            <th>Badge</th>
+                            <th>Succès</th>
                             <th>Nom</th>
                             <th>Description</th>
                             <th>Catégorie</th>
@@ -251,8 +251,8 @@
                             <th>Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="badges-table-body">
-                        <!-- Badges will be loaded here -->
+                    <tbody id="succes-table-body">
+                        <!-- Succes will be loaded here -->
                     </tbody>
                 </table>
             </div>
@@ -385,11 +385,11 @@
 
                 <div class="config-card">
                     <div class="config-info">
-                        <h3>🏆 Badges & Gamification</h3>
-                        <p>Masquez le système de badges et les récompenses sur le profil utilisateur.</p>
+                        <h3>🏆 Succès & Gamification</h3>
+                        <p>Masquez le système de succès et les récompenses sur le profil utilisateur.</p>
                     </div>
                     <label class="switch">
-                        <input type="checkbox" id="feature-badges" checked>
+                        <input type="checkbox" id="feature-succes" checked>
                         <span class="slider round"></span>
                     </label>
                 </div>
@@ -595,35 +595,35 @@
     </main>
 </div>
 
-<!-- Badge Editor Modal -->
-<div id="badge-editor-modal" class="modal">
+<!-- Succes Editor Modal -->
+<div id="succes-editor-modal" class="modal">
     <div class="modal-content" style="max-width: 550px;">
-        <h3 id="badge-modal-title">Nouveau Badge</h3>
-        <form id="badge-form">
-            <input type="hidden" id="badge-id">
+        <h3 id="succes-modal-title">Nouveau Succès</h3>
+        <form id="succes-form">
+            <input type="hidden" id="succes-id">
             <div class="form-group">
-                <label for="badge-name">Nom du badge *</label>
-                <input type="text" id="badge-name" placeholder="Ex: Premier Pas" required>
+                <label for="succes-name">Nom du succès *</label>
+                <input type="text" id="succes-name" placeholder="Ex: Premier Pas" required>
             </div>
             <div class="form-group">
-                <label for="badge-icon">Icône (emoji)</label>
-                <input type="text" id="badge-icon" placeholder="🏆" maxlength="4">
+                <label for="succes-icon">Icône (emoji)</label>
+                <input type="text" id="succes-icon" placeholder="🏆" maxlength="4">
             </div>
             <div class="form-group">
-                <label for="badge-description">Description</label>
-                <textarea id="badge-description" rows="2" placeholder="Description du badge..."></textarea>
+                <label for="succes-description">Description</label>
+                <textarea id="succes-description" rows="2" placeholder="Description du succès..."></textarea>
             </div>
             <div class="form-group">
-                <label for="badge-category">Catégorie</label>
-                <select id="badge-category">
+                <label for="succes-category">Catégorie</label>
+                <select id="succes-category">
                     <option value="progression">Progression</option>
                     <option value="excellence">Excellence</option>
                     <option value="special">Spécial</option>
                 </select>
             </div>
             <div class="form-group">
-                <label for="badge-requirement-type">Type de condition</label>
-                <select id="badge-requirement-type">
+                <label for="succes-requirement-type">Type de condition</label>
+                <select id="succes-requirement-type">
                     <option value="first_quiz">Premier QCM complété</option>
                     <option value="quiz_count">Nombre de QCM complétés</option>
                     <option value="perfect_score">Score parfait (100%)</option>
@@ -642,31 +642,31 @@
                     <option value="sunday_warrior">Guerrier du Dimanche</option>
                 </select>
             </div>
-            <div class="form-group" id="badge-requirement-value-group" style="display: none;">
-                <label for="badge-requirement-value">Valeur requise (Nombre / Secondes)</label>
-                <input type="number" id="badge-requirement-value" min="1" value="1">
+            <div class="form-group" id="succes-requirement-value-group" style="display: none;">
+                <label for="succes-requirement-value">Valeur requise (Nombre / Secondes)</label>
+                <input type="number" id="succes-requirement-value" min="1" value="1">
             </div>
-            <div id="badge-requirement-loyalty-group" style="display: none;">
+            <div id="succes-requirement-loyalty-group" style="display: none;">
                 <div class="form-group">
-                    <label for="badge-requirement-days">Jours d'ancienneté</label>
-                    <input type="number" id="badge-requirement-days" min="1" value="30">
+                    <label for="succes-requirement-days">Jours d'ancienneté</label>
+                    <input type="number" id="succes-requirement-days" min="1" value="30">
                 </div>
                 <div class="form-group">
-                    <label for="badge-requirement-quizzes">QCM complétés</label>
-                    <input type="number" id="badge-requirement-quizzes" min="1" value="10">
+                    <label for="succes-requirement-quizzes">QCM complétés</label>
+                    <input type="number" id="succes-requirement-quizzes" min="1" value="10">
                 </div>
             </div>
             <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem; margin-top: 1rem;">
-                <input type="checkbox" id="badge-secret" style="width: auto;">
-                <label for="badge-secret" style="margin: 0;">Badge Secret (Masqué si verrouillé)</label>
+                <input type="checkbox" id="succes-secret" style="width: auto;">
+                <label for="succes-secret" style="margin: 0;">Succès Secret (Masqué si verrouillé)</label>
             </div>
-            <div class="form-group" id="badge-hint-group">
-                <label for="badge-hint">Indice (affiché si secret et verrouillé)</label>
-                <textarea id="badge-hint" rows="1" placeholder="Ex: Il va falloir être rapide..."></textarea>
+            <div class="form-group" id="succes-hint-group">
+                <label for="succes-hint">Indice (affiché si secret et verrouillé)</label>
+                <textarea id="succes-hint" rows="1" placeholder="Ex: Il va falloir être rapide..."></textarea>
             </div>
             <div class="form-actions" style="display: flex; gap: 1rem; margin-top: 1.5rem;">
                 <button type="submit" class="btn-primary" style="flex: 1;">Enregistrer</button>
-                <button type="button" id="cancel-badge-btn" class="btn-cancel">Annuler</button>
+                <button type="button" id="cancel-succes-btn" class="btn-cancel">Annuler</button>
             </div>
         </form>
     </div>
@@ -696,7 +696,7 @@
                     <select id="shop-item-category" required>
                         <option value="theme">🎨 Thème</option>
                         <option value="frame">🖼️ Cadre</option>
-                        <option value="badge">🏅 Badge</option>
+                        <option value="succes">🏅 Succès</option>
                         <option value="boost">⚡ Boost</option>
                     </select>
                 </div>

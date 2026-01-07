@@ -34,9 +34,9 @@ _#/|##########/\######(   /\   )######/\##########|\#_
                 <span class="sidebar-icon">📊</span>
                 <span class="sidebar-text">Mes Statistiques</span>
             </a>
-            <a href="#" class="sidebar-link" data-account-section="badges">
+            <a href="#" class="sidebar-link" data-account-section="succes">
                 <span class="sidebar-icon">🏆</span>
-                <span class="sidebar-text">Mes Badges</span>
+                <span class="sidebar-text">Mes Succès</span>
             </a>
             <a href="#" class="sidebar-link" data-account-section="pet">
                 <span class="sidebar-icon">🐾</span>
@@ -140,8 +140,8 @@ _#/|##########/\######(   /\   )######/\##########|\#_
                 </div>
                 <div class="user-stat-card">
                     <div class="stat-icon">🏆</div>
-                    <div class="stat-value" id="user-stat-badges-count">-</div>
-                    <div class="stat-label">Badges débloqués</div>
+                    <div class="stat-value" id="user-stat-succes-count">-</div>
+                    <div class="stat-label">Succès débloqués</div>
                 </div>
                 <div class="user-stat-card">
                     <div class="stat-icon">⭐</div>
@@ -178,18 +178,18 @@ _#/|##########/\######(   /\   )######/\##########|\#_
             </div>
         </div>
 
-        <!-- Badges Section -->
-        <div id="account-section-badges" class="account-section">
+        <!-- Succes Section -->
+        <div id="account-section-succes" class="account-section">
             <div class="account-section-header">
-                <h2>🏆 Mes Badges</h2>
-                <div class="badge-filters">
-                    <button class="filter-btn active" data-badge-filter="all">Tous</button>
-                    <button class="filter-btn" data-badge-filter="unlocked">Débloqués</button>
-                    <button class="filter-btn" data-badge-filter="in-progress">En cours</button>
-                    <button class="filter-btn" data-badge-filter="locked">Verrouillés</button>
+                <h2>🏆 Mes Succès</h2>
+                <div class="succes-filters">
+                    <button class="filter-btn active" data-succes-filter="all">Tous</button>
+                    <button class="filter-btn" data-succes-filter="unlocked">Débloqués</button>
+                    <button class="filter-btn" data-succes-filter="in-progress">En cours</button>
+                    <button class="filter-btn" data-succes-filter="locked">Verrouillés</button>
                 </div>
             </div>
-            <div id="badges-container" class="badges-grid">
+            <div id="succes-container" class="succes-grid">
                 <div style="text-align: center; padding: 2rem; color: var(--text-secondary);">Chargement...</div>
             </div>
         </div>
@@ -249,7 +249,7 @@ _#/|##########/\######(   /\   )######/\##########|\#_
                     <button class="filter-btn active" data-inventory-filter="all">Tout</button>
                     <button class="filter-btn" data-inventory-filter="theme">Thèmes</button>
                     <button class="filter-btn" data-inventory-filter="frame">Cadres</button>
-                    <button class="filter-btn" data-inventory-filter="badge">Badges</button>
+                    <button class="filter-btn" data-inventory-filter="succes">Succès</button>
                 </div>
                 <div id="inventory-items-grid" class="inventory-grid">
                     <div style="text-align: center; padding: 2rem; color: var(--text-secondary);">

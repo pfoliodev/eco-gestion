@@ -8,6 +8,7 @@
 .archived-courses-table-container,
 .archived-users-table-container,
 .badges-table-container,
+.succes-table-container,
 .reminders-table-container {
     overflow-x: auto;
     border: 1px solid var(--border-color);
@@ -22,6 +23,7 @@
 .archived-courses-table,
 .archived-users-table,
 .badges-table,
+.succes-table,
 .reminders-table {
     width: 100%;
     border-collapse: collapse;
@@ -33,6 +35,7 @@
 .archived-courses-table thead,
 .archived-users-table thead,
 .badges-table thead,
+.succes-table thead,
 .reminders-table thead {
     background-color: var(--surface-hover);
     border-bottom: 2px solid var(--border-color);
@@ -44,6 +47,7 @@
 .archived-courses-table th,
 .archived-users-table th,
 .badges-table th,
+.succes-table th,
 .reminders-table th {
     padding: 1rem;
     text-align: left;
@@ -60,6 +64,7 @@
 .archived-courses-table td,
 .archived-users-table td,
 .badges-table td,
+.succes-table td,
 .reminders-table td {
     padding: 1rem;
     border-bottom: 1px solid var(--border-color);
@@ -73,6 +78,7 @@
 .archived-courses-table tbody tr:last-child td,
 .archived-users-table tbody tr:last-child td,
 .badges-table tbody tr:last-child td,
+.succes-table tbody tr:last-child td,
 .reminders-table tbody tr:last-child td {
     border-bottom: none;
 }
@@ -83,6 +89,7 @@
 .archived-courses-table tbody tr:hover,
 .archived-users-table tbody tr:hover,
 .badges-table tbody tr:hover,
+.succes-table tbody tr:hover,
 .reminders-table tbody tr:hover {
     background-color: var(--surface-hover);
 }
@@ -91,7 +98,8 @@
 .courses-table,
 .bugs-table,
 .archived-courses-table,
-.badges-table {
+.badges-table,
+.succes-table {
     table-layout: fixed;
 }
 
@@ -147,34 +155,46 @@
     width: 18%;
 }
 
-/* Column widths for badges table */
+/* Column widths for badges/succes table */
 .badges-table th:nth-child(1),
-.badges-table td:nth-child(1) {
+.badges-table td:nth-child(1),
+.succes-table th:nth-child(1),
+.succes-table td:nth-child(1) {
     width: 80px;
 }
 
 .badges-table th:nth-child(2),
-.badges-table td:nth-child(2) {
+.badges-table td:nth-child(2),
+.succes-table th:nth-child(2),
+.succes-table td:nth-child(2) {
     width: 15%;
 }
 
 .badges-table th:nth-child(3),
-.badges-table td:nth-child(3) {
+.badges-table td:nth-child(3),
+.succes-table th:nth-child(3),
+.succes-table td:nth-child(3) {
     width: 30%;
 }
 
 .badges-table th:nth-child(4),
-.badges-table td:nth-child(4) {
+.badges-table td:nth-child(4),
+.succes-table th:nth-child(4),
+.succes-table td:nth-child(4) {
     width: 15%;
 }
 
 .badges-table th:nth-child(5),
-.badges-table td:nth-child(5) {
+.badges-table td:nth-child(5),
+.succes-table th:nth-child(5),
+.succes-table td:nth-child(5) {
     width: 20%;
 }
 
 .badges-table th:nth-child(6),
-.badges-table td:nth-child(6) {
+.badges-table td:nth-child(6),
+.succes-table th:nth-child(6),
+.succes-table td:nth-child(6) {
     width: 100px;
 }
 

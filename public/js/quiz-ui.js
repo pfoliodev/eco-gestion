@@ -7,7 +7,7 @@ import {
     submitQuizResult,
     getUserQuizBestScore
 } from './quiz.js';
-import { checkAndUnlockBadges, updateStreakData, updatePerfectStreakData } from './badges.js';
+import { checkAndUnlockSucces, updateStreakData, updatePerfectStreakData } from './succes.js';
 import { notyf, showPage } from './ui.js';
 import { state } from './state.js';
 import { auth, db } from './firebase.js';
@@ -406,7 +406,7 @@ function renderQuizPlayer() {
             await updatePerfectStreakData(score === currentQuizQuestions.length);
 
             // Check and unlock badges after quiz completion
-            await checkAndUnlockBadges(currentQuiz.id, score, currentQuizQuestions.length, currentQuiz.title, currentQuiz.courseId, { duration });
+            await checkAndUnlockSucces(currentQuiz.id, score, currentQuizQuestions.length, currentQuiz.title, currentQuiz.courseId, { duration });
 
             // Award IFH Coins for quiz completion
             const userStreak = state.user?.quizStreak || 0;
