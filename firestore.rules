@@ -48,6 +48,12 @@ service cloud.firestore {
         allow read: if isAdmin();
     }
 
+    // Professor Dialogues
+    match /professor_dialogues/{categoryId} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+
     // Courses collection
     match /courses/{courseId} {
       allow read: if true;

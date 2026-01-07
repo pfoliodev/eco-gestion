@@ -38,6 +38,10 @@
                 <span class="sidebar-icon">👤</span>
                 <span class="sidebar-text">Utilisateurs Archivés</span>
             </a>
+            <a href="#" class="sidebar-link" data-section="professors">
+                <span class="sidebar-icon">🎓</span>
+                <span class="sidebar-text">Professeurs</span>
+            </a>
             <a href="#" class="sidebar-link" data-section="config">
                 <span class="sidebar-icon">⚙️</span>
                 <span class="sidebar-text">Configuration</span>
@@ -363,6 +367,40 @@
                         <!-- Archived users will be loaded here -->
                     </tbody>
                 </table>
+            </div>
+        </div>
+
+        <!-- Professors Configuration Section -->
+        <div id="admin-section-professors" class="admin-section">
+            <h2>Dialogues Professeurs</h2>
+            <p class="section-intro">Configurez les messages d'accueil des professeurs pour chaque catégorie.</p>
+
+            <div class="prof-config-container"
+                style="background: var(--surface-color); padding: 1.5rem; border-radius: var(--radius-lg); border: 1px solid var(--border-color);">
+                <div class="form-group">
+                    <label for="prof-category-select">Choisir une catégorie</label>
+                    <select id="prof-category-select" class="form-control" style="margin-bottom: 1.5rem;">
+                        <option value="">Sélectionner...</option>
+                        <option value="eco-gestion">Eco/Gestion (Mme Benais)</option>
+                        <option value="english-hospitality">English in Hospitality (Prof Anglais)</option>
+                        <option value="marketing">Fondamentaux du Marketing (Prof Marketing)</option>
+                    </select>
+                </div>
+
+                <div id="prof-dialogues-editor" style="display: none;">
+                    <div id="prof-messages-list">
+                        <!-- Messages inputs will be injected here -->
+                    </div>
+
+                    <button id="add-prof-message-btn" class="btn-secondary" style="margin-top: 1rem;">
+                        <span>➕ Ajouter un message</span>
+                    </button>
+
+                    <div class="form-actions"
+                        style="margin-top: 2rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+                        <button id="save-prof-dialogues-btn" class="btn-primary">Enregistrer les dialogues</button>
+                    </div>
+                </div>
             </div>
         </div>
 
