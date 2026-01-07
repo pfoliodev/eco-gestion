@@ -1,9 +1,21 @@
 <div class="container">
     <div class="courses-header">
-        <h2>Mes Cours</h2>
+        <div class="courses-header-left">
+            <button id="back-to-categories-btn" class="btn-back" style="display: none;">
+                ← Retour aux catégories
+            </button>
+            <h2 id="courses-title">Mes Cours</h2>
+        </div>
         <button id="add-course-btn" class="btn-primary">+ Ajouter un cours</button>
     </div>
-    <div class="course-controls">
+
+    <!-- Category Grid (initial view) -->
+    <div id="category-grid" class="category-grid">
+        <!-- Categories will be generated dynamically -->
+    </div>
+
+    <!-- Course Controls (hidden until category selected) -->
+    <div id="course-controls" class="course-controls" style="display: none;">
         <input type="text" id="course-search" placeholder="Rechercher un cours..." class="search-input">
         <select id="course-type-filter" class="filter-select">
             <option value="">Tous les types</option>
@@ -15,7 +27,9 @@
             <option value="">Tous les sujets</option>
         </select>
     </div>
-    <div class="course-grid" id="course-grid">
+
+    <!-- Course Grid (hidden until category selected) -->
+    <div class="course-grid" id="course-grid" style="display: none;">
         <!-- Les cours seront générés dynamiquement -->
     </div>
 </div>

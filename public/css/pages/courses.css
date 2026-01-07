@@ -6,10 +6,202 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    -webkit-box-orient: vertical;
-    line-clamp: 3;
-    overflow: hidden;
+    margin-bottom: 2rem;
 }
+
+.courses-header-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.courses-header-left h2 {
+    margin: 0;
+}
+
+/* Back Button */
+.btn-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    color: var(--text-main);
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-back:hover {
+    background: var(--surface-hover);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+/* ========================================
+   CATEGORY GRID
+   ======================================== */
+
+.category-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+@media (max-width: 768px) {
+    .category-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Category Card Base */
+.category-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2.5rem 2rem;
+    border-radius: var(--radius-xl, 1rem);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    overflow: hidden;
+    min-height: 280px;
+}
+
+.category-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    opacity: 0.1;
+    transition: opacity 0.3s ease;
+}
+
+.category-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+.category-card:hover::before {
+    opacity: 0.15;
+}
+
+/* Eco/Gestion Theme - Blue/Teal */
+.category-card.eco-gestion {
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0d9488 100%);
+    border: 2px solid #14b8a6;
+}
+
+.category-card.eco-gestion:hover {
+    border-color: #2dd4bf;
+    box-shadow: 0 20px 40px rgba(20, 184, 166, 0.25);
+}
+
+/* English in Hospitality Theme - Purple/Pink */
+.category-card.english-hospitality {
+    background: linear-gradient(135deg, #1e1b4b 0%, #4c1d95 50%, #be185d 100%);
+    border: 2px solid #a855f7;
+}
+
+.category-card.english-hospitality:hover {
+    border-color: #d8b4fe;
+    box-shadow: 0 20px 40px rgba(168, 85, 247, 0.25);
+}
+
+/* Marketing Theme - Blue/Indigo */
+.category-card.marketing {
+    background: linear-gradient(135deg, #0f1c3f 0%, #1e3a8a 50%, #3b82f6 100%);
+    border: 2px solid #60a5fa;
+}
+
+.category-card.marketing:hover {
+    border-color: #93c5fd;
+    box-shadow: 0 20px 40px rgba(59, 130, 246, 0.25);
+}
+
+/* Default Theme - Slate/Blue Grey */
+.category-card.default {
+    background: linear-gradient(135deg, #334155 0%, #475569 50%, #64748b 100%);
+    border: 2px solid #94a3b8;
+}
+
+.category-card.default:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 20px 40px rgba(148, 163, 184, 0.25);
+}
+
+/* Professor Image */
+.category-prof-img {
+    height: 160px;
+    object-fit: contain;
+    margin-bottom: 1.5rem;
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3));
+    transition: transform 0.3s ease;
+}
+
+.category-card:hover .category-prof-img {
+    transform: scale(1.1);
+}
+
+/* Category Content */
+.category-content {
+    text-align: center;
+    z-index: 1;
+}
+
+.category-name {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: white;
+    margin: 0 0 0.75rem 0;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.category-count {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(4px);
+    border-radius: 20px;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.category-count::before {
+    content: '📚';
+}
+
+/* Category Arrow Icon */
+.category-arrow {
+    position: absolute;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    color: white;
+    font-size: 1.25rem;
+    transition: all 0.3s ease;
+}
+
+.category-card:hover .category-arrow {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateX(4px);
+}
+
 
 /* Course Admin Section */
 .course-admin-section {

@@ -1,12 +1,48 @@
 import { db, coursesCollection, auth } from './firebase.js';
 import { getDocs, doc, deleteDoc, updateDoc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js";
-import { state, setCourses, setCurrentCourseId } from './state.js';
+import { state, setCourses, setCurrentCourseId, setUserProgress } from './state.js';
 import { notyf, showPage } from './ui.js';
 import { updateCourseFlashcardsSidebar } from './flashcard-ui.js';
 import { renderQuizList, renderQuizAdmin } from './quiz-ui.js';
+import { getAllUserBestScores } from './quiz.js';
 import { trackCourseView, getCourseViewers, getCourseViewersCount, getAllCourseViewers, renderViewerAvatars, renderViewersList } from './courseViews.js';
 import { escapeHtml, sanitizeAttribute } from './security.js';
 import { applyFeatureFlags } from './features.js';
+
+// Module state for category navigation
+let currentCategory = null;
+
+// Categories configuration
+const CATEGORIES_CONFIG = {
+    'Eco/Gestion': {
+        id: 'eco-gestion',
+        label: 'Eco/Gestion',
+        className: 'eco-gestion',
+        image: '/images/prof/prof_ecogestion.png'
+    },
+    'English in Hospitality': {
+        id: 'english-hospitality',
+        label: 'English in Hospitality',
+        className: 'english-hospitality',
+        image: '/images/prof/prof_english.png'
+    },
+    'Fondamentaux du marketing': {
+        id: 'marketing',
+        label: 'Fondamentaux du marketing',
+        className: 'marketing',
+        image: '/images/prof/prof_marketing.png'
+    }
+};
+
+// Helper to normalize category
+const normalizeCategory = (cat) => {
+    if (!cat) return 'Autre';
+    const lower = cat.toLowerCase();
+    if (lower.includes('english') || lower.includes('anglais')) return 'English in Hospitality';
+    if (lower.includes('eco') || lower.includes('gestion')) return 'Eco/Gestion';
+    if (lower.includes('marketing')) return 'Fondamentaux du marketing';
+    return cat;
+};
 
 export async function loadCourses() {
     try {
@@ -34,74 +70,218 @@ export async function loadCourses() {
         const activeCourses = data.filter(course => !course.archived);
 
         setCourses(activeCourses);
-        renderCourses();
-        updateFilters();
+
+        // Initialize back button listener
+        const backBtn = document.getElementById('back-to-categories-btn');
+        if (backBtn) {
+            backBtn.onclick = backToCategories;
+        }
+
+        // Load User Quiz Progress (Moved to auth.js to wait for login)
+        // if (auth.currentUser) { ... }
+
+        // Update global stats (for Home page)
+        updateGlobalStats();
+
+        // Load recent courses (for Home page)
+        loadRecentCourses();
+
+        // Initial render: Categories view
+        renderCategories();
+
     } catch (error) {
+        console.error(error);
         notyf.error("Erreur de chargement des cours.");
     }
 }
 
+export function updateGlobalStats() {
+    const numCourses = state.courses.filter(c => c.type === 'cours' || !c.type).length;
+    const numExercises = state.courses.filter(c => c.type === 'exercice').length;
+
+    // Attempt to find stat elements (present on Home page)
+    const statCourses = document.getElementById('stat-courses');
+    const statExercises = document.getElementById('stat-exercises');
+
+    if (statCourses) statCourses.textContent = numCourses;
+    if (statExercises) statExercises.textContent = numExercises;
+}
+
+export function renderCategories() {
+    const categoryGrid = document.getElementById('category-grid');
+    const courseGrid = document.getElementById('course-grid');
+    const courseControls = document.getElementById('course-controls');
+    const backBtn = document.getElementById('back-to-categories-btn');
+    const title = document.getElementById('courses-title');
+
+    if (!categoryGrid) return;
+
+    // Reset view to categories
+    categoryGrid.style.display = 'grid';
+    courseGrid.style.display = 'none';
+    courseControls.style.display = 'none';
+    if (backBtn) backBtn.style.display = 'none';
+    if (title) title.textContent = 'Mes Cours';
+
+    // Count courses per category
+    const counts = {};
+    state.courses.forEach(c => {
+        const cat = normalizeCategory(c.category);
+        counts[cat] = (counts[cat] || 0) + 1;
+    });
+    console.log("Categories found:", counts);
+
+    // Dynamic Category Discovery
+    const priorityCategories = ['Eco/Gestion', 'English in Hospitality', 'Fondamentaux du marketing'];
+    const otherCategories = Object.keys(counts).filter(c => !priorityCategories.includes(c) && c !== 'Autre').sort();
+
+    // Merge lists: Priority first, then others
+    const categoriesToRender = [...priorityCategories, ...otherCategories];
+
+    // Always include 'Autre' at the end if it has any courses
+    if (counts['Autre'] > 0) {
+        categoriesToRender.push('Autre');
+    }
+
+    categoryGrid.innerHTML = categoriesToRender.map(catName => {
+        const config = CATEGORIES_CONFIG[catName] || {
+            className: 'default',
+            label: catName,
+            image: null // No image for dynamic categories yet
+        };
+        const count = counts[catName] || 0;
+
+        // If category has no courses (and is essential config), show 0, else maybe hide? 
+        // Showing 0 is fine for main categories. Dynamic ones only appear if count > 0 anyway (from keys logic).
+        // Except if a priority category has 0 courses, it still appears (which is desired).
+
+        const imageHtml = config.image
+            ? `<img src="${config.image}" alt="Professeur ${config.label}" class="category-prof-img">`
+            : `<div class="category-prof-img" style="font-size: 80px; display: flex; align-items: center; justify-content: center;">📚</div>`;
+
+        return `
+        <div class="category-card ${config.className}" onclick="selectCategory('${catName.replace(/'/g, "\\'")}')">
+            ${imageHtml}
+            <div class="category-content">
+                <h3 class="category-name">${config.label}</h3>
+                <span class="category-count">${count} cours</span>
+            </div>
+            <div class="category-arrow">➜</div>
+        </div>
+        `;
+    }).join('');
+}
+
+// Ensure selectCategory is globally available for onclick
+window.selectCategory = function (category) {
+    currentCategory = category;
+    renderCourses();
+};
+
+export function backToCategories() {
+    currentCategory = null;
+    renderCategories();
+}
+
 export function renderCourses() {
     const grid = document.getElementById('course-grid');
+    const categoryGrid = document.getElementById('category-grid');
+    const courseControls = document.getElementById('course-controls');
+    const backBtn = document.getElementById('back-to-categories-btn');
+    const title = document.getElementById('courses-title');
+
     if (!grid) return;
+
+    // If no category selected, show categories instead
+    if (!currentCategory) {
+        renderCategories();
+        return;
+    }
+
+    // Switch view to courses
+    if (categoryGrid) categoryGrid.style.display = 'none';
+    grid.style.display = 'grid';
+    if (courseControls) courseControls.style.display = 'flex';
+    if (backBtn) backBtn.style.display = 'inline-flex';
+    if (title) title.textContent = currentCategory;
 
     const searchTerm = document.getElementById('course-search')?.value.toLowerCase() || '';
     const subjectFilter = document.getElementById('course-filter')?.value || '';
     const typeFilter = document.getElementById('course-type-filter')?.value || '';
 
     let filteredCourses = state.courses.filter(course => {
+        // Category Filter (Critical!)
+        if (normalizeCategory(course.category) !== currentCategory) return false;
+
         const matchesSearch = course.title.toLowerCase().includes(searchTerm) ||
             course.subject.toLowerCase().includes(searchTerm) ||
             course.description.toLowerCase().includes(searchTerm);
+
+        // Subject filter might be redundant with category but keeping it for sub-filtering if needed
         const matchesSubject = !subjectFilter || course.subject === subjectFilter;
-        // Handle 'cours' type which can be null/undefined in DB
+
         const currentType = course.type || 'cours';
         const matchesType = !typeFilter || currentType === typeFilter;
 
         return matchesSearch && matchesSubject && matchesType;
     });
 
-    grid.innerHTML = filteredCourses.map(course => {
-        const type = course.type || 'cours';
-        const typeLabel = type.charAt(0).toUpperCase() + type.slice(1);
-        const dateStr = course.createdAt ? new Date(course.createdAt.seconds * 1000).toLocaleDateString('fr-FR') : new Date().toLocaleDateString('fr-FR');
+    if (filteredCourses.length === 0) {
+        grid.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: var(--text-secondary); padding: 2rem;">Aucun cours trouvé dans cette catégorie.</p>`;
+    } else {
+        grid.innerHTML = filteredCourses.map(course => {
+            const type = course.type || 'cours';
+            const typeLabel = type.charAt(0).toUpperCase() + type.slice(1);
+            const dateStr = course.createdAt ? new Date(course.createdAt.seconds * 1000).toLocaleDateString('fr-FR') : new Date().toLocaleDateString('fr-FR');
 
-        // Sanitize all user-controlled data
-        const safeTitle = escapeHtml(course.title);
-        const safeSubject = escapeHtml(course.subject);
-        const safeCategory = escapeHtml(course.category);
-        const safeAuthor = escapeHtml(course.author || 'Anonyme');
-        const safeDescription = escapeHtml(course.description);
-        const safeId = sanitizeAttribute(course.id);
+            // Sanitize all user-controlled data
+            const safeTitle = escapeHtml(course.title);
+            const safeSubject = escapeHtml(course.subject);
+            const safeCategory = escapeHtml(course.category);
+            const safeAuthor = escapeHtml(course.author || 'Anonyme');
+            const safeDescription = escapeHtml(course.description);
+            const safeId = sanitizeAttribute(course.id);
 
-        return `
-        <div class="course-card" data-course-id="${safeId}">
-            ${state.user ? `
-            <button class="btn-favorite" data-course-id="${safeId}" onclick="toggleFavorite('${safeId}')" title="Ajouter aux favoris">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-                </svg>
-            </button>
-            ` : ''}
-            <h3>${safeTitle}</h3>
-            <div class="course-card-content">
-                <div class="course-tags">
-                    <span class="course-subject-tag">${safeSubject}</span>
-                    <span class="course-type-tag type-${type}">${typeLabel}</span>
+            // Quiz Progress Badge
+            let progressHtml = '';
+            if (state.userProgress && state.userProgress[course.id]) {
+                const p = state.userProgress[course.id];
+                if (p.validated) {
+                    progressHtml = `<span class="course-progress-tag success" title="QCM Validé : ${p.percent}%">✅ ${p.percent}%</span>`;
+                } else {
+                    progressHtml = `<span class="course-progress-tag progress" title="Meilleur score : ${p.percent}%">⚡ ${p.percent}%</span>`;
+                }
+            }
+
+            return `
+            <div class="course-card" data-course-id="${safeId}">
+                ${state.user ? `
+                <button class="btn-favorite" data-course-id="${safeId}" onclick="toggleFavorite('${safeId}')" title="Ajouter aux favoris">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                    </svg>
+                </button>
+                ` : ''}
+                <h3>${safeTitle}</h3>
+                <div class="course-card-content">
+                    <div class="course-tags">
+                        <span class="course-subject-tag">${safeSubject}</span>
+                        <span class="course-type-tag type-${type}">${typeLabel}</span>
+                        ${progressHtml}
+                    </div>
+                    <div class="course-metadata">
+                        <span>👤 ${safeAuthor}</span>
+                        <span>📅 ${dateStr}</span>
+                    </div>
                 </div>
-                ${course.category ? `<div class="course-category-info"><strong>Catégorie :</strong> ${safeCategory}</div>` : ''}
-                <div class="course-metadata">
-                    <span>👤 ${safeAuthor}</span>
-                    <span>📅 ${dateStr}</span>
+                <p>${safeDescription}</p>
+                <div class="course-card-footer">
+                    <div class="course-viewers-preview" id="viewers-${safeId}"></div>
+                    <button class="btn-view" data-id="${safeId}">Voir le cours</button>
                 </div>
             </div>
-            <p>${safeDescription}</p>
-            <div class="course-card-footer">
-                <div class="course-viewers-preview" id="viewers-${safeId}"></div>
-                <button class="btn-view" data-id="${safeId}">Voir le cours</button>
-            </div>
-        </div>
-    `}).join('');
+        `}).join('');
+    }
 
     // Update favorite buttons status
     if (state.user) {
@@ -113,24 +293,43 @@ export function renderCourses() {
         loadCourseCardViewers(filteredCourses);
     }
 
-    // Update stats
+    // Update stats (global or filtered? maybe filtered by category is better here)
+    // Actually the logic for global stats usually sits outside this, currently just keeping it updated relative to view might be confusing
+    // Let's stick to global stats or filtered stats? 
+    // The previous code calculated stats based on `state.courses` (all). Let's keep it based on filtered for context or all?
+    // User asked for "Mes cours" -> Categories -> Courses. 
+    // Let's recalculate stats based on ALL courses to show total platform content, logic was:
     const numCourses = state.courses.filter(c => c.type === 'cours' || !c.type).length;
     const numExercises = state.courses.filter(c => c.type === 'exercice').length;
+
+    // Attempt to find stat elements
     const statCourses = document.getElementById('stat-courses');
     const statExercises = document.getElementById('stat-exercises');
     if (statCourses) statCourses.textContent = numCourses;
     if (statExercises) statExercises.textContent = numExercises;
 
-    // Load recent courses for homepage
-    loadRecentCourses();
+    // Update filters based on filtered courses (so subject filter only shows subjects in this category)
+    updateFilters(filteredCourses);
 }
 
-export function updateFilters() {
+export function updateFilters(currentCourses = state.courses) {
     const filter = document.getElementById('course-filter');
     if (!filter) return;
-    const subjects = [...new Set(state.courses.map(course => course.subject))];
+
+    // If inside a category, we might want to filter subjects available only in that category
+    // But updateFilters is called initially with all courses.
+    // Let's rely on the passed courses.
+
+    const subjects = [...new Set(currentCourses.map(course => course.subject))];
+    const currentVal = filter.value;
+
     filter.innerHTML = '<option value="">Tous les sujets</option>' +
         subjects.map(subject => `<option value="${subject}">${subject}</option>`).join('');
+
+    // Restore selection if possible
+    if (currentVal && subjects.includes(currentVal)) {
+        filter.value = currentVal;
+    }
 }
 
 export function viewCourse(id) {
