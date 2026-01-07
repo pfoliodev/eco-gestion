@@ -188,3 +188,30 @@ export async function getUserQuizHistory(quizId) {
         .filter(r => r.quizId === quizId)
         .sort((a, b) => (b.completedAt?.seconds || 0) - (a.completedAt?.seconds || 0));
 }
+
+// Get all user best scores mapped by courseId
+export async function getAllUserBestScores() {
+    if (!auth.currentUser) return {};
+
+    const q = query(resultsCollection, where("userId", "==", auth.currentUser.uid));
+    const snapshot = await getDocs(q);
+
+    const bestScores = {};
+
+    snapshot.docs.forEach(doc => {
+        const data = doc.data();
+        const courseId = data.courseId;
+        if (!courseId || !data.totalQuestions) return;
+
+        const percent = (data.score / data.totalQuestions) * 100;
+
+        if (!bestScores[courseId] || percent > bestScores[courseId].percent) {
+            bestScores[courseId] = {
+                percent: Math.round(percent),
+                validated: percent >= 80
+            };
+        }
+    });
+
+    return bestScores;
+}

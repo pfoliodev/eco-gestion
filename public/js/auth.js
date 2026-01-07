@@ -2,7 +2,8 @@ import { auth, db } from './firebase.js';
 import { seedDefaultSucces } from './succes.js';
 import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js";
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-auth.js";
-import { setIsAdmin, setUser, state } from './state.js';
+import { setIsAdmin, setUser, state, setUserProgress } from './state.js';
+import { getAllUserBestScores } from './quiz.js';
 import { notyf, showPage } from './ui.js';
 import { getUserBalance, initBalanceListener, updateBalanceDisplay, addCoins } from './coins.js';
 import { ECONOMY } from './config/economy.js';
@@ -186,6 +187,15 @@ export function initAuth() {
                 // Hide admin options in dropdown
                 if (dropdownAdmin) dropdownAdmin.style.display = 'none';
                 if (dropdownAdminDivider) dropdownAdminDivider.style.display = 'none';
+            }
+
+            // Load User Quiz Progress
+            try {
+                const progress = await getAllUserBestScores();
+                setUserProgress(progress);
+                console.log("User progress loaded:", progress);
+            } catch (e) {
+                console.error("Error loading progress:", e);
             }
 
             // Reload courses to show favorite buttons
