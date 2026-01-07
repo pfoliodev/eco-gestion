@@ -1,5 +1,5 @@
 import { db, coursesCollection, auth } from './firebase.js';
-import { getDocs, doc, deleteDoc, updateDoc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js";
+import { getDocs, doc, deleteDoc, updateDoc, addDoc, serverTimestamp, collection } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js";
 import { state, setCourses, setCurrentCourseId, setUserProgress } from './state.js';
 import { notyf, showPage } from './ui.js';
 import { updateCourseFlashcardsSidebar } from './flashcard-ui.js';
@@ -8,6 +8,7 @@ import { getAllUserBestScores } from './quiz.js';
 import { trackCourseView, getCourseViewers, getCourseViewersCount, getAllCourseViewers, renderViewerAvatars, renderViewersList } from './courseViews.js';
 import { escapeHtml, sanitizeAttribute } from './security.js';
 import { applyFeatureFlags } from './features.js';
+import { playProfessorCinematic } from './cinematic.js';
 
 // Module state for category navigation
 let currentCategory = null;
@@ -70,6 +71,15 @@ export async function loadCourses() {
         const activeCourses = data.filter(course => !course.archived);
 
         setCourses(activeCourses);
+
+        // Load Professor Dialogues
+        try {
+            const dialogSnap = await getDocs(collection(db, 'professor_dialogues'));
+            state.profDialogues = {};
+            dialogSnap.forEach(doc => {
+                state.profDialogues[doc.id] = doc.data().messages;
+            });
+        } catch (e) { console.error("Error loading dialogues", e); }
 
         // Initialize back button listener
         const backBtn = document.getElementById('back-to-categories-btn');
@@ -147,20 +157,24 @@ export function renderCategories() {
         const config = CATEGORIES_CONFIG[catName] || {
             className: 'default',
             label: catName,
-            image: null // No image for dynamic categories yet
+            image: null,
+            id: null
         };
         const count = counts[catName] || 0;
-
-        // If category has no courses (and is essential config), show 0, else maybe hide? 
-        // Showing 0 is fine for main categories. Dynamic ones only appear if count > 0 anyway (from keys logic).
-        // Except if a priority category has 0 courses, it still appears (which is desired).
 
         const imageHtml = config.image
             ? `<img src="${config.image}" alt="Professeur ${config.label}" class="category-prof-img">`
             : `<div class="category-prof-img" style="font-size: 80px; display: flex; align-items: center; justify-content: center;">📚</div>`;
 
+        // Cinematic Button logic
+        let playBtnHtml = '';
+        if (config.id && state.profDialogues && state.profDialogues[config.id] && state.profDialogues[config.id].length > 0) {
+            playBtnHtml = `<button class="btn-play-cinematic" onclick="event.stopPropagation(); window.playCinematic('${config.id}')" style="position: absolute; top: 15px; right: 15px; z-index: 10; width: 44px; height: 44px; border-radius: 50%; background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.4); font-size: 1.5rem; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); transition: transform 0.2s, background 0.2s;" onmouseover="this.style.transform='scale(1.1)'; this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.transform='scale(1)'; this.style.background='rgba(255,255,255,0.2)'" title="Message du professeur">💬</button>`;
+        }
+
         return `
         <div class="category-card ${config.className}" onclick="selectCategory('${catName.replace(/'/g, "\\'")}')">
+            ${playBtnHtml}
             ${imageHtml}
             <div class="category-content">
                 <h3 class="category-name">${config.label}</h3>
@@ -171,6 +185,23 @@ export function renderCategories() {
         `;
     }).join('');
 }
+
+// Helpers for Cinematics
+window.playCinematic = function (catId) {
+    const dialogues = state.profDialogues && state.profDialogues[catId];
+    // Find config by ID
+    const catName = Object.keys(CATEGORIES_CONFIG).find(key => CATEGORIES_CONFIG[key].id === catId);
+    const config = catName ? CATEGORIES_CONFIG[catName] : null;
+
+    if (config && dialogues) {
+        let themeColor = '#2563eb';
+        if (catId === 'eco-gestion') themeColor = '#0d9488';
+        if (catId === 'english-hospitality') themeColor = '#be185d';
+        if (catId === 'marketing') themeColor = '#3b82f6';
+
+        playProfessorCinematic(config.image, dialogues, themeColor);
+    }
+};
 
 // Ensure selectCategory is globally available for onclick
 window.selectCategory = function (category) {

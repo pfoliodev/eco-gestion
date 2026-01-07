@@ -6,6 +6,7 @@ export const state = {
     // Flashcard features (HEAD)
     flashcards: [],
     userProgress: {},
+    profDialogues: {},
     currentStudySession: null,
     features: {
         flashcards: true,

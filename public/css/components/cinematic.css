@@ -1,0 +1,147 @@
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600&display=swap');
+
+/* Cinematic Overlay */
+.cinematic-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.75);
+    /* Darker background for focus */
+    backdrop-filter: blur(8px);
+    z-index: 9999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s ease;
+    display: flex;
+    justify-content: center;
+    /* Center horizontally */
+    align-items: flex-end;
+    /* Align bottom */
+}
+
+.cinematic-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Professor Image */
+.cinematic-prof-container {
+    position: absolute;
+    bottom: 0;
+    left: 15%;
+    /* Centered slightly more */
+    height: auto;
+    /* Let image define height */
+    max-height: 65vh;
+    /* Limit max height */
+    transform: translateY(100%);
+    transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    z-index: 10000;
+    pointer-events: none;
+    /* Let clicks pass through to overlay if needed */
+}
+
+.cinematic-overlay.active .cinematic-prof-container {
+    transform: translateY(0);
+}
+
+.cinematic-prof-img {
+    height: auto;
+    max-height: 65vh;
+    /* Match container limit */
+    width: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.5));
+}
+
+/* Dialogue Box */
+.cinematic-dialogue-box {
+    position: relative;
+    width: 65%;
+    /* Slightly narrower */
+    max-width: 900px;
+    background: linear-gradient(160deg, #ffffff 0%, #f0f4f8 100%);
+    border: 3px solid var(--theme-color, #2563eb);
+    border-radius: 24px;
+    padding: 2.5rem;
+    margin-bottom: 4rem;
+    /* More space from bottom */
+    box-shadow:
+        0 20px 60px rgba(0, 0, 0, 0.5),
+        0 0 0 4px rgba(255, 255, 255, 0.3) inset;
+    /* Inner glow */
+    z-index: 10001;
+    transform: translateY(50px) scale(0.95);
+    opacity: 0;
+    transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1) 0.2s;
+}
+
+.cinematic-overlay.active .cinematic-dialogue-box {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+}
+
+.cinematic-content {
+    font-size: 1.6rem;
+    color: #0f172a;
+    font-family: 'Fredoka', 'Outfit', sans-serif;
+    font-weight: 500;
+    line-height: 1.5;
+    min-height: 3em;
+    text-shadow: 0 1px 1px rgba(255, 255, 255, 0.8);
+    letter-spacing: 0.02em;
+}
+
+.cinematic-next-icon {
+    position: absolute;
+    bottom: 15px;
+    right: 25px;
+    color: var(--theme-color, #2563eb);
+    font-size: 2rem;
+    animation: bounce 1s infinite;
+    cursor: pointer;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes bounce {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-6px);
+    }
+}
+
+/* Mobile Adjustments */
+@media (max-width: 768px) {
+    .cinematic-prof-container {
+        left: 50%;
+        transform: translate(-50%, 100%);
+        max-height: 45vh;
+        /* Smaller on mobile */
+    }
+
+    .cinematic-prof-img {
+        max-height: 45vh;
+    }
+
+    .cinematic-overlay.active .cinematic-prof-container {
+        transform: translate(-50%, 0);
+    }
+
+    .cinematic-dialogue-box {
+        width: 92%;
+        margin-bottom: 2rem;
+        padding: 1.5rem;
+        border-width: 2px;
+    }
+
+    .cinematic-content {
+        font-size: 1.2rem;
+    }
+}

@@ -1,5 +1,5 @@
 import { db, usersCollection, bugsCollection, coursesCollection } from './firebase.js';
-import { getDocs, getDoc, doc, updateDoc, deleteDoc, query, orderBy, where, serverTimestamp, collection, limit, getCountFromServer, increment } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js";
+import { getDocs, getDoc, doc, updateDoc, setDoc, deleteDoc, query, orderBy, where, serverTimestamp, collection, limit, getCountFromServer, increment } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js";
 import { state } from './state.js';
 import { auth } from './firebase.js';
 import { notyf } from './ui.js';
@@ -291,6 +291,9 @@ export function initAdminSidebar() {
             }
             if (section === 'database') {
                 loadDatabase();
+            }
+            if (section === 'professors') {
+                initProfessorDialogues();
             }
 
             // Close sidebar on mobile after selection
@@ -2120,4 +2123,91 @@ async function handleShopItemFormSubmit(e) {
 }
 
 window.loadShopAdmin = loadShopAdmin;
+
+// ============================================
+// PROFESSOR DIALOGUES MANAGEMENT
+// ============================================
+
+let currentProfCategory = '';
+
+async function initProfessorDialogues() {
+    const selector = document.getElementById('prof-category-select');
+    const editor = document.getElementById('prof-dialogues-editor');
+    const messagesList = document.getElementById('prof-messages-list');
+    const addBtn = document.getElementById('add-prof-message-btn');
+    const saveBtn = document.getElementById('save-prof-dialogues-btn');
+
+    if (!selector || selector.dataset.initialized) return;
+    selector.dataset.initialized = 'true';
+
+    selector.addEventListener('change', async (e) => {
+        const category = e.target.value;
+        currentProfCategory = category;
+
+        if (!category) {
+            editor.style.display = 'none';
+            return;
+        }
+
+        editor.style.display = 'block';
+        messagesList.innerHTML = '<p>Chargement...</p>';
+
+        try {
+            const docRef = doc(db, 'professor_dialogues', category);
+            const docSnap = await getDoc(docRef);
+
+            messagesList.innerHTML = ''; // Clear loading text
+
+            if (docSnap.exists() && docSnap.data().messages) {
+                const messages = docSnap.data().messages;
+                messages.forEach(msg => addMessageInput(messagesList, msg));
+            } else {
+                // Add one empty input by default
+                addMessageInput(messagesList, '');
+            }
+        } catch (error) {
+            console.error("Error loading dialogues:", error);
+            notyf.error("Erreur chargement dialogues.");
+        }
+    });
+
+    addBtn.addEventListener('click', () => {
+        addMessageInput(messagesList, '');
+    });
+
+    saveBtn.addEventListener('click', async () => {
+        if (!currentProfCategory) return;
+
+        const inputs = messagesList.querySelectorAll('textarea');
+        const messages = Array.from(inputs).map(input => input.value.trim()).filter(val => val !== '');
+
+        try {
+            await setDoc(doc(db, 'professor_dialogues', currentProfCategory), {
+                messages: messages,
+                updatedAt: serverTimestamp()
+            });
+            notyf.success("Dialogues sauvegardés !");
+        } catch (error) {
+            console.error("Error saving dialogues:", error);
+            notyf.error("Erreur sauvegarde.");
+        }
+    });
+}
+
+function addMessageInput(container, value) {
+    const div = document.createElement('div');
+    div.className = 'prof-message-row';
+    div.style.cssText = 'display: flex; gap: 0.5rem; margin-bottom: 0.5rem; align-items: flex-start;';
+
+    div.innerHTML = `
+        <textarea class="form-control" rows="2" style="flex: 1;" placeholder="Saisir le message du professeur...">${value || ''}</textarea>
+        <button class="btn-delete" style="padding: 0.5rem;" title="Supprimer ce message">🗑️</button>
+    `;
+
+    div.querySelector('.btn-delete').addEventListener('click', () => {
+        div.remove();
+    });
+
+    container.appendChild(div);
+}
 
