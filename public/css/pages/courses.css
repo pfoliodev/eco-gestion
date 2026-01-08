@@ -125,6 +125,54 @@
     box-shadow: 0 20px 40px rgba(59, 130, 246, 0.25);
 }
 
+/* Reception Theme - Maroon/Red */
+.category-card.reception {
+    /* Dark Slate -> Deep Red -> Bright Red */
+    background: linear-gradient(135deg, #0f172a 0%, #7f1d1d 50%, #ef4444 100%);
+    border: 2px solid #ef4444;
+}
+
+.category-card.reception:hover {
+    border-color: #f87171;
+    box-shadow: 0 20px 40px rgba(239, 68, 68, 0.25);
+}
+
+/* Excel Theme - Green */
+.category-card.excel {
+    /* Emerald -> Green -> Lime */
+    background: linear-gradient(135deg, #064e3b 0%, #15803d 50%, #65a30d 100%);
+    border: 2px solid #22c55e;
+}
+
+.category-card.excel:hover {
+    border-color: #4ade80;
+    box-shadow: 0 20px 40px rgba(34, 197, 94, 0.25);
+}
+
+/* Oenologie Theme - Wine/Burgundy */
+.category-card.oenologie {
+    /* Dark Violet -> Burgundy -> Deep Pink/Red */
+    background: linear-gradient(135deg, #4a044e 0%, #831843 50%, #9f1239 100%);
+    border: 2px solid #db2777;
+}
+
+.category-card.oenologie:hover {
+    border-color: #f472b6;
+    box-shadow: 0 20px 40px rgba(219, 39, 119, 0.25);
+}
+
+/* RH Theme - Corporate Blue/Indigo */
+.category-card.rh {
+    /* Navy -> Indigo -> Violet */
+    background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4338ca 100%);
+    border: 2px solid #6366f1;
+}
+
+.category-card.rh:hover {
+    border-color: #818cf8;
+    box-shadow: 0 20px 40px rgba(99, 102, 241, 0.25);
+}
+
 /* Default Theme - Slate/Blue Grey */
 .category-card.default {
     background: linear-gradient(135deg, #334155 0%, #475569 50%, #64748b 100%);
@@ -338,6 +386,34 @@
     top: 2rem;
 }
 
+@media (max-width: 992px) {
+    .course-detail-layout {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "side-info"
+            "main-content";
+        gap: 2rem;
+    }
+
+    .course-sidebar-left {
+        position: static;
+        /* Remove sticky on mobile */
+        order: -1;
+        /* Show sidebar (resources) above content on mobile, or remove to show below */
+    }
+
+    .course-detail-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .course-detail-content {
+        padding: 1.5rem;
+        /* Reduce padding on mobile */
+    }
+}
+
 .sidebar-section {
     background: var(--surface-color);
     border: 1px solid var(--border-color);
@@ -414,4 +490,43 @@
     .course-content-main {
         order: 1;
     }
+}
+
+/* Back to Top Button */
+.btn-back-to-top {
+    position: fixed;
+    bottom: 90px;
+    /* Moved up to avoid bug button overlap */
+    right: 2rem;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    line-height: 1;
+    padding-bottom: 3px;
+    /* Visual centering tweak */
+    cursor: pointer;
+    z-index: 9999;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(20px);
+    transition: all 0.3s ease;
+}
+
+.btn-back-to-top.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.btn-back-to-top:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
 }

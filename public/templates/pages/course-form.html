@@ -31,6 +31,14 @@
             <label for="course-description">Description</label>
             <textarea id="course-description" rows="3" placeholder="Brève description du cours..."></textarea>
         </div>
+
+        <div class="form-group">
+            <label>Ressources (PDF, Images, Liens)</label>
+            <div id="attachments-editor-list"
+                style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px;"></div>
+            <button type="button" id="add-attachment-btn" class="btn-secondary btn-small">+ Ajouter une
+                ressource</button>
+        </div>
         <div class="form-group">
             <label>Contenu du cours *</label>
             <textarea id="editor-container" placeholder="Contenu du cours..."></textarea>

@@ -9,6 +9,7 @@ import { escapeHtml, sanitizeAttribute } from './security.js';
 import { getOverviewStats, getAllCourseStats, getTopUsers } from './stats.js';
 import { getShopItems, createShopItem, updateShopItem, deleteShopItem, seedDefaultShopItems } from './shop.js';
 import { adminGiftCoins } from './coins.js';
+import { CATEGORIES_CONFIG } from './course.js';
 
 export async function loadUsers() {
     if (!state.isAdmin) return;
@@ -2138,6 +2139,18 @@ async function initProfessorDialogues() {
     const saveBtn = document.getElementById('save-prof-dialogues-btn');
 
     if (!selector || selector.dataset.initialized) return;
+
+    // Populate selector dynamically
+    selector.innerHTML = '<option value="">Sélectionner...</option>';
+    Object.values(CATEGORIES_CONFIG).forEach(cat => {
+        if (cat.id !== 'autre') {
+            const option = document.createElement('option');
+            option.value = cat.id;
+            option.textContent = cat.label;
+            selector.appendChild(option);
+        }
+    });
+
     selector.dataset.initialized = 'true';
 
     selector.addEventListener('change', async (e) => {

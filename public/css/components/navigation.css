@@ -203,3 +203,79 @@ header {
 .dropdown-logout:hover {
     background-color: rgba(239, 68, 68, 0.1);
 }
+
+/* Responsive Navigation - Improved Layout */
+@media (max-width: 768px) {
+    .nav-container {
+        height: auto;
+        padding: 0.75rem 1rem;
+        flex-wrap: wrap;
+        gap: 0;
+        /* Managed by margins/padding inside */
+    }
+
+    /* Use display: contents to unwrap .nav-right so we can reorder children independently */
+    .nav-right {
+        display: contents;
+    }
+
+    /* Logo - Top Left */
+    .nav-container h1 {
+        font-size: 1.1rem;
+        order: 1;
+        flex: 1;
+        /* Pushes actions to the right */
+        margin-right: 1rem;
+        display: block;
+        /* Ensure visibility */
+    }
+
+    /* Actions (Profile/Shop) - Top Right */
+    .nav-actions {
+        order: 2;
+        gap: 0.5rem;
+    }
+
+    /* Navigation Menu - Second Row, Scrollable */
+    .nav-menu {
+        order: 3;
+        width: 100%;
+        margin-top: 1rem;
+        overflow-x: auto;
+        white-space: nowrap;
+        gap: 0.5rem;
+        padding-bottom: 5px;
+        /* Space for scrollbar if visible */
+        -webkit-overflow-scrolling: touch;
+        /* Hide scrollbar */
+        scrollbar-width: none;
+        /* Firefox */
+        -ms-overflow-style: none;
+        /* IE 10+ */
+    }
+
+    .nav-menu::-webkit-scrollbar {
+        display: none;
+        /* Chrome/Safari */
+    }
+
+    .nav-menu a {
+        padding: 0.5rem 0.8rem;
+        font-size: 0.9rem;
+        background: var(--surface-start);
+        /* Light bg to distinguish */
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+    }
+
+    /* Badge adjustment */
+    .badge-coming-soon {
+        display: none;
+        /* Simplify for mobile, or keep minimal */
+    }
+
+    .profile-trigger {
+        width: 36px;
+        height: 36px;
+    }
+}
