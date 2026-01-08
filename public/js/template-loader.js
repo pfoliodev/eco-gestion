@@ -15,7 +15,7 @@ export async function loadTemplate(path) {
     }
 
     try {
-        const response = await fetch(`${path}?v=${Date.now()}`);
+        const response = await fetch(path);
         if (!response.ok) {
             throw new Error(`Failed to load template: ${path} (${response.status})`);
         }

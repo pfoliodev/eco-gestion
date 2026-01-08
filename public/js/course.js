@@ -14,7 +14,7 @@ import { playProfessorCinematic } from './cinematic.js';
 let currentCategory = null;
 
 // Categories configuration
-const CATEGORIES_CONFIG = {
+export const CATEGORIES_CONFIG = {
     'Eco/Gestion': {
         id: 'eco-gestion',
         label: 'Eco/Gestion',
@@ -32,16 +32,49 @@ const CATEGORIES_CONFIG = {
         label: 'Fondamentaux du marketing',
         className: 'marketing',
         image: '/images/prof/prof_marketing.png'
+    },
+    "L'art de l'accueil": {
+        id: 'reception',
+        label: "L'art de l'accueil",
+        className: 'reception',
+        image: '/images/prof/prof_accueil.png'
+    },
+    'Modélisation Excel': {
+        id: 'excel',
+        label: 'Modélisation Excel',
+        className: 'excel',
+        image: '/images/prof/prof_excel.png'
+    },
+    'Sommelerie & Oenologie': {
+        id: 'oenologie',
+        label: 'Sommelerie & Oenologie',
+        className: 'oenologie',
+        image: '/images/prof/prof_oenologie.png'
+    },
+    'Fondamentaux des ressources humaines': {
+        id: 'rh',
+        label: 'Ressources Humaines',
+        className: 'rh',
+        image: '/images/prof/prof_rh.png'
+    },
+    'Autre': {
+        id: 'autre',
+        label: 'Autre',
+        className: 'default',
+        image: '/images/prof/prof_default.png'
     }
 };
 
-// Helper to normalize category
 const normalizeCategory = (cat) => {
     if (!cat) return 'Autre';
     const lower = cat.toLowerCase();
     if (lower.includes('english') || lower.includes('anglais')) return 'English in Hospitality';
     if (lower.includes('eco') || lower.includes('gestion')) return 'Eco/Gestion';
     if (lower.includes('marketing')) return 'Fondamentaux du marketing';
+    if (lower.includes('accueil') || lower.includes('réception') || lower.includes('reception')) return "L'art de l'accueil";
+    if (lower.includes('excel') || lower.includes('tableur')) return 'Modélisation Excel';
+    if (lower.includes('vin') || lower.includes('sommelerie') || lower.includes('oenologie')) return 'Sommelerie & Oenologie';
+    if (lower.includes('ressources humaines') || lower.includes('rh') || lower.includes('management')) return 'Fondamentaux des ressources humaines';
     return cat;
 };
 
@@ -206,6 +239,16 @@ window.playCinematic = function (catId) {
 // Ensure selectCategory is globally available for onclick
 window.selectCategory = function (category) {
     currentCategory = category;
+
+    // Reset filters
+    const searchInput = document.getElementById('course-search');
+    const typeFilter = document.getElementById('course-type-filter');
+    const subjectFilter = document.getElementById('course-filter');
+
+    if (searchInput) searchInput.value = '';
+    if (typeFilter) typeFilter.value = '';
+    if (subjectFilter) subjectFilter.value = '';
+
     renderCourses();
 };
 
@@ -420,6 +463,8 @@ export function viewCourse(id) {
         renderRelatedCourses(course.subject, id);
         renderRelatedExercises(course.subject, id);
         updateCourseFlashcardsSidebar(id);
+        renderAttachments(id);
+        renderAttachments(id);
 
         // Track this view and load viewers sidebar
         if (state.user) {
@@ -440,6 +485,48 @@ export function viewCourse(id) {
             import('./gamification.js').then(module => {
                 module.triggerCreativeDiscovery(state.user);
             });
+        }
+
+
+        // Back to Top Button Logic
+        let btn = document.getElementById('back-to-top-btn');
+        if (!btn) {
+            btn = document.createElement('button');
+            btn.id = 'back-to-top-btn';
+            btn.className = 'btn-back-to-top';
+            btn.innerHTML = '↑';
+            document.body.appendChild(btn); // Re-added this line!
+            let scrollContainer = window;
+
+            const scrollHandler = (e) => {
+                let currentScroll = window.scrollY;
+
+                // If it's an element scrolling
+                if (e.target && e.target.scrollTop !== undefined && e.target !== document) {
+                    // Check if this is likely the main content (heuristic: height > 100px)
+                    if (e.target.clientHeight > 100) {
+                        currentScroll = e.target.scrollTop;
+                        scrollContainer = e.target;
+                    }
+                }
+
+                if (currentScroll > 300) {
+                    btn.classList.add('visible');
+                } else {
+                    btn.classList.remove('visible');
+                }
+            };
+
+            // Use capture: true to catch scroll events from any element
+            window.addEventListener('scroll', scrollHandler, { capture: true, passive: true });
+
+            btn.onclick = () => {
+                scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+                // Fallback for window
+                if (scrollContainer !== window) {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            };
         }
     }
 }
@@ -511,6 +598,58 @@ export function renderRelatedExercises(subject, currentId) {
     `).join('');
 }
 
+
+export function renderAttachments(courseId) {
+    const list = document.getElementById('course-attachments-list');
+    const section = document.getElementById('attachments-sidebar-section');
+    if (!list || !section) return;
+
+    const course = state.courses.find(c => c.id === courseId);
+    if (!course || !course.attachments || course.attachments.length === 0) {
+        section.style.display = 'none';
+        checkSidebarVisibility();
+        return;
+    }
+
+    section.style.display = 'block';
+    checkSidebarVisibility();
+    list.innerHTML = course.attachments.map(att => {
+        const directUrl = processAttachmentUrl(att.url);
+        return `
+        <a href="${directUrl}" target="_blank" class="attachment-item" style="display: flex; align-items: center; padding: 10px; background: white; border-radius: 12px; margin-bottom: 8px; text-decoration: none; color: inherit; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: transform 0.2s;">
+            <span style="font-size: 1.5rem; margin-right: 10px;">${getAttachmentIcon(att.type)}</span>
+            <div style="flex: 1;">
+                <div style="font-weight: 600; font-size: 0.95rem;">${escapeHtml(att.name)}</div>
+                <div style="font-size: 0.8rem; color: #64748b;">${att.type ? att.type.toUpperCase() : 'LIEN'}</div>
+            </div>
+            <span style="color: var(--primary-color);">↘</span>
+        </a>
+        `;
+    }).join('');
+}
+
+function processAttachmentUrl(url) {
+    // Converts Google Drive Viewer links to Direct links
+    if (url && url.includes('drive.google.com') && url.includes('/view')) {
+        const match = url.match(/\/d\/([^/]+)/);
+        if (match && match[1]) {
+            return `https://drive.google.com/uc?export=view&id=${match[1]}`;
+        }
+    }
+    return url;
+}
+
+function getAttachmentIcon(type) {
+    if (!type) return '🔗';
+    type = type.toLowerCase();
+    if (type.includes('pdf')) return '📕';
+    if (type.includes('image') || type.includes('jpg') || type.includes('png')) return '🖼️';
+    if (type.includes('video') || type.includes('mp4')) return '🎥';
+    if (type.includes('doc') || type.includes('word')) return '📝';
+    if (type.includes('xls') || type.includes('sheet')) return '📊';
+    return '🔗';
+}
+
 export function checkSidebarVisibility() {
     const sidebar = document.querySelector('.course-sidebar-left');
     const layout = document.querySelector('.course-detail-layout');
@@ -578,6 +717,10 @@ export function editCourse() {
         } else {
             document.getElementById('editor-container').value = course.content;
         }
+
+        // Attachments
+        renderAttachmentInputs(course.attachments || []);
+
         showPage('ajouter');
     }
 }
@@ -585,6 +728,13 @@ export function editCourse() {
 export function initForm() {
     const form = document.getElementById('course-form');
     if (!form) return;
+
+    // Add Attachment Button Listener
+    const addAttBtn = document.getElementById('add-attachment-btn');
+    if (addAttBtn) {
+        addAttBtn.onclick = () => addAttachmentInput();
+    }
+
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         if (!state.isAdmin) {
@@ -596,6 +746,17 @@ export function initForm() {
         const editor = tinymce.get('editor-container');
         const content = editor ? editor.getContent() : document.getElementById('editor-container').value;
 
+        // Gather Attachments
+        const attachments = [];
+        document.querySelectorAll('.attachment-input-group').forEach(div => {
+            const name = div.querySelector('.att-name').value.trim();
+            const url = div.querySelector('.att-url').value.trim();
+            const type = div.querySelector('.att-type').value;
+            if (name && url) {
+                attachments.push({ name, url, type });
+            }
+        });
+
         const data = {
             title: document.getElementById('course-title').value,
             subject: document.getElementById('course-subject').value,
@@ -603,7 +764,8 @@ export function initForm() {
             type: document.getElementById('course-type').value,
             category: document.getElementById('course-category').value,
             description: document.getElementById('course-description').value,
-            content: content
+            content: content,
+            attachments: attachments
         };
 
         try {
@@ -621,7 +783,9 @@ export function initForm() {
                 notyf.success('Ajouté !');
             }
             form.reset();
+            document.getElementById('attachments-editor-list').innerHTML = '';
             if (editor) editor.setContent('');
+            renderCourses();
             showPage('cours');
         } catch (error) {
             notyf.error("Erreur d'enregistrement.");
@@ -764,4 +928,42 @@ window.toggleViewersList = function () {
         list.style.display = isHidden ? 'block' : 'none';
         btn.textContent = isHidden ? 'Masquer' : 'Voir tous';
     }
+};
+
+// --- Attachment Helpers ---
+function renderAttachmentInputs(attachments = []) {
+    const list = document.getElementById('attachments-editor-list');
+    if (!list) return;
+    list.innerHTML = '';
+    attachments.forEach(att => addAttachmentInput(att));
+}
+
+window.addAttachmentInput = function (att = { name: '', url: '', type: 'pdf' }) {
+    const list = document.getElementById('attachments-editor-list');
+    if (!list) return;
+
+    const div = document.createElement('div');
+    div.className = 'attachment-input-group';
+    div.style.cssText = 'display: flex; gap: 8px; align-items: center; background: #f8fafc; padding: 10px; border-radius: 6px; flex-wrap: wrap; border: 1px solid #e2e8f0;';
+
+    div.innerHTML = `
+        <div style="flex: 1; min-width: 150px;">
+            <input type="text" class="att-name" placeholder="Nom du document" value="${escapeHtml(att.name)}" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px;">
+        </div>
+        <div style="flex: 2; min-width: 200px;">
+            <input type="text" class="att-url" placeholder="Lien externe (Drive, Dropbox...)" value="${escapeHtml(att.url)}" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px;">
+        </div>
+        <select class="att-type" style="padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px;">
+            <option value="pdf" ${att.type === 'pdf' ? 'selected' : ''}>PDF</option>
+            <option value="image" ${att.type === 'image' || att.type === 'jpg' || att.type === 'png' ? 'selected' : ''}>Image</option>
+            <option value="link" ${att.type === 'link' ? 'selected' : ''}>Lien</option>
+            <option value="video" ${att.type === 'video' || att.type === 'mp4' ? 'selected' : ''}>Vidéo</option>
+            <option value="other" ${(!['pdf', 'image', 'link', 'video'].includes(att.type)) ? 'selected' : ''}>Autre</option>
+        </select>
+        <button type="button" class="btn-remove-att" style="background: #ef4444; color: white; border: none; width: 34px; height: 34px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center;">✕</button>
+    `;
+
+    const removeBtn = div.querySelector('.btn-remove-att');
+    removeBtn.onclick = () => div.remove();
+    list.appendChild(div);
 };
