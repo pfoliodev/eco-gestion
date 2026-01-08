@@ -52,10 +52,24 @@
     margin-bottom: 2rem;
 }
 
-@media (max-width: 768px) {
-    .category-grid {
-        grid-template-columns: 1fr;
-    }
+
+/* ========================================
+   DARK MODE OVERRIDES FOR DYNAMIC CONTENT
+   ======================================== */
+[data-theme="dark"] .course-detail-content div[style*="background"],
+[data-theme="dark"] .course-detail-content span[style*="background"],
+[data-theme="dark"] .course-detail-content p[style*="background"],
+[data-theme="dark"] .course-detail-content table,
+[data-theme="dark"] .course-detail-content th,
+[data-theme="dark"] .course-detail-content td {
+    background-color: var(--surface-color) !important;
+    color: var(--text-main) !important;
+    border-color: var(--border-color) !important;
+}
+
+/* Try to preserve semantic colors if possible with borders */
+[data-theme="dark"] .course-detail-content [style*="background-color"] {
+    border: 1px solid var(--border-color);
 }
 
 /* Category Card Base */
@@ -308,7 +322,7 @@
 
 .btn-icon:hover {
     border-color: var(--primary-color);
-    background: white;
+    background: var(--surface-hover);
 }
 
 .course-controls {
@@ -529,4 +543,42 @@
 .btn-back-to-top:hover {
     transform: translateY(-4px);
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+}
+
+/* ========================================
+   DARK MODE OVERRIDES FOR DYNAMIC CONTENT
+   ======================================== */
+[data-theme="dark"] .course-detail-content div[style*="background"],
+[data-theme="dark"] .course-detail-content span[style*="background"],
+[data-theme="dark"] .course-detail-content p[style*="background"],
+[data-theme="dark"] .course-detail-content table,
+[data-theme="dark"] .course-detail-content th,
+[data-theme="dark"] .course-detail-content td,
+[data-theme="dark"] .course-detail-content h1,
+[data-theme="dark"] .course-detail-content h2,
+[data-theme="dark"] .course-detail-content h3,
+[data-theme="dark"] .course-detail-content h4,
+[data-theme="dark"] .course-detail-content h5,
+[data-theme="dark"] .course-detail-content h6,
+[data-theme="dark"] .course-detail-content strong,
+[data-theme="dark"] .course-detail-content b {
+    background-color: var(--surface-color) !important;
+    color: var(--text-main) !important;
+    border-color: var(--border-color) !important;
+}
+
+/* Try to preserve semantic colors if possible with borders */
+[data-theme="dark"] .course-detail-content [style*="background-color"] {
+    border: 1px solid var(--border-color);
+}
+
+/* Attachment Items Dark Mode Override */
+[data-theme="dark"] .attachment-item {
+    background: var(--surface-color) !important;
+    color: var(--text-main) !important;
+    border: 1px solid var(--border-color) !important;
+}
+
+[data-theme="dark"] .attachment-item div[style*="color: #64748b"] {
+    color: var(--text-secondary) !important;
 }

@@ -43,3 +43,42 @@
     --font-heading: 'Inter', system-ui, sans-serif;
     --font-body: 'Inter', system-ui, sans-serif;
 }
+
+[data-theme="dark"] {
+    /* Palette "Dark Mode" - Accessibility Focused */
+
+    /* Primary needs to be slightly lighter to pass contrast against dark bg */
+    --primary-color: #6366f1;
+    /* Indigo 500 */
+    --primary-rgb: 99, 102, 241;
+    --primary-hover: #818cf8;
+    /* Indigo 400 */
+
+    --secondary-color: #94a3b8;
+    /* Slate 400 */
+
+    /* Background & Surfaces */
+    --background-color: #0f172a;
+    /* Slate 900 */
+    --surface-color: #1e293b;
+    /* Slate 800 */
+    --surface-hover: #334155;
+    /* Slate 700 */
+
+    /* Text Colors */
+    --text-main: #f8fafc;
+    /* Slate 50 */
+    --text-secondary: #cbd5e1;
+    /* Slate 300 */
+    --text-inverted: #0f172a;
+    /* Slate 900 */
+
+    /* Borders & Inputs */
+    --border-color: #334155;
+    /* Slate 700 */
+    --input-bg: #1e293b;
+
+    /* Ensure shadows are visible on dark mode if needed, or keep subtle */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+}

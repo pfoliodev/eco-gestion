@@ -83,7 +83,7 @@
 }
 
 .reminder-countdown {
-    background: currentColor;
+    /* background: currentColor; -> Replaced by specific rules below for better contrast control */
     color: white;
     padding: 0.25rem 0.75rem;
     border-radius: 20px;
@@ -91,6 +91,18 @@
     font-weight: 700;
     white-space: nowrap;
     text-transform: uppercase;
+}
+
+.reminder-card.urgent .reminder-countdown {
+    background: #ef4444;
+}
+
+.reminder-card.warning .reminder-countdown {
+    background: #f59e0b;
+}
+
+.reminder-card.normal .reminder-countdown {
+    background: #10b981;
 }
 
 .reminder-date {
