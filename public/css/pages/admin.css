@@ -449,7 +449,7 @@
 
 .rank-badge.silver {
     background: linear-gradient(135deg, #e5e7eb, #9ca3af);
-    color: #374151;
+    color: var(--text-secondary);
 }
 
 .rank-badge.bronze {

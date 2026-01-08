@@ -168,6 +168,44 @@ function initMobileMenu() {
     });
 }
 
+
+function initTheme() {
+    const themeToggle = document.getElementById('theme-toggle');
+    const moonIcon = document.getElementById('theme-icon-moon');
+    const sunIcon = document.getElementById('theme-icon-sun');
+
+    // Check saved theme or system preference
+    const savedTheme = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+    // Set initial theme - default to system if no save, but prioritize save
+    const currentTheme = savedTheme || (prefersDark ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', currentTheme);
+
+    function updateIcon(theme) {
+        if (theme === 'dark') {
+            moonIcon.style.display = 'none';
+            sunIcon.style.display = 'block';
+        } else {
+            moonIcon.style.display = 'block';
+            sunIcon.style.display = 'none';
+        }
+    }
+
+    updateIcon(currentTheme);
+
+    if (themeToggle) {
+        themeToggle.addEventListener('click', () => {
+            const current = document.documentElement.getAttribute('data-theme');
+            const newTheme = current === 'dark' ? 'light' : 'dark';
+
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateIcon(newTheme);
+        });
+    }
+}
+
 // Initialize application after loading templates
 async function initApp() {
     try {
@@ -195,6 +233,7 @@ async function initApp() {
         ]);
 
         // Initialize app after templates are loaded
+        initTheme(); // Initialize theme early
         await initFeatures();
         initTinyMCE();
         initAuth();
