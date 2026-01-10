@@ -93,6 +93,12 @@ export function openQuizEditor(quiz = null) {
     form.reset();
     document.getElementById('quiz-id').value = quiz ? quiz.id : '';
     document.getElementById('quiz-title').value = quiz ? quiz.title : '';
+    // Tags handling
+    const tagsInput = document.getElementById('quiz-tags');
+    if (tagsInput) {
+        tagsInput.value = quiz && quiz.tags ? quiz.tags.join(', ') : '';
+    }
+
     questionsContainer.innerHTML = '';
 
     // Existing questions or one empty question
@@ -150,6 +156,11 @@ export function initQuizEditor() {
 
         const quizId = document.getElementById('quiz-id').value;
         const title = document.getElementById('quiz-title').value;
+
+        // Tags process
+        const tagsInput = document.getElementById('quiz-tags');
+        const tags = tagsInput ? tagsInput.value.split(',').map(t => t.trim()).filter(t => t.length > 0) : [];
+
         const questionBlocks = document.querySelectorAll('.question-block');
 
         const questions = Array.from(questionBlocks).map((block) => {
@@ -164,10 +175,10 @@ export function initQuizEditor() {
 
         try {
             if (quizId) {
-                await updateQuiz(quizId, { title, questions });
+                await updateQuiz(quizId, { title, questions, tags });
                 notyf.success("QCM mis à jour");
             } else {
-                await createQuiz(state.currentCourseId, { title, questions });
+                await createQuiz(state.currentCourseId, { title, questions, tags });
                 notyf.success("QCM créé");
             }
 
