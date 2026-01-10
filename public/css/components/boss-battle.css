@@ -1,0 +1,758 @@
+/* Boss Battle Theme */
+.boss-battle-container {
+    width: 100%;
+    margin-bottom: 2rem;
+    position: relative;
+    border-radius: 16px;
+    padding: 1rem;
+    background: linear-gradient(rgba(20, 20, 35, 0.7), rgba(20, 20, 35, 0.85)), url('/images/backgrounds/boss_classroom.png');
+    background-size: cover;
+    background-position: center;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+}
+
+.battle-timer {
+    position: absolute;
+    top: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.7);
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-family: monospace;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    z-index: 5;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* Arena Layout */
+.battle-arena {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    min-height: 180px;
+    /* Space for the prof image */
+}
+
+/* Boss Side (Right) */
+.boss-side {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    width: 45%;
+    position: relative;
+}
+
+.boss-sprite {
+    height: 160px;
+    width: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 0 10px rgba(255, 0, 0, 0.2));
+    transition: transform 0.2s, filter 0.2s;
+    z-index: 2;
+}
+
+.boss-sprite.damage-taken {
+    animation: shake 0.4s cubic-bezier(.36, .07, .19, .97) both;
+    filter: drop-shadow(0 0 15px rgba(255, 0, 0, 0.8)) hue-rotate(30deg);
+}
+
+/* Player Side (Left) */
+.player-side {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 45%;
+    align-self: flex-end;
+    /* Bottom alignment */
+    margin-bottom: 1rem;
+}
+
+.player-avatar-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.player-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* Health Bars */
+.health-box {
+    background: rgba(0, 0, 0, 0.6);
+    padding: 8px 12px;
+    border-radius: 12px;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    width: 100%;
+    max-width: 220px;
+}
+
+.label-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    font-weight: bold;
+    color: #e2e8f0;
+    margin-bottom: 4px;
+}
+
+.hp-track {
+    background: #334155;
+    height: 12px;
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.hp-fill {
+    height: 100%;
+    border-radius: 6px;
+    transition: width 0.4s ease-out, background-color 0.4s;
+    position: relative;
+}
+
+.hp-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 100%);
+}
+
+/* Colors */
+.boss-hp {
+    background: linear-gradient(90deg, #ef4444, #b91c1c);
+    /* Red */
+    width: 100%;
+}
+
+.player-hp {
+    background: linear-gradient(90deg, #22c55e, #15803d);
+    /* Green */
+    width: 100%;
+}
+
+/* Low HP Warning */
+.player-hp.low {
+    background: linear-gradient(90deg, #eab308, #ca8a04);
+    /* Yellow/Orange */
+}
+
+.player-hp.critical {
+    background: linear-gradient(90deg, #ef4444, #991b1b);
+    /* Red */
+    animation: pulse-red 1s infinite;
+}
+
+/* Player Damage Shake */
+/* Player Damage Shake & Flash */
+.player-avatar.damage-taken {
+    animation: shake 0.4s cubic-bezier(.36, .07, .19, .97) both;
+    filter: drop-shadow(0 0 15px rgba(255, 0, 0, 0.8)) sepia(1) saturate(5) hue-rotate(-50deg);
+    /* Intense Red Flash */
+    border-color: #ef4444;
+}
+
+/* Animations */
+@keyframes shake {
+
+    10%,
+    90% {
+        transform: translate3d(-1px, 0, 0);
+    }
+
+    20%,
+    80% {
+        transform: translate3d(2px, 0, 0);
+    }
+
+    30%,
+    50%,
+    70% {
+        transform: translate3d(-4px, 0, 0);
+    }
+
+    40%,
+    60% {
+        transform: translate3d(4px, 0, 0);
+    }
+}
+
+@keyframes pulse-red {
+    0% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+    }
+
+    70% {
+        box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+    }
+}
+
+@keyframes floatUp {
+    0% {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+
+    50% {
+        transform: translateY(-30px) scale(1.5);
+    }
+
+    100% {
+        transform: translateY(-60px) scale(1.2);
+        opacity: 0;
+    }
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .boss-sprite {
+        height: 120px;
+    }
+
+    .player-avatar {
+        width: 45px;
+        height: 45px;
+    }
+
+    .battle-arena {
+        flex-direction: column-reverse;
+        /* Stack boss on top on mobile? Or side by side? */
+        /* Actually side by side is better for "Battle" feel even on mobile, just smaller */
+        flex-direction: row;
+        gap: 0.5rem;
+    }
+
+}
+
+/* Game Over Screen */
+.game-over-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 400px;
+}
+
+.game-over-card {
+    background: linear-gradient(145deg, #1a1a2e, #16213e);
+    border: 2px solid #ef4444;
+    border-radius: 20px;
+    padding: 3rem 2rem;
+    text-align: center;
+    max-width: 400px;
+    width: 100%;
+    box-shadow: 0 0 30px rgba(239, 68, 68, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.game-over-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 6px;
+    background: #ef4444;
+    box-shadow: 0 0 10px #ef4444;
+}
+
+.game-over-icon {
+    font-size: 5rem;
+    margin-bottom: 1rem;
+    animation: floatUp 2s infinite ease-in-out;
+}
+
+.game-over-title {
+    font-size: 2rem;
+    font-weight: 900;
+    color: #ef4444;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 0.5rem;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.game-over-text {
+    color: #94a3b8;
+    margin-bottom: 2rem;
+    font-size: 1.1rem;
+}
+
+.game-over-stats {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: center;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.stat-label {
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    color: #94a3b8;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: white;
+}
+
+.game-over-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.btn-retry {
+    background: #ef4444;
+    color: white;
+    border: none;
+    padding: 1rem;
+    border-radius: 12px;
+    font-weight: bold;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 6px rgba(239, 68, 68, 0.3);
+}
+
+.btn-retry:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(239, 68, 68, 0.4);
+    background: #dc2626;
+}
+
+.btn-exit {
+    background: transparent;
+    color: #94a3b8;
+    border: 2px solid #334155;
+    padding: 0.8rem;
+    border-radius: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-exit:hover {
+    border-color: #94a3b8;
+    color: white;
+}
+
+/* Victory Screen (Visual Novel Style) */
+.victory-container {
+    position: relative;
+    width: 100%;
+    min-height: 500px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+    overflow: hidden;
+    background: radial-gradient(circle at center, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.8));
+    animation: fadeIn 1s;
+    border-radius: 16px;
+}
+
+/* Flex Layout for Dialog */
+.victory-dialog-box {
+    position: relative;
+    width: 95%;
+    max-width: 950px;
+    background: rgba(20, 24, 39, 0.95);
+    border: 2px solid #fbbf24;
+    border-radius: 16px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    z-index: 2;
+    display: flex;
+    /* Row Layout */
+    flex-direction: row;
+    align-items: flex-end;
+    /* Align bottom */
+    gap: 1rem;
+    animation: slideUp 0.8s ease-out forwards 1s;
+    opacity: 0;
+}
+
+.victory-content {
+    flex: 1;
+    /* Takes remaining space */
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    z-index: 2;
+    /* Text above image area if needed */
+}
+
+.victory-visual {
+    width: 250px;
+    /* Fixed width for visual area */
+    height: 0;
+    /* Let it be zero height, reliance on absolute image is fine */
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+}
+
+.victory-prof-img {
+    position: absolute;
+    bottom: -20px;
+    /* Slight offset */
+    left: 50%;
+    transform: translateX(-50%);
+    /* Centered in the visual column */
+    width: auto;
+    height: 350px;
+    /* Fixed Height */
+    max-height: none;
+    /* Allow exceeding box */
+    object-fit: contain;
+    filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.3));
+    z-index: 3;
+    pointer-events: none;
+    animation: slideInRight 0.8s forwards 0.5s;
+}
+
+.victory-title {
+    color: #fbbf24;
+    font-size: 1.8rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+}
+
+.victory-text {
+    color: #e2e8f0;
+    font-size: 1.1rem;
+    line-height: 1.6;
+}
+
+.victory-stats-row {
+    display: flex;
+    gap: 2rem;
+    margin-top: 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 1rem;
+    border-radius: 8px;
+}
+
+.victory-stat {
+    display: flex;
+    flex-direction: column;
+}
+
+.victory-stat label {
+    font-size: 0.8rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+}
+
+.victory-stat span {
+    font-size: 1.4rem;
+    font-weight: bold;
+    color: white;
+}
+
+.victory-rewards {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.reward-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.reward-coins {
+    background: rgba(234, 179, 8, 0.2);
+    color: #fbbf24;
+    border: 1px solid rgba(234, 179, 8, 0.5);
+}
+
+.reward-coins span {
+    color: #fbbf24;
+}
+
+.reward-xp {
+    background: rgba(59, 130, 246, 0.2);
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, 0.5);
+}
+
+.victory-actions {
+    margin-top: 1rem;
+    display: flex;
+    justify-content: flex-end;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(-50%);
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 800px) {
+    .victory-dialog-box {
+        flex-direction: column;
+        align-items: center;
+        padding-bottom: 1rem;
+    }
+
+    .victory-visual {
+        width: 100%;
+        height: 180px;
+        /* Space for image */
+        margin-top: 1rem;
+    }
+
+    .victory-prof-img {
+        height: 200px;
+        bottom: -10px;
+        transform: translateX(-50%);
+        /* Keep centering */
+        animation: slideUp 0.5s forwards 0.5s;
+    }
+}
+
+/* Gym Badge Acquisition Overlay - MOVED OUTSIDE MEDIA QUERY */
+.gym-badge-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 2000;
+    /* Higher than everything */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    animation: fadeIn 0.5s;
+    backdrop-filter: blur(10px);
+}
+
+.gym-badge-acquire-card {
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    padding: 3rem;
+    border-radius: 20px;
+    border: 2px solid #fbbf24;
+    text-align: center;
+    position: relative;
+    box-shadow: 0 0 50px rgba(251, 191, 36, 0.5);
+    animation: zoomIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    max-width: 90%;
+}
+
+.gym-badge-glow {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(251, 191, 36, 0.4) 0%, rgba(0, 0, 0, 0) 70%);
+    animation: rotate 10s linear infinite;
+    z-index: 0;
+}
+
+.gym-badge-img-large {
+    width: 220px;
+    height: auto;
+    filter: drop-shadow(0 0 20px rgba(251, 191, 36, 0.8));
+    z-index: 1;
+    animation: floatBadge 3s ease-in-out infinite;
+}
+
+.gym-badge-info {
+    z-index: 1;
+}
+
+.gym-badge-info h3 {
+    color: #fbbf24;
+    font-size: 2.5rem;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.gym-badge-info p {
+    color: #94a3b8;
+    margin-bottom: 2rem;
+    font-size: 1.2rem;
+}
+
+.gym-badge-flavor {
+    font-style: italic;
+    color: #e2e8f0 !important;
+    font-size: 1.1rem !important;
+    margin-bottom: 2rem !important;
+    border-left: 3px solid #fbbf24;
+    padding-left: 1rem;
+    display: inline-block;
+}
+
+@keyframes zoomIn {
+    from {
+        opacity: 0;
+        transform: scale(0.5);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes floatBadge {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-15px);
+    }
+}
+
+@keyframes rotate {
+    from {
+        transform: translate(-50%, -50%) rotate(0deg);
+    }
+
+    to {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
+}
+
+.gym-badge-glow {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, rgba(251, 191, 36, 0.4) 0%, rgba(0, 0, 0, 0) 70%);
+    animation: rotate 10s linear infinite;
+    z-index: 0;
+}
+
+.gym-badge-img-large {
+    width: 180px;
+    height: auto;
+    filter: drop-shadow(0 0 15px rgba(251, 191, 36, 0.6));
+    z-index: 1;
+    animation: floatBadge 3s ease-in-out infinite;
+}
+
+.gym-badge-info {
+    z-index: 1;
+}
+
+.gym-badge-info h3 {
+    color: #fbbf24;
+    font-size: 2rem;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.gym-badge-info p {
+    color: #94a3b8;
+    margin-bottom: 2rem;
+    font-size: 1.2rem;
+}
+
+@keyframes zoomIn {
+    from {
+        opacity: 0;
+        transform: scale(0.5);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes floatBadge {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-15px);
+    }
+}
+
+@keyframes rotate {
+    from {
+        transform: translate(-50%, -50%) rotate(0deg);
+    }
+
+    to {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
+}

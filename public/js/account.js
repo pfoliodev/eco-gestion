@@ -5,6 +5,7 @@ import { state } from './state.js';
 import { notyf } from './ui.js';
 import { loadUserFavorites } from './favorites.js';
 import { getUserSucces, getAllSuccesDefinitions, getUserSuccesStats, unlockSucces, removeUserSucces, showSuccesUnlockedPopup, getSuccesById } from './succes.js';
+import { getUserGymBadges, GYM_BADGES } from './gym-badges.js';
 import { getUserInventory, equipItem, unequipItem, useConsumable } from './shop.js';
 import { getUserBalance, formatCoins, getTransactionHistory } from './coins.js';
 import { STARTER_PETS, PROFESSOR, XP_CONFIG, EVOLUTION_LEVELS } from './config/pets.js';
@@ -68,8 +69,11 @@ export async function loadAccount() {
     await loadInventory();
     await loadUserPet();
     initProfileForm();
+    initProfileForm();
     initAccountSidebar();
-    initSuccesFilters();
+    await loadUserSucces();
+    await loadUserGymBadges(); // NEW
+    await loadUserStats();
 }
 
 // Initialize account sidebar navigation
@@ -101,9 +105,12 @@ function initAccountSidebar() {
                     loadUserStats();
                 }
 
-                // Reload inventory when entering inventory section
                 if (section === 'inventory') {
                     loadInventory();
+                }
+
+                if (section === 'gym-badges') {
+                    loadUserGymBadges();
                 }
             }
         });
@@ -430,6 +437,58 @@ function renderQuizHistory(quizzes) {
             </tr>
         `;
     }).join('');
+}
+
+// ============================================
+// GYM BADGES SECTION
+// ============================================
+
+export async function loadUserGymBadges() {
+    const container = document.getElementById('gym-badges-grid');
+    if (!container) return;
+
+    try {
+        const userBadges = await getUserGymBadges();
+        const unlockedIds = new Set(userBadges.map(b => b.badgeId));
+
+        // Render all configured badges (some might be locked)
+        // For now, we only show unlocked ones + placeholders for known ones if desired
+        // Or just the ones we have defined clearly
+
+        container.innerHTML = GYM_BADGES.map(badgeDef => {
+            const isUnlocked = unlockedIds.has(badgeDef.id);
+            const userBadge = userBadges.find(b => b.badgeId === badgeDef.id);
+            const date = userBadge?.unlockedAt ? new Date(userBadge.unlockedAt.seconds * 1000).toLocaleDateString() : '';
+
+            return `
+                <div class="gym-badge-slot ${isUnlocked ? 'unlocked' : 'empty'}">
+                    ${isUnlocked
+                    ? `<img src="${badgeDef.image}" class="gym-badge-item" alt="${badgeDef.name}">
+                           <div class="gym-badge-tooltip">
+                               <strong>${badgeDef.name}</strong><br>
+                               ${date}
+                           </div>`
+                    : `<span style="font-size: 2rem; opacity: 0.2">🛡️</span>
+                           <div class="gym-badge-tooltip">Badge Verrouillé</div>`
+                }
+                </div>
+            `;
+        }).join('');
+
+        // Fill the grid to a multiple of 4
+        const totalDesired = Math.max(8, Math.ceil(GYM_BADGES.length / 4) * 4);
+        const emptySlotsCount = totalDesired - GYM_BADGES.length;
+
+        let extraHtml = '';
+        for (let i = 0; i < emptySlotsCount; i++) {
+            extraHtml += `<div class="gym-badge-slot empty"><div class="gym-badge-placeholder"></div></div>`;
+        }
+        container.innerHTML += extraHtml;
+
+    } catch (error) {
+        console.error("Error loading gym badges:", error);
+        container.innerHTML = '<div class="error-msg">Erreur.</div>';
+    }
 }
 
 // ============================================

@@ -69,6 +69,40 @@ export async function getQuizById(quizId) {
     return { id: snapshot.id, ...snapshot.data() };
 }
 
+// Get all unique tags from quizzes
+export async function getAllQuizTags() {
+    const snapshot = await getDocs(quizzesCollection);
+    const tags = new Set();
+    snapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.tags && Array.isArray(data.tags)) {
+            data.tags.forEach(tag => tags.add(tag));
+        }
+    });
+    return Array.from(tags).sort();
+}
+
+// Get total question count for specific tags
+export async function getQuestionCountByTags(tags) {
+    if (!tags || tags.length === 0) return 0;
+
+    const snapshot = await getDocs(quizzesCollection);
+    let totalQuestions = 0;
+
+    snapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.tags && Array.isArray(data.tags) && data.questions) {
+            // Check if quiz has at least one matching tag
+            const hasMatch = data.tags.some(t => tags.includes(t));
+            if (hasMatch) {
+                totalQuestions += data.questions.length;
+            }
+        }
+    });
+
+    return totalQuestions;
+}
+
 // --- Results Handling ---
 
 // Submit a quiz result with Intelligence Bonus

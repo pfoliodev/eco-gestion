@@ -836,12 +836,25 @@
                 <input type="text" id="evaluation-tags" placeholder="Ex: eval, s1, final" required>
                 <small style="color: var(--text-secondary);">Les QCM contenant au moins un de ces tags seront
                     inclus.</small>
+                <div id="evaluation-tags-suggestions"
+                    style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem;">
+                    <!-- Tags chips will be injected here -->
+                </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
                 <div class="form-group">
                     <label for="evaluation-count">Nb Questions</label>
-                    <input type="number" id="evaluation-count" min="5" value="20" required>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <input type="number" id="evaluation-count" min="5" value="20" required style="flex: 1;">
+                        <button type="button" id="btn-max-questions" class="btn-secondary"
+                            style="padding: 0 0.5rem; font-size: 0.8rem;"
+                            title="Mettre au maximum disponible">MAX</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="evaluation-lives">Vies Joueur</label>
+                    <input type="number" id="evaluation-lives" min="1" value="3" required>
                 </div>
                 <div class="form-group">
                     <label for="evaluation-time">Temps (min)</label>

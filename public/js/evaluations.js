@@ -14,6 +14,7 @@ import {
 import { auth } from './firebase.js';
 import { getQuizzesByCourse, createQuiz } from './quiz.js';
 import { state } from './state.js';
+import { CATEGORIES_CONFIG } from './config/categories.js';
 
 const evaluationsCollection = collection(db, 'evaluations');
 
@@ -22,8 +23,14 @@ const evaluationsCollection = collection(db, 'evaluations');
 export async function createEvaluation(data) {
     if (!auth.currentUser) throw new Error("Unauthorized");
 
-    const evaluationData = {
+    // Normalize category ID
+    const normalizedData = {
         ...data,
+        categoryId: data.categoryId ? data.categoryId.toLowerCase().trim() : data.categoryId
+    };
+
+    const evaluationData = {
+        ...normalizedData,
         createdAt: serverTimestamp(),
         authorId: auth.currentUser.uid,
         active: true
@@ -35,7 +42,13 @@ export async function createEvaluation(data) {
 export async function updateEvaluation(id, data) {
     if (!auth.currentUser) throw new Error("Unauthorized");
     const docRef = doc(db, 'evaluations', id);
-    return await updateDoc(docRef, { ...data, updatedAt: serverTimestamp() });
+
+    const normalizedData = { ...data };
+    if (normalizedData.categoryId) {
+        normalizedData.categoryId = normalizedData.categoryId.toLowerCase().trim();
+    }
+
+    return await updateDoc(docRef, { ...normalizedData, updatedAt: serverTimestamp() });
 }
 
 export async function deleteEvaluation(id) {
@@ -120,6 +133,13 @@ export async function startEvaluation(evaluationId) {
     const count = evaluation.questionCount || 20;
     const selectedQuestions = shuffleArray(candidatesQuestions).slice(0, count);
 
+    // Resolve Boss Image
+    const catId = evaluation.categoryId || 'autre';
+    // Match by ID or normalize if needed. Config keys are names, but values have IDs.
+    // CATEGORIES_CONFIG is keyed by name ('Eco/Gestion'), we need to search by ID ('eco-gestion').
+    const configEntry = Object.values(CATEGORIES_CONFIG).find(c => c.id === catId);
+    const bossImage = configEntry ? configEntry.image : '/images/prof/prof_default.png';
+
     // 4. Construct a temporary "Quiz" object to compatible with the player
     return {
         id: `eval_${evaluationId}_${Date.now()}`, // Temporary ID
@@ -127,8 +147,131 @@ export async function startEvaluation(evaluationId) {
         questions: selectedQuestions,
         courseId: 'evaluation_mode', // Special ID
         isEvaluation: true,
+        playerLives: evaluation.playerLives || 3,
+        bossImage: bossImage,
         timeLimit: evaluation.timeLimit
     };
+}
+
+// Check if user has unlocked the evaluation
+export async function checkEvaluationUnlockStatus(evaluationId) {
+    if (!auth.currentUser) return { unlocked: false, reason: "Not logged in" };
+
+    // 1. Fetch Evaluation
+    const evalRef = doc(db, 'evaluations', evaluationId);
+    const evalSnap = await getDoc(evalRef);
+    if (!evalSnap.exists()) return { unlocked: false, reason: "Evaluation not found" };
+    const evaluation = evalSnap.data();
+
+    if (!evaluation.tags || evaluation.tags.length === 0) return { unlocked: true }; // No tags = no prereqs
+
+    // 2. Fetch ALL quizzes (to find relevant tags)
+    // Optimization: In a real app index by tags or cache this
+    const quizzesSnap = await getDocs(collection(db, 'quizzes'));
+    const allQuizzes = quizzesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    // Filter relevant quizzes
+    const requiredQuizzes = allQuizzes.filter(q => {
+        if (!q.tags || !Array.isArray(q.tags)) return false;
+        return q.tags.some(tag => evaluation.tags.includes(tag));
+    });
+
+    if (requiredQuizzes.length === 0) return { unlocked: true };
+
+    // 3. Fetch User Results
+    const resultsRef = collection(db, 'quiz_results');
+    const q = query(resultsRef, where("userId", "==", auth.currentUser.uid));
+    const querySnapshot = await getDocs(q);
+    const userResults = querySnapshot.docs.map(doc => doc.data());
+
+    // Map best scores per quiz
+    const bestScores = {}; // quizId -> maxPercent
+    userResults.forEach(r => {
+        if (!r.quizId || !r.totalQuestions) return;
+        const percent = (r.score / r.totalQuestions) * 100;
+        if (!bestScores[r.quizId] || percent > bestScores[r.quizId]) {
+            bestScores[r.quizId] = percent;
+        }
+    });
+
+    // 4. Verify Prerequisites
+    const missing = [];
+    const threshold = 80;
+
+    requiredQuizzes.forEach(quiz => {
+        const score = bestScores[quiz.id] || 0;
+        if (score < threshold) {
+            missing.push({
+                title: quiz.title,
+                id: quiz.id,
+                currentScore: Math.round(score)
+            });
+        }
+    });
+
+    if (missing.length > 0) {
+        return {
+            unlocked: false,
+            reason: `Il vous manque ${missing.length} QCM(s) validés à 80% mini.`,
+            missing,
+            professorId: evaluation.categoryId // Assuming logic maps category to prof
+        };
+    }
+
+    return { unlocked: true };
+}
+
+// Bulk check for all evaluations (optimization for rendering)
+export async function preloadEvaluationStatuses(evaluations) {
+    if (!auth.currentUser || !evaluations || evaluations.length === 0) return {};
+
+    // 1. Fetch Data (Optimized: Fetch once for all)
+    // In a larger app, we'd cache this or use specific queries
+    const [quizzesSnap, resultsSnap] = await Promise.all([
+        getDocs(collection(db, 'quizzes')),
+        getDocs(query(collection(db, 'quiz_results'), where("userId", "==", auth.currentUser.uid)))
+    ]);
+
+    const allQuizzes = quizzesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const userResults = resultsSnap.docs.map(d => d.data());
+
+    // 2. Map Best Scores
+    const bestScores = {};
+    userResults.forEach(r => {
+        if (!r.quizId || !r.totalQuestions) return;
+        const percent = (r.score / r.totalQuestions) * 100;
+        if (!bestScores[r.quizId] || percent > bestScores[r.quizId]) {
+            bestScores[r.quizId] = percent;
+        }
+    });
+
+    // 3. Compute Status for each Evaluation
+    const statuses = {};
+    evaluations.forEach(evalData => {
+        if (!evalData.tags || evalData.tags.length === 0) {
+            statuses[evalData.id] = { unlocked: true };
+            return;
+        }
+
+        const requiredQuizzes = allQuizzes.filter(q => {
+            if (!q.tags || !Array.isArray(q.tags)) return false;
+            return q.tags.some(tag => evalData.tags.includes(tag));
+        });
+
+        if (requiredQuizzes.length === 0) {
+            statuses[evalData.id] = { unlocked: true };
+            return;
+        }
+
+        const isUnlocked = requiredQuizzes.every(q => {
+            const score = bestScores[q.id] || 0;
+            return score >= 80;
+        });
+
+        statuses[evalData.id] = { unlocked: isUnlocked };
+    });
+
+    return statuses;
 }
 
 function shuffleArray(array) {

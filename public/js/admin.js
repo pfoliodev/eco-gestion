@@ -9,8 +9,9 @@ import { escapeHtml, sanitizeAttribute } from './security.js';
 import { getOverviewStats, getAllCourseStats, getTopUsers } from './stats.js';
 import { getShopItems, createShopItem, updateShopItem, deleteShopItem, seedDefaultShopItems } from './shop.js';
 import { adminGiftCoins } from './coins.js';
-import { CATEGORIES_CONFIG } from './course.js';
+import { CATEGORIES_CONFIG } from './config/categories.js';
 import { createEvaluation, updateEvaluation, deleteEvaluation, getEvaluations } from './evaluations.js';
+import { getAllQuizTags, getQuestionCountByTags } from './quiz.js';
 
 export async function loadUsers() {
     if (!state.isAdmin) return;
@@ -799,6 +800,9 @@ window.restoreUser = restoreUser;
 
 export async function loadEvaluationsAdmin() {
     if (!state.isAdmin) return;
+
+    initEvaluationListeners();
+
     try {
         const evaluations = await getEvaluations();
         renderEvaluationsAdmin(evaluations);
@@ -808,13 +812,61 @@ export async function loadEvaluationsAdmin() {
     }
 }
 
+function initEvaluationListeners() {
+    const addBtn = document.getElementById('add-evaluation-btn');
+    if (addBtn && !addBtn.dataset.listenerAdded) {
+        addBtn.dataset.listenerAdded = 'true';
+        addBtn.addEventListener('click', () => openEvaluationEditor());
+    }
+
+    const cancelBtn = document.getElementById('cancel-evaluation-btn');
+    if (cancelBtn && !cancelBtn.dataset.listenerAdded) {
+        cancelBtn.dataset.listenerAdded = 'true';
+        cancelBtn.addEventListener('click', () => {
+            document.getElementById('evaluation-editor-modal').style.display = 'none';
+        });
+    }
+
+    const form = document.getElementById('evaluation-form');
+    if (form && !form.dataset.listenerAdded) {
+        form.dataset.listenerAdded = 'true';
+        form.addEventListener('submit', handleEvaluationSubmit);
+    }
+
+    const maxBtn = document.getElementById('btn-max-questions');
+    if (maxBtn && !maxBtn.dataset.listenerAdded) {
+        maxBtn.dataset.listenerAdded = 'true';
+        maxBtn.addEventListener('click', async () => {
+            const tagsInput = document.getElementById('evaluation-tags');
+            const countInput = document.getElementById('evaluation-count');
+            const tags = tagsInput.value.split(',').map(t => t.trim()).filter(Boolean);
+
+            if (tags.length === 0) {
+                notyf.error("Veuillez entrer des tags d'abord.");
+                return;
+            }
+
+            maxBtn.textContent = "⏳";
+            try {
+                const count = await getQuestionCountByTags(tags);
+                if (count === 0) {
+                    notyf.open({ type: 'warning', message: 'Aucune question trouvée pour ces tags.' });
+                } else {
+                    countInput.value = count;
+                    notyf.success(`Max trouvé : ${count} questions`);
+                }
+            } catch (e) {
+                console.error(e);
+                notyf.error("Erreur de calcul.");
+            } finally {
+                maxBtn.textContent = "MAX";
+            }
+        });
+    }
+}
+
 function renderEvaluationsAdmin(evaluations) {
     const tbody = document.getElementById('evaluations-table-body');
-    const addBtn = document.getElementById('add-evaluation-btn');
-
-    if (addBtn) {
-        addBtn.onclick = () => openEvaluationEditor();
-    }
 
     if (!tbody) return;
 
@@ -884,58 +936,93 @@ function renderEvaluationsAdmin(evaluations) {
     });
 }
 
-function openEvaluationEditor(evaluation = null) {
+async function openEvaluationEditor(evaluation = null) {
     const modal = document.getElementById('evaluation-editor-modal');
     modal.style.display = 'flex';
 
     // Fill fields
     document.getElementById('evaluation-id').value = evaluation ? evaluation.id : '';
     document.getElementById('evaluation-title').value = evaluation ? evaluation.title : '';
-    document.getElementById('evaluation-category').value = evaluation ? evaluation.categoryId : '';
-    document.getElementById('evaluation-tags').value = evaluation ? evaluation.tags.join(', ') : '';
+    const tagInput = document.getElementById('evaluation-tags');
+    tagInput.value = evaluation ? evaluation.tags.join(', ') : '';
     document.getElementById('evaluation-count').value = evaluation ? evaluation.questionCount : 20;
+    document.getElementById('evaluation-lives').value = evaluation ? (evaluation.playerLives || 3) : 3;
     document.getElementById('evaluation-time').value = evaluation ? evaluation.timeLimit : 30;
+    document.getElementById('evaluation-category').value = evaluation ? evaluation.categoryId : '';
     document.getElementById('evaluation-modal-title').textContent = evaluation ? 'Modifier Évaluation' : 'Nouvelle Évaluation';
 
-    // Save Handler
-    const form = document.getElementById('evaluation-form');
-    // Remove old listener to avoid dupes (naive way: rely on onclick on submit button or clone)
-    // Better: use one global listener. But here we are initializing on open.
-    // Let's attach onsubmit once or replace node.
+    // Load available tags
+    const suggestionsContainer = document.getElementById('evaluation-tags-suggestions');
+    suggestionsContainer.innerHTML = '<span style="font-size: 0.8rem; color: var(--text-secondary);">Chargement des tags...</span>';
 
-    const newForm = form.cloneNode(true);
-    form.parentNode.replaceChild(newForm, form);
+    try {
+        const allTags = await getAllQuizTags();
+        suggestionsContainer.innerHTML = '';
 
-    newForm.onsubmit = async (e) => {
-        e.preventDefault();
-        const id = document.getElementById('evaluation-id').value;
-        const data = {
-            title: document.getElementById('evaluation-title').value,
-            categoryId: document.getElementById('evaluation-category').value,
-            tags: document.getElementById('evaluation-tags').value.split(',').map(t => t.trim()).filter(Boolean),
-            questionCount: parseInt(document.getElementById('evaluation-count').value),
-            timeLimit: parseInt(document.getElementById('evaluation-time').value)
-        };
+        if (allTags.length === 0) {
+            suggestionsContainer.innerHTML = '<span style="font-size: 0.8rem; color: var(--text-secondary);">Aucun tag trouvé.</span>';
+        } else {
+            allTags.forEach(tag => {
+                const chip = document.createElement('span');
+                chip.textContent = tag;
+                chip.style.cssText = `
+                    background: var(--surface-hover);
+                    padding: 4px 8px;
+                    border-radius: 12px;
+                    font-size: 0.8rem;
+                    cursor: pointer;
+                    border: 1px solid var(--border-color);
+                    transition: all 0.2s;
+                `;
+                chip.onmouseover = () => { chip.style.background = 'var(--primary-color)'; chip.style.color = 'white'; };
+                chip.onmouseout = () => { chip.style.background = 'var(--surface-hover)'; chip.style.color = 'var(--text-main)'; };
 
-        try {
-            if (id) {
-                await updateEvaluation(id, data);
-                notyf.success("Mis à jour !");
-            } else {
-                await createEvaluation(data);
-                notyf.success("Créé !");
-            }
-            modal.style.display = 'none';
-            loadEvaluationsAdmin();
-        } catch (err) {
-            console.error(err);
-            notyf.error("Erreur d'enregistrement");
+                chip.onclick = () => {
+                    const currentVal = tagInput.value.trim();
+                    if (currentVal) {
+                        const existingTags = currentVal.split(',').map(t => t.trim());
+                        if (!existingTags.includes(tag)) {
+                            tagInput.value = currentVal + ', ' + tag;
+                        }
+                    } else {
+                        tagInput.value = tag;
+                    }
+                };
+                suggestionsContainer.appendChild(chip);
+            });
         }
+    } catch (e) {
+        console.error("Error loading tags", e);
+        suggestionsContainer.innerHTML = '';
+    }
+}
+
+async function handleEvaluationSubmit(e) {
+    e.preventDefault();
+    const id = document.getElementById('evaluation-id').value;
+    const data = {
+        title: document.getElementById('evaluation-title').value,
+        categoryId: document.getElementById('evaluation-category').value,
+        tags: document.getElementById('evaluation-tags').value.split(',').map(t => t.trim()).filter(Boolean),
+        questionCount: parseInt(document.getElementById('evaluation-count').value),
+        playerLives: parseInt(document.getElementById('evaluation-lives').value) || 3,
+        timeLimit: parseInt(document.getElementById('evaluation-time').value)
     };
 
-    document.getElementById('cancel-evaluation-btn').onclick = () => {
-        modal.style.display = 'none';
-    };
+    try {
+        if (id) {
+            await updateEvaluation(id, data);
+            notyf.success("Mis à jour !");
+        } else {
+            await createEvaluation(data);
+            notyf.success("Créé !");
+        }
+        document.getElementById('evaluation-editor-modal').style.display = 'none';
+        loadEvaluationsAdmin();
+    } catch (err) {
+        console.error(err);
+        notyf.error("Erreur d'enregistrement");
+    }
 }
 
 // ============================================

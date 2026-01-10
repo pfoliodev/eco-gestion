@@ -9,75 +9,12 @@ import { trackCourseView, getCourseViewers, getCourseViewersCount, getAllCourseV
 import { escapeHtml, sanitizeAttribute } from './security.js';
 import { applyFeatureFlags } from './features.js';
 import { playProfessorCinematic } from './cinematic.js';
-import { getEvaluations, startEvaluation } from './evaluations.js';
+import { getEvaluations, startEvaluation, checkEvaluationUnlockStatus, preloadEvaluationStatuses } from './evaluations.js';
 
 // Module state for category navigation
 let currentCategory = null;
 
-// Categories configuration
-export const CATEGORIES_CONFIG = {
-    'Eco/Gestion': {
-        id: 'eco-gestion',
-        label: 'Eco/Gestion',
-        className: 'eco-gestion',
-        image: '/images/prof/prof_ecogestion.png'
-    },
-    'English in Hospitality': {
-        id: 'english-hospitality',
-        label: 'English in Hospitality',
-        className: 'english-hospitality',
-        image: '/images/prof/prof_english.png'
-    },
-    'Fondamentaux du marketing': {
-        id: 'marketing',
-        label: 'Fondamentaux du marketing',
-        className: 'marketing',
-        image: '/images/prof/prof_marketing.png'
-    },
-    "L'art de l'accueil": {
-        id: 'reception',
-        label: "L'art de l'accueil",
-        className: 'reception',
-        image: '/images/prof/prof_accueil.png'
-    },
-    'Modélisation Excel': {
-        id: 'excel',
-        label: 'Modélisation Excel',
-        className: 'excel',
-        image: '/images/prof/prof_excel.png'
-    },
-    'Sommelerie & Oenologie': {
-        id: 'oenologie',
-        label: 'Sommelerie & Oenologie',
-        className: 'oenologie',
-        image: '/images/prof/prof_oenologie.png'
-    },
-    'Fondamentaux des ressources humaines': {
-        id: 'rh',
-        label: 'Ressources Humaines',
-        className: 'rh',
-        image: '/images/prof/prof_rh.png'
-    },
-    'Autre': {
-        id: 'autre',
-        label: 'Autre',
-        className: 'default',
-        image: '/images/prof/prof_default.png'
-    }
-};
-
-const normalizeCategory = (cat) => {
-    if (!cat) return 'Autre';
-    const lower = cat.toLowerCase();
-    if (lower.includes('english') || lower.includes('anglais')) return 'English in Hospitality';
-    if (lower.includes('eco') || lower.includes('gestion')) return 'Eco/Gestion';
-    if (lower.includes('marketing')) return 'Fondamentaux du marketing';
-    if (lower.includes('accueil') || lower.includes('réception') || lower.includes('reception')) return "L'art de l'accueil";
-    if (lower.includes('excel') || lower.includes('tableur')) return 'Modélisation Excel';
-    if (lower.includes('vin') || lower.includes('sommelerie') || lower.includes('oenologie')) return 'Sommelerie & Oenologie';
-    if (lower.includes('ressources humaines') || lower.includes('rh') || lower.includes('management')) return 'Fondamentaux des ressources humaines';
-    return cat;
-};
+import { CATEGORIES_CONFIG, normalizeCategory } from './config/categories.js';
 
 export async function loadCourses() {
     try {
@@ -124,10 +61,14 @@ export async function loadCourses() {
         // Load Evaluations
         try {
             state.evaluations = await getEvaluations();
-        } catch (e) { console.error("Error loading evaluations", e); }
 
-        // Load User Quiz Progress (Moved to auth.js to wait for login)
-        // if (auth.currentUser) { ... }
+            // Preload unlock statuses if logged in (for UI feedback)
+            if (auth.currentUser && state.evaluations.length > 0) {
+                state.evaluationStatuses = await preloadEvaluationStatuses(state.evaluations);
+            } else {
+                state.evaluationStatuses = {};
+            }
+        } catch (e) { console.error("Error loading evaluations", e); }
 
         // Update global stats (for Home page)
         updateGlobalStats();
@@ -213,9 +154,23 @@ export function renderCategories() {
 
         // Evaluation Button Logic
         let evalBtnHtml = '';
-        const catEval = state.evaluations ? state.evaluations.find(e => e.categoryId === config.id && e.active) : null;
-        if (catEval) {
-            evalBtnHtml = `<button class="btn-start-eval" onclick="event.stopPropagation(); window.startCategoryEvaluation('${catEval.id}')" style="position: absolute; bottom: 15px; right: 15px; z-index: 10; padding: 0.5rem 1rem; border-radius: 20px; background: var(--primary-color); color: white; border: none; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.2); transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">📝 Évaluation</button>`;
+        // Loose comparison for category ID
+        const catEval = state.evaluations ? state.evaluations.find(e =>
+            e.categoryId && config.id &&
+            e.categoryId.toLowerCase() === config.id.toLowerCase() &&
+            e.active
+        ) : null;
+        if (catEval && auth.currentUser) {
+            const status = state.evaluationStatuses && state.evaluationStatuses[catEval.id];
+            const isLocked = status && !status.unlocked;
+
+            if (isLocked) {
+                // Locked Style (Grey/Red)
+                evalBtnHtml = `<button class="btn-start-eval" onclick="event.stopPropagation(); window.startCategoryEvaluation('${catEval.id}')" style="position: absolute; top: 70px; right: 15px; z-index: 10; padding: 0.5rem 1rem; border-radius: 20px; background: #6b7280; color: white; border: none; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.2); transition: transform 0.2s; opacity: 0.8;" title="Verrouillé - Cliquez pour voir les conditions">🔒 Évaluation</button>`;
+            } else {
+                // Unlocked Style (Primary Color)
+                evalBtnHtml = `<button class="btn-start-eval" onclick="event.stopPropagation(); window.startCategoryEvaluation('${catEval.id}')" style="position: absolute; top: 70px; right: 15px; z-index: 10; padding: 0.5rem 1rem; border-radius: 20px; background: var(--primary-color); color: white; border: none; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.2); transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">📝 Évaluation</button>`;
+            }
         }
 
         return `
@@ -270,22 +225,59 @@ export function backToCategories() {
     renderCategories();
 }
 
+export async function refreshEvaluationStatuses() {
+    if (auth.currentUser && state.evaluations && state.evaluations.length > 0) {
+        state.evaluationStatuses = await preloadEvaluationStatuses(state.evaluations);
+    } else {
+        state.evaluationStatuses = {};
+    }
+}
+
 window.startCategoryEvaluation = async function (evalId) {
     try {
+        // 1. Check prerequisites
+        const status = await checkEvaluationUnlockStatus(evalId);
+
+        if (!status.unlocked) {
+            if (status.reason === "Not logged in") {
+                notyf.error("Vous devez être connecté pour passer une évaluation.");
+                showPage('login');
+                return;
+            }
+
+            // Locked: Show Professor Dialogue
+            const catId = status.professorId || 'autre';
+            let profImage = '/images/prof/prof_default.png';
+
+            // Find professor image from config
+            const configEntry = Object.values(CATEGORIES_CONFIG).find(c => c.id === catId);
+            if (configEntry) profImage = configEntry.image;
+
+            let message = ["Tu n'es pas encore prêt pour cette évaluation."];
+
+            if (status.missing && status.missing.length > 0) {
+                const missingList = status.missing.map(m => `- ${m.title} (${m.currentScore}%)`).join('\n');
+                message.push("Pour débloquer ce défi, il te faut au moins 80% de réussite sur tous les QCM associés.");
+                message.push(`Voici ce qu'il te manque :\n${missingList}`);
+                message.push("Entraîne-toi encore un peu et reviens me voir !");
+            } else {
+                message.push(status.reason || "Critères non remplis.");
+            }
+
+            await playProfessorCinematic(profImage, message, '#ef4444');
+            return;
+        }
+
+        // 2. Start Evaluation if unlocked
         const quizData = await startEvaluation(evalId);
         if (!quizData) {
             notyf.error("Impossible de charger l'évaluation.");
             return;
         }
 
-        // Import Quiz Player dynamically
-        state.currentActiveQuiz = quizData;
-        // Now we can call startQuiz directly if we import it or access it globally.
-        // Since we are in 'course.js', and 'quiz-ui.js' exposes it to window (lines 253), we can use that.
         if (window.startQuiz) {
             window.startQuiz(quizData);
         } else {
-            // Fallback if not loaded (should not happen if quiz-ui loaded)
             console.error("Quiz UI not loaded");
         }
 
