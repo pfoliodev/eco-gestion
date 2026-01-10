@@ -9,6 +9,7 @@ import { trackCourseView, getCourseViewers, getCourseViewersCount, getAllCourseV
 import { escapeHtml, sanitizeAttribute } from './security.js';
 import { applyFeatureFlags } from './features.js';
 import { playProfessorCinematic } from './cinematic.js';
+import { getEvaluations, startEvaluation } from './evaluations.js';
 
 // Module state for category navigation
 let currentCategory = null;
@@ -120,6 +121,11 @@ export async function loadCourses() {
             backBtn.onclick = backToCategories;
         }
 
+        // Load Evaluations
+        try {
+            state.evaluations = await getEvaluations();
+        } catch (e) { console.error("Error loading evaluations", e); }
+
         // Load User Quiz Progress (Moved to auth.js to wait for login)
         // if (auth.currentUser) { ... }
 
@@ -205,9 +211,17 @@ export function renderCategories() {
             playBtnHtml = `<button class="btn-play-cinematic" onclick="event.stopPropagation(); window.playCinematic('${config.id}')" style="position: absolute; top: 15px; right: 15px; z-index: 10; width: 44px; height: 44px; border-radius: 50%; background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.4); font-size: 1.5rem; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); transition: transform 0.2s, background 0.2s;" onmouseover="this.style.transform='scale(1.1)'; this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.transform='scale(1)'; this.style.background='rgba(255,255,255,0.2)'" title="Message du professeur">💬</button>`;
         }
 
+        // Evaluation Button Logic
+        let evalBtnHtml = '';
+        const catEval = state.evaluations ? state.evaluations.find(e => e.categoryId === config.id && e.active) : null;
+        if (catEval) {
+            evalBtnHtml = `<button class="btn-start-eval" onclick="event.stopPropagation(); window.startCategoryEvaluation('${catEval.id}')" style="position: absolute; bottom: 15px; right: 15px; z-index: 10; padding: 0.5rem 1rem; border-radius: 20px; background: var(--primary-color); color: white; border: none; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.2); transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">📝 Évaluation</button>`;
+        }
+
         return `
         <div class="category-card ${config.className}" onclick="selectCategory('${catName.replace(/'/g, "\\'")}')">
             ${playBtnHtml}
+            ${evalBtnHtml}
             ${imageHtml}
             <div class="category-content">
                 <h3 class="category-name">${config.label}</h3>
@@ -248,7 +262,6 @@ window.selectCategory = function (category) {
     if (searchInput) searchInput.value = '';
     if (typeFilter) typeFilter.value = '';
     if (subjectFilter) subjectFilter.value = '';
-
     renderCourses();
 };
 
@@ -256,6 +269,31 @@ export function backToCategories() {
     currentCategory = null;
     renderCategories();
 }
+
+window.startCategoryEvaluation = async function (evalId) {
+    try {
+        const quizData = await startEvaluation(evalId);
+        if (!quizData) {
+            notyf.error("Impossible de charger l'évaluation.");
+            return;
+        }
+
+        // Import Quiz Player dynamically
+        state.currentActiveQuiz = quizData;
+        // Now we can call startQuiz directly if we import it or access it globally.
+        // Since we are in 'course.js', and 'quiz-ui.js' exposes it to window (lines 253), we can use that.
+        if (window.startQuiz) {
+            window.startQuiz(quizData);
+        } else {
+            // Fallback if not loaded (should not happen if quiz-ui loaded)
+            console.error("Quiz UI not loaded");
+        }
+
+    } catch (e) {
+        console.error(e);
+        notyf.error(e.message || "Erreur lors du lancement");
+    }
+};
 
 export function renderCourses() {
     const grid = document.getElementById('course-grid');

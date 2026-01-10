@@ -258,10 +258,12 @@ export async function renderQuizList(courseId) {
     }
 }
 
-export async function startQuiz(quizId) {
+export async function startQuiz(quizIdOrObject) {
     let quiz = null;
 
-    if (quizId === 'debug-quiz-xp') {
+    if (typeof quizIdOrObject === 'object') {
+        quiz = quizIdOrObject;
+    } else if (quizIdOrObject === 'debug-quiz-xp') {
         quiz = {
             id: 'debug-quiz-xp',
             title: '⚡ [ADMIN] Test Rapide XP',
@@ -276,7 +278,7 @@ export async function startQuiz(quizId) {
             ]
         };
     } else {
-        quiz = await getQuizById(quizId);
+        quiz = await getQuizById(quizIdOrObject);
     }
 
     if (!quiz) return;

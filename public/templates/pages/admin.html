@@ -22,6 +22,10 @@
                 <span class="sidebar-icon">🏆</span>
                 <span class="sidebar-text">Succès</span>
             </a>
+            <a href="#" class="sidebar-link" data-section="evaluations">
+                <span class="sidebar-icon">🎓</span>
+                <span class="sidebar-text">Évaluations</span>
+            </a>
             <a href="#" class="sidebar-link" data-section="reminders">
                 <span class="sidebar-icon">⏰</span>
                 <span class="sidebar-text">Rappels d'Éval</span>
@@ -599,6 +603,36 @@
         </div>
 
 
+        <!-- Evaluations Section -->
+        <div id="admin-section-evaluations" class="admin-section">
+            <h2>Gestion des Évaluations</h2>
+            <p class="section-intro">Créez des "Giga QCM" basés sur des tags pour générer des évaluations complètes.</p>
+
+            <div style="margin-bottom: 1.5rem;">
+                <button id="add-evaluation-btn" class="btn-primary">
+                    ➕ Nouvelle Évaluation
+                </button>
+            </div>
+
+            <div class="evaluations-table-container">
+                <table class="users-table">
+                    <thead>
+                        <tr>
+                            <th>Titre</th>
+                            <th>Catégorie</th>
+                            <th>Tags</th>
+                            <th>Questions</th>
+                            <th>Temps (min)</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="evaluations-table-body">
+                        <!-- Evaluations will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
         <!-- Database Visualization Section -->
         <div id="admin-section-database" class="admin-section">
             <h2>🗄️ Base de Données</h2>
@@ -767,6 +801,57 @@
             <div class="form-actions" style="display: flex; gap: 1rem; margin-top: 1.5rem;">
                 <button type="submit" class="btn-primary" style="flex: 1;">Enregistrer</button>
                 <button type="button" id="cancel-shop-item-btn" class="btn-cancel">Annuler</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Evaluation Editor Modal -->
+<div id="evaluation-editor-modal" class="modal">
+    <div class="modal-content" style="max-width: 550px;">
+        <h3 id="evaluation-modal-title">Nouvelle Évaluation</h3>
+        <form id="evaluation-form">
+            <input type="hidden" id="evaluation-id">
+            <div class="form-group">
+                <label for="evaluation-title">Titre de l'évaluation *</label>
+                <input type="text" id="evaluation-title" placeholder="Ex: Partiel Semestre 1" required>
+            </div>
+
+            <div class="form-group">
+                <label for="evaluation-category">Catégorie *</label>
+                <select id="evaluation-category" required>
+                    <option value="">Sélectionner...</option>
+                    <option value="eco-gestion">Eco/Gestion</option>
+                    <option value="english-hospitality">English in Hospitality</option>
+                    <option value="marketing">Fondamentaux du marketing</option>
+                    <option value="reception">L'art de l'accueil</option>
+                    <option value="excel">Modélisation Excel</option>
+                    <option value="oenologie">Sommelerie & Oenologie</option>
+                    <option value="rh">Ressources Humaines</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="evaluation-tags">Tags requis (séparés par des virgules) *</label>
+                <input type="text" id="evaluation-tags" placeholder="Ex: eval, s1, final" required>
+                <small style="color: var(--text-secondary);">Les QCM contenant au moins un de ces tags seront
+                    inclus.</small>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label for="evaluation-count">Nb Questions</label>
+                    <input type="number" id="evaluation-count" min="5" value="20" required>
+                </div>
+                <div class="form-group">
+                    <label for="evaluation-time">Temps (min)</label>
+                    <input type="number" id="evaluation-time" min="5" value="30" required>
+                </div>
+            </div>
+
+            <div class="form-actions" style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                <button type="submit" class="btn-primary" style="flex: 1;">Enregistrer</button>
+                <button type="button" id="cancel-evaluation-btn" class="btn-cancel">Annuler</button>
             </div>
         </form>
     </div>

@@ -10,6 +10,7 @@ import { getOverviewStats, getAllCourseStats, getTopUsers } from './stats.js';
 import { getShopItems, createShopItem, updateShopItem, deleteShopItem, seedDefaultShopItems } from './shop.js';
 import { adminGiftCoins } from './coins.js';
 import { CATEGORIES_CONFIG } from './course.js';
+import { createEvaluation, updateEvaluation, deleteEvaluation, getEvaluations } from './evaluations.js';
 
 export async function loadUsers() {
     if (!state.isAdmin) return;
@@ -295,6 +296,9 @@ export function initAdminSidebar() {
             }
             if (section === 'professors') {
                 initProfessorDialogues();
+            }
+            if (section === 'evaluations') {
+                loadEvaluationsAdmin();
             }
 
             // Close sidebar on mobile after selection
@@ -788,6 +792,151 @@ export async function restoreUser(userId) {
 }
 
 window.restoreUser = restoreUser;
+
+// ============================================
+// EVALUATIONS MANAGEMENT
+// ============================================
+
+export async function loadEvaluationsAdmin() {
+    if (!state.isAdmin) return;
+    try {
+        const evaluations = await getEvaluations();
+        renderEvaluationsAdmin(evaluations);
+    } catch (error) {
+        console.error("Error loading evaluations:", error);
+        notyf.error("Erreur de chargement des évaluations.");
+    }
+}
+
+function renderEvaluationsAdmin(evaluations) {
+    const tbody = document.getElementById('evaluations-table-body');
+    const addBtn = document.getElementById('add-evaluation-btn');
+
+    if (addBtn) {
+        addBtn.onclick = () => openEvaluationEditor();
+    }
+
+    if (!tbody) return;
+
+    if (evaluations.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem;">Aucune évaluation créée.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = evaluations.map(ev => {
+        const safeTitle = escapeHtml(ev.title);
+        const tags = ev.tags ? ev.tags.join(', ') : '';
+
+        return `
+            <tr>
+                <td><strong>${safeTitle}</strong></td>
+                <td><span class="role-badge" style="background: var(--surface-hover); color: var(--text-main);">${ev.categoryId}</span></td>
+                <td>${tags}</td>
+                <td>${ev.questionCount}</td>
+                <td>${ev.timeLimit} min</td>
+                <td>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="btn-icon-action btn-edit-eval" data-id="${ev.id}" title="Modifier">
+                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
+                        </button>
+                        <button class="btn-icon-action btn-delete-eval" data-id="${ev.id}" title="Supprimer">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="3 6 5 6 21 6"/>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                            </svg>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+
+    // Listeners
+    requestAnimationFrame(() => {
+        tbody.querySelectorAll('.btn-edit-eval').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const id = btn.dataset.id;
+                // Fetch latest data or find in memory
+                // Re-fetch to be safe or pass full object
+                const evaluations = await getEvaluations();
+                const ev = evaluations.find(e => e.id === id);
+                openEvaluationEditor(ev);
+            });
+        });
+
+        tbody.querySelectorAll('.btn-delete-eval').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const id = btn.dataset.id;
+                if (confirm("Supprimer cette évaluation ?")) {
+                    try {
+                        await deleteEvaluation(id);
+                        notyf.success("Évaluation supprimée");
+                        loadEvaluationsAdmin();
+                    } catch (e) {
+                        notyf.error("Erreur de suppression");
+                    }
+                }
+            });
+        });
+    });
+}
+
+function openEvaluationEditor(evaluation = null) {
+    const modal = document.getElementById('evaluation-editor-modal');
+    modal.style.display = 'flex';
+
+    // Fill fields
+    document.getElementById('evaluation-id').value = evaluation ? evaluation.id : '';
+    document.getElementById('evaluation-title').value = evaluation ? evaluation.title : '';
+    document.getElementById('evaluation-category').value = evaluation ? evaluation.categoryId : '';
+    document.getElementById('evaluation-tags').value = evaluation ? evaluation.tags.join(', ') : '';
+    document.getElementById('evaluation-count').value = evaluation ? evaluation.questionCount : 20;
+    document.getElementById('evaluation-time').value = evaluation ? evaluation.timeLimit : 30;
+    document.getElementById('evaluation-modal-title').textContent = evaluation ? 'Modifier Évaluation' : 'Nouvelle Évaluation';
+
+    // Save Handler
+    const form = document.getElementById('evaluation-form');
+    // Remove old listener to avoid dupes (naive way: rely on onclick on submit button or clone)
+    // Better: use one global listener. But here we are initializing on open.
+    // Let's attach onsubmit once or replace node.
+
+    const newForm = form.cloneNode(true);
+    form.parentNode.replaceChild(newForm, form);
+
+    newForm.onsubmit = async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('evaluation-id').value;
+        const data = {
+            title: document.getElementById('evaluation-title').value,
+            categoryId: document.getElementById('evaluation-category').value,
+            tags: document.getElementById('evaluation-tags').value.split(',').map(t => t.trim()).filter(Boolean),
+            questionCount: parseInt(document.getElementById('evaluation-count').value),
+            timeLimit: parseInt(document.getElementById('evaluation-time').value)
+        };
+
+        try {
+            if (id) {
+                await updateEvaluation(id, data);
+                notyf.success("Mis à jour !");
+            } else {
+                await createEvaluation(data);
+                notyf.success("Créé !");
+            }
+            modal.style.display = 'none';
+            loadEvaluationsAdmin();
+        } catch (err) {
+            console.error(err);
+            notyf.error("Erreur d'enregistrement");
+        }
+    };
+
+    document.getElementById('cancel-evaluation-btn').onclick = () => {
+        modal.style.display = 'none';
+    };
+}
 
 // ============================================
 // SUCCES ADMIN MANAGEMENT
