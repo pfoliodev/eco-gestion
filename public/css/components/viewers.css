@@ -41,7 +41,7 @@
     left: 50%;
     transform: translateX(-50%);
     background: var(--text-main);
-    color: white;
+    color: var(--text-inverted);
     padding: 0.25rem 0.5rem;
     border-radius: var(--radius-md);
     font-size: 0.75rem;
