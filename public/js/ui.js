@@ -66,6 +66,7 @@ export function showPage(pageId) {
         transitionTimeout = setTimeout(() => {
             activePage.classList.remove('active', 'exiting');
             targetPage.classList.add('active');
+            window.scrollTo(0, 0); // Reset scroll
             transitionTimeout = null;
 
             // Trigger specific page logic after transition
@@ -74,6 +75,7 @@ export function showPage(pageId) {
     } else {
         // INSTANT (First load)
         targetPage.classList.add('active');
+        window.scrollTo(0, 0); // Reset scroll
         document.dispatchEvent(new CustomEvent('pageChange', { detail: { pageId } }));
     }
 }

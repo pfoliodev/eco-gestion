@@ -8,6 +8,13 @@
     padding: 3rem 2rem;
 }
 
+main {
+    position: relative;
+    min-height: 85vh;
+    /* Prevent footer jump */
+    width: 100%;
+}
+
 h2 {
     font-size: 1.75rem;
     font-weight: 700;
