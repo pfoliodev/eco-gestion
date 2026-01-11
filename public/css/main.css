@@ -38,6 +38,7 @@
 @import './pages/flashcards.css';
 @import './pages/quiz.css';
 @import './pages/shop.css';
+@import './pages/pantheon.css';
 
 /* Utilities */
 @import './utilities/helpers.css';
