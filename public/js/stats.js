@@ -6,6 +6,11 @@ import { db } from './firebase.js';
 import {
     collection,
     getDocs,
+    getDoc,
+    setDoc,
+    doc,
+    serverTimestamp,
+    increment,
     query,
     where,
     orderBy,
@@ -13,9 +18,41 @@ import {
 } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js";
 
 const courseViewsCollection = collection(db, 'courseViews');
+const siteVisitsCollection = collection(db, 'site_visits'); // NEW
 const quizResultsCollection = collection(db, 'quiz_results');
 const usersCollection = collection(db, 'users');
 const coursesCollection = collection(db, 'courses');
+
+// ============================================
+// SITE VISITS TRACKING
+// ============================================
+
+export async function trackSiteVisit(userId) {
+    if (!userId) return;
+    try {
+        const visitRef = doc(db, 'site_visits', userId);
+        // We just mark that this user HAS visited the site (and when last)
+        await setDoc(visitRef, {
+            userId,
+            lastVisit: serverTimestamp(),
+            visitCount: increment(1)
+        }, { merge: true });
+    } catch (e) {
+        console.error("Error tracking site visit", e);
+    }
+}
+
+/**
+ * Get count of unique site visitors
+ */
+async function getSiteVisitorsCount() {
+    try {
+        const snap = await getDocs(siteVisitsCollection);
+        return snap.size;
+    } catch {
+        return 0;
+    }
+}
 
 // ============================================
 // COURSE STATISTICS
@@ -315,10 +352,11 @@ export async function getTopUsers(topN = 10) {
  */
 export async function getOverviewStats() {
     try {
-        const [viewData, quizStats, userStats] = await Promise.all([
+        const [viewData, quizStats, userStats, siteVisitors] = await Promise.all([
             fetchViewStatsRaw(),
             getOverallQuizStats(),
-            getUserActivityStats()
+            getUserActivityStats(),
+            getSiteVisitorsCount()
         ]);
 
         const courseStats = viewData.perCourse;
@@ -330,7 +368,7 @@ export async function getOverviewStats() {
         });
 
         return {
-            totalUniqueViews: viewData.globalUnique,
+            totalUniqueViews: siteVisitors,
             totalViews,
             totalQuizAttempts: quizStats.totalAttempts,
             avgQuizScore: quizStats.avgScore,

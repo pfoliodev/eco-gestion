@@ -143,6 +143,11 @@ export function initAuth() {
             setIsAdmin(userRole === 'admin');
             setUser(user); // Set user in state
 
+            // Track Site Visit
+            import('./stats.js').then(module => {
+                module.trackSiteVisit(user.uid);
+            });
+
             // --- DAILY BONUS & PET LOGIC ---
             import('./gamification.js').then(module => {
                 module.checkDailyBonus(user);
