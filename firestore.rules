@@ -51,6 +51,12 @@ service cloud.firestore {
       }
     }
     
+    // Quizzes Definitions
+    match /quizzes/{quizId} {
+        allow read: if request.auth != null;
+        allow create, update, delete: if isAdmin();
+    }
+
     // Quiz Results collection
     match /quiz_results/{resultId} {
         // Allow public read for leaderboard stats (or restrict to counting if possible, but read is standard)
