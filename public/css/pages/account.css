@@ -482,13 +482,16 @@
    ======================================== */
 
 .trainer-card {
-    background: #2d2d2d;
+    background: var(--surface-hover);
+    /* Adapts to theme */
     padding: 3rem 2rem;
-    border-radius: 1px;
+    border-radius: 12px;
     max-width: 700px;
     margin: 0 auto;
     position: relative;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-color);
+    transition: background-color 0.3s, border-color 0.3s;
 }
 
 .trainer-card-header {
@@ -501,17 +504,16 @@
 .header-line {
     flex: 1;
     height: 4px;
-    background: #f8fafc;
+    background: var(--border-color);
     border-radius: 2px;
 }
 
 .header-title {
-    color: #f8fafc;
+    color: var(--text-main);
     font-weight: 800;
     font-size: 1.5rem;
     text-transform: uppercase;
     letter-spacing: 2px;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
     white-space: nowrap;
 }
 
@@ -527,14 +529,13 @@
 .pokeball-css {
     width: 32px;
     height: 32px;
-    background: white;
-    border: 4px solid #f8fafc;
+    background: var(--surface-hover);
+    /* Match Card BG */
+    border: 4px solid var(--text-main);
     border-radius: 50%;
     position: relative;
-    background: #2d2d2d;
-    /* Match Card BG */
-    box-shadow: 0 0 0 10px #2d2d2d;
-    /* Cutout effect on lines */
+    box-shadow: 0 0 0 10px var(--surface-hover);
+    /* Cutout effect matches bg */
 }
 
 .pokeball-css::after {
@@ -545,8 +546,7 @@
     transform: translate(-50%, -50%);
     width: 12px;
     height: 12px;
-    background: white;
-    /* Inner circle */
+    background: var(--text-main);
     border-radius: 50%;
 }
 
@@ -596,53 +596,60 @@
     filter: drop-shadow(5px 8px 4px rgba(0, 0, 0, 0.4));
 }
 
-/* Empty Placeholder (Subtle Shape) */
-/* Empty Placeholder (Tech Hexagon) */
+/* Empty Placeholder (Tech Hexagon - Themed) */
+/* Empty Placeholder (Flat & Clean) */
 .gym-badge-placeholder {
     width: 70px;
     height: 70px;
-    background: linear-gradient(145deg, #232323, #1a1a1a);
+    background: transparent;
+    /* Use a pseudo-element for the border to handle clip-path border quirk, or just use background */
+    background-color: var(--surface-color);
     clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
     position: relative;
     display: flex;
     justify-content: center;
     align-items: center;
     transition: all 0.3s ease;
+    opacity: 0.4;
 }
 
-/* Inner socket illusion */
+/* Simple border outline effect via inner box since CSS borders don't follow clip-path nicely */
 .gym-badge-placeholder::before {
     content: '';
     position: absolute;
-    width: 86%;
-    height: 86%;
-    background: #2d2d2d;
-    /* Match container bg to create rim effect */
+    inset: 2px;
+    /* 2px border width */
+    background: var(--surface-hover);
+    /* Match card background to create "cutout" look */
     clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
     z-index: 1;
 }
 
+/* Small center dot for "empty" state */
 .gym-badge-placeholder::after {
     content: '';
-    width: 40%;
-    height: 40%;
-    background: #1a1a1a;
-    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-    box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.8);
+    width: 6px;
+    height: 6px;
+    background: var(--text-secondary);
+    border-radius: 50%;
     z-index: 2;
     opacity: 0.5;
-    transition: all 0.3s ease;
 }
 
 .gym-badge-slot:hover .gym-badge-placeholder {
     transform: scale(1.05);
+    opacity: 0.8;
+}
+
+.gym-badge-slot:hover .gym-badge-placeholder::before {
+    background: var(--surface-color);
+    /* Lighten slightly on hover */
 }
 
 .gym-badge-slot:hover .gym-badge-placeholder::after {
-    background: #3b82f6;
-    /* Subtle blue glow on hover */
+    background: var(--primary-color);
     opacity: 0.8;
-    box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+    box-shadow: 0 0 10px var(--primary-color);
 }
 
 /* Tooltip (Simplified) */
