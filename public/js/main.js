@@ -59,6 +59,9 @@ function initNavigation() {
                 loadAccount();
                 showPage('mon-compte');
             }
+            else if (href === '#pantheon') {
+                showPage('pantheon');
+            }
         }
     });
 }
