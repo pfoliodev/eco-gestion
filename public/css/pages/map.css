@@ -1,0 +1,236 @@
+/* Progress Map Visualization */
+.map-container {
+    display: none;
+    /* Hidden by default */
+    background: var(--surface-color);
+    border-radius: var(--radius-lg);
+    padding: 3rem 1rem;
+    position: relative;
+    overflow: hidden;
+    min-height: 80vh;
+}
+
+/* Background Path Effect */
+.map-path-svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.map-path-line {
+    fill: none;
+    stroke: var(--border-color);
+    stroke-width: 4;
+    stroke-dasharray: 10, 10;
+    stroke-linecap: round;
+}
+
+/* Nodes */
+.map-nodes-wrapper {
+    position: relative;
+    z-index: 1;
+    max-width: 600px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4rem;
+    /* Spacing between major islands */
+    padding-bottom: 4rem;
+}
+
+/* Island (Category Node) */
+.map-island {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--surface-color);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    cursor: pointer;
+    border: 4px solid var(--border-color);
+}
+
+.map-island:hover {
+    transform: scale(1.1);
+    z-index: 10;
+}
+
+.map-island.unlocked {
+    border-color: var(--primary-color);
+}
+
+.map-island.completed {
+    border-color: #fbbf24;
+    /* Gold */
+    box-shadow: 0 0 20px rgba(251, 191, 36, 0.4);
+}
+
+.map-island-icon {
+    font-size: 3rem;
+    pointer-events: none;
+}
+
+.map-island-label {
+    position: absolute;
+    bottom: -40px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--surface-color);
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: bold;
+    white-space: nowrap;
+    box-shadow: var(--shadow-md);
+    font-size: 0.9rem;
+    border: 1px solid var(--border-color);
+    z-index: 5;
+}
+
+.map-prof-avatar {
+    position: absolute;
+    top: -45px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 3px solid white;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    z-index: 6;
+    background: white;
+    transition: transform 0.3s;
+}
+
+.map-island:hover .map-prof-avatar {
+    transform: translateX(-50%) scale(1.1) translateY(-5px);
+}
+
+.map-prof-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Sub-nodes (Courses) - Hidden initially or expanded */
+.map-subnodes {
+    display: none;
+    /* Flex when active */
+    flex-direction: column;
+    gap: 1.5rem;
+    align-items: center;
+    margin-top: 1rem;
+    animation: slideDown 0.3s ease-out;
+}
+
+.map-subnodes.active {
+    display: flex;
+}
+
+.map-course-node {
+    width: 60px;
+    height: 60px;
+    background: var(--surface-color);
+    border: 3px solid var(--border-color);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+}
+
+.map-course-node:hover {
+    transform: scale(1.15);
+}
+
+.map-course-node.completed {
+    background: #fbbf24;
+    border-color: #d97706;
+    color: white;
+}
+
+.map-course-node.locked {
+    filter: grayscale(1);
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+.map-course-popup {
+    position: absolute;
+    left: 80px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--surface-color);
+    padding: 1rem;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    width: 200px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+    z-index: 20;
+    text-align: left;
+}
+
+.map-course-node:hover .map-course-popup {
+    opacity: 1;
+}
+
+/* Toggle Switch Styles */
+.view-toggle-container {
+    display: flex;
+    justify-content: center;
+    margin: 2rem 0;
+    gap: 1rem;
+}
+
+.view-toggle-btn {
+    padding: 0.5rem 1.5rem;
+    border-radius: 20px;
+    border: 1px solid var(--border-color);
+    background: var(--surface-color);
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.view-toggle-btn.active {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .map-island {
+        width: 100px;
+        height: 100px;
+    }
+
+    .map-island-icon {
+        font-size: 2.5rem;
+    }
+}

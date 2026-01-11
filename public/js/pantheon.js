@@ -12,6 +12,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js";
 import { notyf } from './ui.js';
 import { GYM_BADGES } from './gym-badges.js';
+import { getAllSuccesDefinitions } from './succes.js';
 
 export async function initPantheon() {
     const listElement = document.getElementById('leaderboard-list');
@@ -114,29 +115,24 @@ async function fetchLeaderboardData() {
     // Limit to top 50 to avoid fetching too many profiles
     sortedUsers = sortedUsers.slice(0, 50);
 
-    // 4. Fetch User Profiles & Quiz Counts
+    // 4. Fetch User Profiles & Quiz Counts & SUCCES
+    const allSuccesDefs = await getAllSuccesDefinitions();
+    const succesMap = {};
+    allSuccesDefs.forEach(s => succesMap[s.id] = s);
+
     const enrichedUsers = await Promise.all(sortedUsers.map(async (stat) => {
         const userDoc = await getDoc(doc(db, 'users', stat.userId));
         if (!userDoc.exists()) return null;
 
         const userData = userDoc.data();
-        // Hide if archived/banned?
         if (userData.archived) return null;
 
-        // Get Quiz Count (Unique) - We need to fetch this or rely on a stored field.
-        // For efficiency, we'll check if 'quizCount' exists on user, else default to 0 (or partial fetch).
-        // To be accurate without over-reading, we simply display what we know or do a quick count if essential.
-        // User requested "nombre de qcm effectué".
-        // Use 'quiz_results' count for this user.
+        // Quiz Count
         const qResults = query(collection(db, 'quiz_results'), where('userId', '==', stat.userId));
-        const qSnap = await getDocs(qResults); // This might be heavy (N * M).
-        // Optimization: Use userData.quizStreak or similar as proxy? No. 
-        // We will do the fetch because accurate data is requested. 
-        // 50 users * 10-20 reads is fine.
+        const qSnap = await getDocs(qResults);
+        const quizCount = qSnap.size;
 
-        const quizCount = qSnap.size; // Total attempts
-
-        // Fetch user's active pet (pets are in top-level 'pets' collection with userId field)
+        // Active Pet
         let activePet = null;
         try {
             const petQuery = query(collection(db, 'pets'), where('userId', '==', stat.userId), where('isActive', '==', true), limit(1));
@@ -144,53 +140,88 @@ async function fetchLeaderboardData() {
             if (!petSnap.empty) {
                 activePet = petSnap.docs[0].data();
             }
-        } catch (err) {
-            console.error(`Error fetching pet for ${stat.userId}`, err);
-        }
+        } catch (err) { console.error(err); }
+
+        // Successes (Achievements)
+        let userSucces = [];
+        try {
+            const succesQuery = collection(db, 'users', stat.userId, 'userSucces');
+            const succesSnap = await getDocs(succesQuery);
+            userSucces = succesSnap.docs.map(d => {
+                const sId = d.data().succesId || d.id;
+                const def = succesMap[sId];
+                return def ? { ...def, unlockedAt: d.data().unlockedAt } : null;
+            }).filter(s => s);
+        } catch (err) { console.error("Error fetching user succes", err); }
 
         return {
             ...stat,
             displayName: userData.firstname ? `${userData.firstname} ${userData.lastname || ''}` : (userData.email.split('@')[0]),
             photoURL: userData.photoURL,
             quizCount: quizCount,
-            badges: stat.badges, // Pass processed badges
-            activePet: activePet // Pass active pet
+            badges: stat.badges,
+            activePet: activePet,
+            successes: userSucces
         };
     }));
 
     return enrichedUsers.filter(u => u !== null);
 }
 
+// Global store for modal access
+let currentLeaderboardData = [];
+
 function renderLeaderboard(container, users) {
+    currentLeaderboardData = users; // Store for global access
+
     if (users.length === 0) {
         container.innerHTML = '<div style="padding: 2rem; text-align: center;">Aucun champion pour le moment. Soyez le premier !</div>';
         return;
     }
 
-    // Determine max badges for progress bar scale (e.g. max found or a fixed cap like 20)
-    // If top user has 5, scale is 5. If 500, scale is 500.
-    const maxBadges = Math.max(...users.map(u => u.badgeCount), 10); // Min 10 scale
-
     container.innerHTML = users.map((user, index) => {
         const rank = index + 1;
         const isPodium = rank <= 3;
 
-        // Generate Badge Icons HTML
+        // Gym Badges
         const badgeIconsHtml = user.badges.map(b => {
-            const unlockDate = new Date(b.unlockedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+            const unlockDate = b.unlockedAt ? new Date(b.unlockedAt).toLocaleDateString('fr-FR') : '';
             return `
-            <div class="pantheon-badge-icon" data-tooltip="${b.name} (Obtenu le ${unlockDate})">
+            <div class="pantheon-badge-icon" data-tooltip="${b.name} (${unlockDate})">
                 ${b.image ? `<img src="${b.image}">` : '🏅'}
             </div>
         `}).join('');
+
+        // Achievements (Succès)
+        const MAX_SUCCES_DISPLAY = 5;
+        const visibleSucces = user.successes.slice(0, MAX_SUCCES_DISPLAY);
+        const hiddenSucces = user.successes.slice(MAX_SUCCES_DISPLAY);
+
+        let succesHtml = visibleSucces.map(s => `
+            <span class="user-succes-icon" data-tooltip="${s.name}" style="font-size: 1.2rem; cursor: help; margin-right: 4px;">
+                ${s.icon && s.icon.includes('/') ? `<img src="${s.icon}" style="width: 20px; height: 20px;">` : (s.icon || '🏆')}
+            </span>
+        `).join('');
+
+        if (hiddenSucces.length > 0) {
+            succesHtml += `
+            <span class="user-succes-more clickable" onclick="window.showAllSucces('${user.userId}')" data-tooltip="Voir les ${hiddenSucces.length} autres succès" style="font-size: 0.9rem; background: var(--surface-color-hover); padding: 2px 8px; border-radius: 12px; cursor: pointer; color: var(--text-secondary); border: 1px solid var(--border-color); transition: all 0.2s;">
+                +${hiddenSucces.length}
+            </span>`;
+        }
+
+        const succesContainer = user.successes.length > 0 ? `
+            <div class="user-succes-row" style="margin-top: 6px; display: flex; align-items: center; flex-wrap: wrap;">
+                ${succesHtml}
+            </div>
+        ` : '';
+
 
         let rankDisplay = `<span class="rank-text">${rank}.</span>`;
         if (isPodium) {
             const icons = ['👑', '🥈', '🥉'];
             rankDisplay = `<div class="rank-badge">${icons[index]}</div>`;
         }
-
-        const dateStr = new Date(user.lastBadgeDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
 
         return `
         <div class="leaderboard-item rank-${rank}">
@@ -216,7 +247,47 @@ function renderLeaderboard(container, users) {
                     ${user.badgeCount > 10 ? `<span class="more-badges">+${user.badgeCount - 10}</span>` : ''}
                 </div>
             </div>
+            <div class="col-succes-list">
+                 ${succesContainer}
+            </div>
         </div>
         `;
     }).join('');
 }
+
+// Global modal function
+window.showAllSucces = function (userId) {
+    const user = currentLeaderboardData.find(u => u.userId === userId);
+    if (!user) return;
+
+    // Create Modal HTML
+    const modalHtml = `
+    <div class="pantheon-modal-overlay active" onclick="this.classList.remove('active'); setTimeout(() => this.remove(), 300);">
+        <div class="pantheon-modal" onclick="event.stopPropagation()">
+            <button class="pantheon-modal-close" onclick="this.closest('.pantheon-modal-overlay').classList.remove('active'); setTimeout(() => this.closest('.pantheon-modal-overlay').remove(), 300);">×</button>
+            <div class="pantheon-modal-header">
+                <h3>Succès de ${user.displayName}</h3>
+                <span class="badge-count-pill">${user.successes.length} Succès</span>
+            </div>
+            <div class="pantheon-modal-grid">
+                ${user.successes.map(s => {
+        const date = s.unlockedAt ? new Date(s.unlockedAt.seconds * 1000).toLocaleDateString('fr-FR') : '';
+        return `
+                    <div class="succes-grid-item" title="${s.description || ''}">
+                        <div class="succes-grid-icon">
+                             ${s.icon && s.icon.includes('/') ? `<img src="${s.icon}">` : (s.icon || '🏆')}
+                        </div>
+                        <div class="succes-grid-info">
+                            <div class="succes-name">${s.name}</div>
+                            <div class="succes-date">${date}</div>
+                        </div>
+                    </div>
+                    `;
+    }).join('')}
+            </div>
+        </div>
+    </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+};
