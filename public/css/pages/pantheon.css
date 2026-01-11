@@ -102,18 +102,78 @@ html[data-theme="dark"] .leaderboard-header {
     gap: 1rem;
 }
 
-.col-badges {
-    width: 150px;
+.col-count {
+    width: 80px;
+    /* Was col-badges */
     text-align: center;
-    font-weight: 600;
-    color: var(--text-secondary);
-}
-
-.col-progress {
-    flex: 1.5;
-    padding-left: 1rem;
     display: flex;
     align-items: center;
+    justify-content: center;
+}
+
+.badge-count-pill {
+    background: rgba(251, 191, 36, 0.2);
+    color: #b45309;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+html[data-theme="dark"] .badge-count-pill {
+    color: #fbbf24;
+    background: rgba(251, 191, 36, 0.15);
+}
+
+.col-badges-list {
+    flex: 3;
+    /* Was col-progress */
+    padding-left: 1.5rem;
+    display: flex;
+    align-items: center;
+}
+
+/* Badges Grid for Collection Display */
+.badges-grid {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.pantheon-badge-icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface-hover);
+    border-radius: 50%;
+    font-size: 1.2rem;
+    border: 1px solid var(--border-color);
+    transition: transform 0.2s;
+    cursor: help;
+    /* Tooltip on hover */
+}
+
+.pantheon-badge-icon:hover {
+    transform: scale(1.1);
+    z-index: 2;
+    background: var(--surface-color);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.pantheon-badge-icon img {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+}
+
+.more-badges {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+    margin-left: 0.25rem;
 }
 
 /* Rank Styles */

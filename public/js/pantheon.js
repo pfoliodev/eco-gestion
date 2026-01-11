@@ -11,6 +11,7 @@ import {
     collectionGroup
 } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js";
 import { notyf } from './ui.js';
+import { getAllSuccesDefinitions } from './succes.js';
 
 export async function initPantheon() {
     const listElement = document.getElementById('leaderboard-list');
@@ -37,12 +38,13 @@ async function fetchLeaderboardData() {
     const succesQuery = query(collectionGroup(db, 'userSucces'));
     const snapshot = await getDocs(succesQuery);
 
-    const userStats = {};
+    // 2. Fetch definitions for icons
+    const allSucces = await getAllSuccesDefinitions();
+    const succesMap = {};
+    allSucces.forEach(s => succesMap[s.id] = s);
 
-    // 2. Aggregate counts and last date
+    // 3. Aggregate counts and data
     snapshot.docs.forEach(docSnap => {
-        // Parent of userSucces is the user document path: users/{userId}/userSucces/{succesId}
-        // doc.ref.parent.parent.id gives userId
         const userId = docSnap.ref.parent.parent.id;
         const data = docSnap.data();
         const unlockedAt = data.unlockedAt ? data.unlockedAt.seconds * 1000 : 0;
@@ -51,14 +53,27 @@ async function fetchLeaderboardData() {
             userStats[userId] = {
                 userId,
                 badgeCount: 0,
-                lastBadgeDate: 0
+                lastBadgeDate: 0,
+                unlockedBadges: [] // Store IDs
             };
         }
 
         userStats[userId].badgeCount++;
+        userStats[userId].unlockedBadges.push(data.succesId);
+
         if (unlockedAt > userStats[userId].lastBadgeDate) {
             userStats[userId].lastBadgeDate = unlockedAt;
         }
+    });
+
+    // Attach icons to user stats
+    Object.values(userStats).forEach(stat => {
+        // Sort badges by some criteria? Maybe just random or defined order?
+        // Let's just map to objects for rendering
+        stat.badges = stat.unlockedBadges
+            .map(id => succesMap[id])
+            .filter(b => b) // Filter out unknown IDs
+            .slice(0, 10); // Limit to 10 for display
     });
 
     // 3. Filter users with at least 1 badge and Sort
@@ -110,7 +125,8 @@ async function fetchLeaderboardData() {
             ...stat,
             displayName: userData.firstname ? `${userData.firstname} ${userData.lastname || ''}` : (userData.email.split('@')[0]),
             photoURL: userData.photoURL,
-            quizCount: quizCount
+            quizCount: quizCount,
+            badges: stat.badges // Pass processed badges
         };
     }));
 
@@ -130,11 +146,17 @@ function renderLeaderboard(container, users) {
     container.innerHTML = users.map((user, index) => {
         const rank = index + 1;
         const isPodium = rank <= 3;
-        const progressPercent = (user.badgeCount / maxBadges) * 100;
+
+        // Generate Badge Icons HTML
+        const badgeIconsHtml = user.badges.map(b => `
+            <div class="pantheon-badge-icon" title="${b.name}">
+                ${b.icon.includes('/') ? `<img src="${b.icon}">` : b.icon}
+            </div>
+        `).join('');
 
         let rankDisplay = `<span class="rank-text">${rank}.</span>`;
         if (isPodium) {
-            const icons = ['👑', '🥈', '🥉']; // Or specific styles
+            const icons = ['👑', '🥈', '🥉'];
             rankDisplay = `<div class="rank-badge">${icons[index]}</div>`;
         }
 
@@ -149,16 +171,16 @@ function renderLeaderboard(container, users) {
                 <img src="${user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName)}&background=random`}" class="user-avatar" alt="${user.displayName}">
                 <div class="user-details">
                     <span class="user-name">${user.displayName}</span>
-                    <span class="user-subtext">${user.quizCount} QCM complétés • Dernier badge le ${dateStr}</span>
+                    <span class="user-subtext">${user.quizCount} QCM complétés</span>
                 </div>
             </div>
-            <div class="col-badges">
-                ${user.badgeCount} Succès
+            <div class="col-count">
+                <span class="badge-count-pill">${user.badgeCount}</span>
             </div>
-            <div class="col-progress">
-                <div class="progress-container">
-                    <div class="progress-bar" style="width: ${progressPercent}%"></div>
-                    <span class="progress-label">${Math.floor(progressPercent)}%</span>
+            <div class="col-badges-list">
+                <div class="badges-grid">
+                    ${badgeIconsHtml}
+                    ${user.badgeCount > 10 ? `<span class="more-badges">+${user.badgeCount - 10}</span>` : ''}
                 </div>
             </div>
         </div>
