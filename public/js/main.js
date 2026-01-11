@@ -1,5 +1,6 @@
 import { initTinyMCE, showPage, notyf } from './ui.js';
 import { db, auth } from './firebase.js';
+import { doc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js";
 import { initAuth } from './auth.js';
 import { initForm, loadCourses, renderCourses, updateFilters, viewCourse, editCourse, deleteCourse, loadRecentCourses } from './course.js';
 import { initAdminSidebar, loadUsers } from './admin.js';
@@ -338,3 +339,16 @@ window.revealDragon = async () => {
 
 // Hint for the curious
 console.log("%cLa curiosité est récompensée... Essaye de taper revealDragon()", "color: transparent;");
+// Time Tracking
+setInterval(async () => {
+    if (auth.currentUser) {
+        try {
+            const userRef = doc(db, 'users', auth.currentUser.uid);
+            await updateDoc(userRef, {
+                totalTimeSpent: increment(60)
+            });
+        } catch (e) {
+            // fail silently
+        }
+    }
+}, 60000);
