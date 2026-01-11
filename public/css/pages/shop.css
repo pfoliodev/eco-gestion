@@ -672,14 +672,14 @@
 
 .shop-login-required h3 {
     font-size: 1.75rem;
-    color: var(--text-main);
+    color: #1e293b;
     margin-bottom: 1rem;
     font-weight: 700;
     letter-spacing: -0.02em;
 }
 
 .shop-login-required p {
-    color: var(--text-secondary);
+    color: #475569;
     margin-bottom: 2.5rem;
     line-height: 1.6;
     font-size: 1.05rem;
