@@ -28,6 +28,7 @@
 @import './components/footer.css';
 @import './components/coins.css';
 @import './components/hero.css';
+@import './components/quests.css';
 
 /* Pages */
 @import './pages/home.css';

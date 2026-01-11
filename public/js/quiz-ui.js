@@ -14,6 +14,7 @@ import { state } from './state.js';
 import { auth, db } from './firebase.js';
 import { addCoins, showCoinGainAnimation, updateBalanceDisplay } from './coins.js';
 import { unlockGymBadge, getBadgeForQuiz } from './gym-badges.js';
+import { onQuizComplete } from './quests.js';
 
 import { calculateQuizReward } from './config/economy.js';
 import { processXPGain, calculatePetStats } from './utils/pet-utils.js';
@@ -719,6 +720,9 @@ function renderQuizPlayer() {
             // Update streaks
             await updateStreakData();
             await updatePerfectStreakData(score === currentQuizQuestions.length);
+
+            // Update quest progress
+            await onQuizComplete(score === currentQuizQuestions.length);
 
             // Check and unlock badges after quiz completion
             await checkAndUnlockSucces(currentQuiz.id, score, currentQuizQuestions.length, currentQuiz.title, currentQuiz.courseId, { duration });
