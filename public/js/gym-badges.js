@@ -1,4 +1,5 @@
 import { db, auth } from './firebase.js';
+import { unlockSucces } from './succes.js';
 import {
     collection,
     doc,
@@ -52,6 +53,10 @@ export async function unlockGymBadge(badgeId) {
 
         await setDoc(userBadgeRef, newBadgeData);
         console.log(`🏅 Gym Badge Unlocked: ${badgeDef.name}`);
+
+        // Unlock 'Le premier d'une longue série' success
+        // This function handles the check if it's already unlocked
+        await unlockSucces('first_badge');
 
         return { success: true, isNew: true, badge: newBadgeData, def: badgeDef };
 

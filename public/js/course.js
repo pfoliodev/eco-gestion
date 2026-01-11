@@ -163,8 +163,21 @@ export function renderCategories() {
         if (catEval && auth.currentUser) {
             const status = state.evaluationStatuses && state.evaluationStatuses[catEval.id];
             const isLocked = status && !status.unlocked;
+            const isValidated = status && status.validated;
 
-            if (isLocked) {
+            if (isValidated) {
+                // Badge Display (Success!)
+                const badgeImg = status.badge ? status.badge.image : null;
+                if (badgeImg) {
+                    // Centered alignment with the button above (Button center ~37px from right)
+                    // Badge width 75px -> Center is 37.5px from right if right=0.
+                    evalBtnHtml = `<div class="badge-awarded-icon" style="position: absolute; top: 65px; right: 0px; z-index: 10; width: 75px; height: 75px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4)); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);" onmouseover="this.style.transform='scale(1.2) rotate(10deg)'" onmouseout="this.style.transform='scale(1) rotate(0deg)'" title="Badge Obtenu !">
+                        <img src="${badgeImg}" alt="Badge" style="width: 100%; height: 100%; object-fit: contain;">
+                    </div>`;
+                } else {
+                    evalBtnHtml = `<div style="position: absolute; top: 70px; right: 15px; z-index: 10; font-size: 3rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); cursor: help;" title="Badge Obtenu !">🏅</div>`;
+                }
+            } else if (isLocked) {
                 // Locked Style (Grey/Red)
                 evalBtnHtml = `<button class="btn-start-eval" onclick="event.stopPropagation(); window.startCategoryEvaluation('${catEval.id}')" style="position: absolute; top: 70px; right: 15px; z-index: 10; padding: 0.5rem 1rem; border-radius: 20px; background: #6b7280; color: white; border: none; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.2); transition: transform 0.2s; opacity: 0.8;" title="Verrouillé - Cliquez pour voir les conditions">🔒 Évaluation</button>`;
             } else {

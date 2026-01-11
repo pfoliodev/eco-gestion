@@ -227,13 +227,15 @@ export async function preloadEvaluationStatuses(evaluations) {
 
     // 1. Fetch Data (Optimized: Fetch once for all)
     // In a larger app, we'd cache this or use specific queries
-    const [quizzesSnap, resultsSnap] = await Promise.all([
+    const [quizzesSnap, resultsSnap, badgesSnap] = await Promise.all([
         getDocs(collection(db, 'quizzes')),
-        getDocs(query(collection(db, 'quiz_results'), where("userId", "==", auth.currentUser.uid)))
+        getDocs(query(collection(db, 'quiz_results'), where("userId", "==", auth.currentUser.uid))),
+        getDocs(collection(db, 'users', auth.currentUser.uid, 'gymBadges'))
     ]);
 
     const allQuizzes = quizzesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
     const userResults = resultsSnap.docs.map(d => d.data());
+    const userBadges = badgesSnap.docs.map(d => d.data());
 
     // 2. Map Best Scores
     const bestScores = {};
@@ -248,27 +250,40 @@ export async function preloadEvaluationStatuses(evaluations) {
     // 3. Compute Status for each Evaluation
     const statuses = {};
     evaluations.forEach(evalData => {
+        // --- Badge / Validation Check ---
+        let relatedBadge = null;
+        if (evalData.categoryId === 'eco-gestion') {
+            relatedBadge = userBadges.find(b => b.badgeId === 'badge_eco_gestion');
+        }
+        const isValidated = !!relatedBadge;
+
+        // --- Unlock Check ---
+        let isUnlocked = false;
+
         if (!evalData.tags || evalData.tags.length === 0) {
-            statuses[evalData.id] = { unlocked: true };
-            return;
+            isUnlocked = true;
+        } else {
+            const requiredQuizzes = allQuizzes.filter(q => {
+                if (!q.tags || !Array.isArray(q.tags)) return false;
+                return q.tags.some(tag => evalData.tags.includes(tag));
+            });
+
+            if (requiredQuizzes.length === 0) {
+                isUnlocked = true;
+            } else {
+                isUnlocked = requiredQuizzes.every(q => {
+                    const score = bestScores[q.id] || 0;
+                    return score >= 80;
+                });
+            }
         }
 
-        const requiredQuizzes = allQuizzes.filter(q => {
-            if (!q.tags || !Array.isArray(q.tags)) return false;
-            return q.tags.some(tag => evalData.tags.includes(tag));
-        });
-
-        if (requiredQuizzes.length === 0) {
-            statuses[evalData.id] = { unlocked: true };
-            return;
-        }
-
-        const isUnlocked = requiredQuizzes.every(q => {
-            const score = bestScores[q.id] || 0;
-            return score >= 80;
-        });
-
-        statuses[evalData.id] = { unlocked: isUnlocked };
+        // Final Status Object
+        statuses[evalData.id] = {
+            unlocked: isUnlocked,
+            validated: isValidated,
+            badge: relatedBadge
+        };
     });
 
     return statuses;

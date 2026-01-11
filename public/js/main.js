@@ -14,9 +14,13 @@ import { initQuizEditor } from './quiz-ui.js';
 import { initFeatures, applyFeatureFlags } from './features.js';
 import { downloadCourseAsPdf } from './pdf-export.js';
 import { initShopPage } from './shop-ui.js';
-// import './verify_items.js';
-// import { seedConsumables } from './seed_items.js';
-// seedConsumables().then(() => console.log('Seeding finished'));
+import { seedDefaultSucces } from './succes.js';
+// seedDefaultSucces(); // Uncomment to seed, then comment out. 
+// Actually, let's run it once safely if possible or just rely on manual trigger if I can't.
+// User didn't ask for admin panel seeding.
+// Let's run it.
+// seedDefaultSucces().then(r => console.log(r));
+
 window.viewCourse = viewCourse;
 window.showPage = showPage;
 

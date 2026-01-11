@@ -425,8 +425,28 @@ function renderQuizHistory(quizzes) {
         const duration = formatDuration(quiz.duration);
 
         // Find course title from state
-        const course = state.courses.find(c => c.id === quiz.courseId);
-        const courseTitle = course ? course.title : 'Cours inconnu';
+        let courseTitle = 'Cours inconnu';
+
+        if (quiz.courseId === 'evaluation_mode' || (quiz.id && quiz.id.startsWith('eval_'))) {
+            // Handle Evaluations
+            const parts = quiz.id.split('_');
+            // Format: eval_{evalId}_{timestamp} -> parts[1] is evaluationId
+            if (parts.length >= 2 && state.evaluations) {
+                const evalId = parts[1];
+                const evaluation = state.evaluations.find(e => e.id === evalId);
+                if (evaluation) {
+                    courseTitle = `Évaluation : ${evaluation.title}`;
+                } else {
+                    courseTitle = 'Évaluation'; // Fallback
+                }
+            } else {
+                courseTitle = 'Évaluation';
+            }
+        } else {
+            // Normal Courses
+            const course = state.courses.find(c => c.id === quiz.courseId);
+            if (course) courseTitle = course.title;
+        }
 
         return `
             <tr>

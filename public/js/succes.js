@@ -709,6 +709,14 @@ export async function seedDefaultSucces() {
             secret: true,
             hint: "La console est ton amie... revealDragon() pourrait t'aider.",
             requirement: { type: 'console_found' }
+        },
+        {
+            id: 'first_badge',
+            name: 'Le premier d\'une longue série',
+            description: 'Obtenez votre premier Badge d\'Arène.',
+            icon: '/images/succes/first_badge.png', // Image copied from user upload
+            category: 'progression',
+            requirement: { type: 'first_badge' }
         }
     ];
 
