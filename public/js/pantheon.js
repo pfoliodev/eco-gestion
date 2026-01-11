@@ -155,7 +155,7 @@ function renderLeaderboard(container, users) {
         const badgeIconsHtml = user.badges.map(b => {
             const unlockDate = new Date(b.unlockedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
             return `
-            <div class="pantheon-badge-icon" title="${b.name} (Obtenu le ${unlockDate})">
+            <div class="pantheon-badge-icon" data-tooltip="${b.name} (Obtenu le ${unlockDate})">
                 ${b.image ? `<img src="${b.image}">` : '🏅'}
             </div>
         `}).join('');
