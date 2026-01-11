@@ -5,7 +5,7 @@ import { onAuthStateChanged, signInWithEmailAndPassword, signOut, GoogleAuthProv
 import { setIsAdmin, setUser, state, setUserProgress } from './state.js';
 import { getAllUserBestScores } from './quiz.js';
 import { notyf, showPage } from './ui.js';
-import { getUserBalance, initBalanceListener, updateBalanceDisplay, addCoins } from './coins.js';
+import { getUserBalance, initBalanceListener, stopBalanceListener, updateBalanceDisplay, addCoins } from './coins.js';
 import { ECONOMY } from './config/economy.js';
 
 export async function createUserProfile(userId, email, firstName = '', lastName = '', photoURL = null, isNewUser = true) {
@@ -128,6 +128,7 @@ export function initAuth() {
         dropdownLogout.addEventListener('click', async () => {
             profileDropdown.classList.remove('active');
             try {
+                stopBalanceListener(); // Stop listener before signing out
                 await signOut(auth);
                 notyf.success('Déconnexion réussie.');
                 showPage('accueil');
@@ -226,6 +227,7 @@ export function initAuth() {
                 });
             }
         } else {
+            stopBalanceListener(); // Ensure listener is stopped
             setIsAdmin(false);
             setUser(null); // Clear user from state
 

@@ -74,19 +74,46 @@ export async function getTotalEarned() {
  * @param {function} callback - Called with new balance value
  * @returns {function} Unsubscribe function
  */
+let unsubscribeBalanceListener = null;
+
+/**
+ * Initialize balance listener for real-time updates
+ * @param {function} callback - Called with new balance value
+ * @returns {function} Unsubscribe function
+ */
 export function initBalanceListener(callback) {
     if (!auth.currentUser) return () => { };
 
+    // Unsubscribe previous if exists to avoid duplicates
+    if (unsubscribeBalanceListener) {
+        unsubscribeBalanceListener();
+        unsubscribeBalanceListener = null;
+    }
+
     const userRef = doc(db, 'users', auth.currentUser.uid);
 
-    return onSnapshot(userRef, (snap) => {
+    unsubscribeBalanceListener = onSnapshot(userRef, (snap) => {
         if (snap.exists()) {
             const balance = snap.data().balance || 0;
             callback(balance);
         }
     }, (error) => {
+        // Ignore permission errors on logout
+        if (error.code === 'permission-denied') return;
         console.error('Balance listener error:', error);
     });
+
+    return unsubscribeBalanceListener;
+}
+
+/**
+ * Stop the active balance listener
+ */
+export function stopBalanceListener() {
+    if (unsubscribeBalanceListener) {
+        unsubscribeBalanceListener();
+        unsubscribeBalanceListener = null;
+    }
 }
 
 // ============================================
