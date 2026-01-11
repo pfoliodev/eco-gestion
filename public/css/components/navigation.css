@@ -2,13 +2,19 @@
    NAVIGATION & HEADER
    ======================================== */
 
+/* Main Container for Sticky Header */
+#header-container {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    width: 100%;
+}
+
 /* Header & Navigation */
 header {
     background: var(--surface-color);
     border-bottom: 1px solid var(--border-color);
-    position: sticky;
-    top: 0;
-    z-index: 100;
+    /* Removed sticky from here as parent converts */
 }
 
 .nav-container {
