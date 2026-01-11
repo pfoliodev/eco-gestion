@@ -226,6 +226,12 @@ export function initAuth() {
                     updateBalanceDisplay(newBalance);
                 });
             }
+
+            // Redirect to home if on login/register page
+            const activePage = document.querySelector('.page.active');
+            if (activePage && (activePage.id === 'login' || activePage.id === 'register')) {
+                showPage('accueil');
+            }
         } else {
             stopBalanceListener(); // Ensure listener is stopped
             setIsAdmin(false);
@@ -271,7 +277,7 @@ export function initAuth() {
             try {
                 await signInWithEmailAndPassword(auth, email, password);
                 notyf.success('Connexion réussie !');
-                showPage('cours');
+                showPage('accueil');
             } catch (error) {
                 console.error("Login error:", error);
                 let errorMessage = 'Email ou mot de passe incorrect.';
@@ -287,7 +293,7 @@ export function initAuth() {
             try {
                 await signInWithPopup(auth, provider);
                 notyf.success('Connexion Google réussie !');
-                showPage('cours');
+                showPage('accueil');
             } catch (error) {
                 console.error('Google login error:', error);
                 let errorMessage = 'Erreur lors de la connexion Google.';
@@ -336,7 +342,7 @@ export function initAuth() {
                 await createUserProfile(userCredential.user.uid, email, firstName, lastName);
 
                 notyf.success('Inscription réussie ! Bienvenue !');
-                showPage('cours');
+                showPage('accueil');
             } catch (error) {
                 console.error('Registration error:', error);
                 let errorMessage = 'Erreur lors de l\'inscription.';
@@ -379,7 +385,7 @@ export function initAuth() {
                 }
 
                 notyf.success('Inscription Google réussie !');
-                showPage('cours');
+                showPage('accueil');
             } catch (error) {
                 console.error('Google registration error:', error);
                 let errorMessage = 'Erreur lors de l\'inscription Google.';
