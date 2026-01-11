@@ -301,6 +301,51 @@ html[data-theme="dark"] .badge-count-pill {
     z-index: 10;
 }
 
+/* Pet Icon Tooltip */
+.user-pet-icon[data-tooltip]:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 130%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: white;
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+    pointer-events: none;
+    z-index: 100;
+    font-weight: 600;
+    animation: tooltipFadeIn 0.2s ease-out;
+}
+
+.user-pet-icon[data-tooltip]:hover::before {
+    content: '';
+    position: absolute;
+    bottom: 115%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 6px;
+    border-style: solid;
+    border-color: #6366f1 transparent transparent transparent;
+    z-index: 100;
+    animation: tooltipFadeIn 0.2s ease-out;
+}
+
+@keyframes tooltipFadeIn {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
 .user-name {
     font-weight: 600;
     color: var(--text-main);
