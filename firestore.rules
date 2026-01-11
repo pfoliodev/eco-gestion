@@ -109,6 +109,14 @@ service cloud.firestore {
         (request.resource.data.userId == request.auth.uid || resource.data.userId == request.auth.uid);
     }
 
+    // Site Visits collection (Unique Visitors)
+    match /site_visits/{userId} {
+      // Allows counting documents for stats
+      allow read: if request.auth != null;
+      // Users can only mark their own visit
+      allow create, update: if request.auth != null && request.auth.uid == userId;
+    }
+
     // Settings collection (feature flags)
     match /settings/{settingId} {
       allow read: if true;
