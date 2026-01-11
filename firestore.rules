@@ -126,6 +126,11 @@ service cloud.firestore {
       allow read: if request.auth != null;
     }
 
+    // Collection Group Rule for gymBadges
+    match /{path=**}/gymBadges/{badgeId} {
+      allow read: if request.auth != null;
+    }
+
     // Settings collection (feature flags)
     match /settings/{settingId} {
       allow read: if true;

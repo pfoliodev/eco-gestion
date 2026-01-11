@@ -11,7 +11,7 @@ import {
     collectionGroup
 } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js";
 import { notyf } from './ui.js';
-import { getAllSuccesDefinitions } from './succes.js';
+import { GYM_BADGES } from './gym-badges.js';
 
 export async function initPantheon() {
     const listElement = document.getElementById('leaderboard-list');
@@ -32,17 +32,15 @@ export async function initPantheon() {
  * Then fetch user details for the top users.
  */
 async function fetchLeaderboardData() {
-    // 1. Fetch all unlocked successes globally
-    // Note: In a large scale app, this should be a scheduled cloud function updating a 'stats' document.
-    // For this size, collectionGroup is acceptable.
-    const succesQuery = query(collectionGroup(db, 'userSucces'));
-    const snapshot = await getDocs(succesQuery);
+    // 1. Fetch all unlocked gym badges globally
+    const badgesQuery = query(collectionGroup(db, 'gymBadges'));
+    const snapshot = await getDocs(badgesQuery);
 
-    // 2. Fetch definitions for icons
-    const allSucces = await getAllSuccesDefinitions();
-    const userStats = {}; // Definition restored
-    const succesMap = {};
-    allSucces.forEach(s => succesMap[s.id] = s);
+    // 2. Prep definitions map
+    const badgeMap = {};
+    GYM_BADGES.forEach(b => badgeMap[b.id] = b);
+
+    const userStats = {};
 
     // 3. Aggregate counts and data
     snapshot.docs.forEach(docSnap => {
@@ -60,7 +58,9 @@ async function fetchLeaderboardData() {
         }
 
         userStats[userId].badgeCount++;
-        userStats[userId].unlockedBadges.push(data.succesId);
+        // data.id or docSnap.id is the badgeId.
+        // In gym-badges.js, the doc ID IS the badgeId (e.g. 'badge_eco_gestion')
+        userStats[userId].unlockedBadges.push(docSnap.id);
 
         if (unlockedAt > userStats[userId].lastBadgeDate) {
             userStats[userId].lastBadgeDate = unlockedAt;
@@ -69,12 +69,10 @@ async function fetchLeaderboardData() {
 
     // Attach icons to user stats
     Object.values(userStats).forEach(stat => {
-        // Sort badges by some criteria? Maybe just random or defined order?
-        // Let's just map to objects for rendering
         stat.badges = stat.unlockedBadges
-            .map(id => succesMap[id])
+            .map(id => badgeMap[id])
             .filter(b => b) // Filter out unknown IDs
-            .slice(0, 10); // Limit to 10 for display
+            .slice(0, 10);
     });
 
     // 3. Filter users with at least 1 badge and Sort
