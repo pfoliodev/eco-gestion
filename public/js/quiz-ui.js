@@ -215,6 +215,7 @@ export async function renderQuizList(courseId) {
         container.innerHTML = `
             <div class="locked-content">
                 <p>🔒 Connectez-vous pour accéder aux QCM de révision.</p>
+                <a href="#login" class="btn-login-small">Se connecter</a>
             </div>
         `;
         return;
