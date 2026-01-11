@@ -1,13 +1,38 @@
 /* Hero Section */
 .hero-section {
-    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
-    color: white;
+    /* background: linear-gradient(135deg, var(--primary-color), var(--primary-dark)); removed to be theme-aware or specific */
+    background: var(--surface-color);
+    /* Use surface by default */
+    color: var(--text-main);
     padding: 3rem 2rem;
     border-radius: var(--radius-lg);
-    box-shadow: 0 10px 25px -5px rgba(79, 70, 229, 0.4);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
     position: relative;
     overflow: hidden;
     transition: all 0.3s ease;
+}
+
+/* Specific styling for Light Mode Hero to be distinct but readable */
+html[data-theme="light"] .hero-section {
+    background: white;
+    border: 1px solid var(--border-color);
+}
+
+/* Specific styling for Dark Mode Hero */
+html[data-theme="dark"] .hero-section {
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    color: white;
+    border: none;
+    box-shadow: 0 10px 25px -5px rgba(79, 70, 229, 0.4);
+}
+
+/* Inner elements logic */
+html[data-theme="dark"] .hero-content p {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+html[data-theme="light"] .hero-content p {
+    color: var(--text-secondary);
 }
 
 .hero-section::before {
