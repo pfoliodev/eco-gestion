@@ -1,0 +1,179 @@
+/* Login Page Specific Styles */
+
+.login-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    width: 100%;
+    max-width: 1000px;
+    /* Wider to accommodate both panels */
+    min-height: 600px;
+    margin: 2rem auto;
+    background: var(--surface-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
+    overflow: hidden;
+    /* For image/bg clipping */
+}
+
+/* --- Left Side: Hero / Features --- */
+.login-hero {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    color: white;
+    padding: 3rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+}
+
+.login-hero::after {
+    /* Geometric decoration */
+    content: '';
+    position: absolute;
+    top: -50px;
+    right: -50px;
+    width: 200px;
+    height: 200px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+}
+
+.login-hero h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    font-weight: 800;
+    /* Extra bold */
+    line-height: 1.2;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    /* Subtle shadow for contrast */
+}
+
+.login-hero p.subtitle {
+    font-size: 1.15rem;
+    font-weight: 500;
+    /* Medium weight instead of normal/thin */
+    opacity: 0.95;
+    /* Increased opacity */
+    margin-bottom: 3rem;
+}
+
+.login-features-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.login-feature-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    animation: loginFadeIn 0.5s ease-out forwards;
+    opacity: 0;
+    position: relative;
+    z-index: 2;
+}
+
+@keyframes loginFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.login-feature-item:nth-child(1) {
+    animation-delay: 0.1s;
+}
+
+.login-feature-item:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.login-feature-item:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+.login-feature-icon {
+    width: 48px;
+    height: 48px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+    /* Prevent icon shrinking */
+}
+
+.login-feature-text h3 {
+    font-size: 1.1rem;
+    margin-bottom: 0.2rem;
+}
+
+/* Ensure text is white in hero section overrides */
+.login-hero h1,
+.login-hero p,
+.login-hero h3,
+.login-hero li,
+.login-hero .login-feature-text h3,
+.login-hero .login-feature-text p {
+    color: #ffffff !important;
+}
+
+.login-feature-text p {
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+/* --- Right Side: Form --- */
+.login-form-wrapper {
+    padding: 3rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    background: var(--surface-color);
+}
+
+.login-form-wrapper h2 {
+    font-size: 2rem;
+    margin-bottom: 2rem;
+    text-align: center;
+    color: var(--text-main);
+}
+
+/* --- Responsive --- */
+@media (max-width: 768px) {
+    .login-container {
+        grid-template-columns: 1fr;
+        max-width: 500px;
+        min-height: auto;
+    }
+
+    .login-hero {
+        padding: 2rem;
+        text-align: center;
+    }
+
+    .login-hero h1 {
+        font-size: 2rem;
+    }
+
+    .login-features-list {
+        display: none;
+        /* Hide detailed list on very small screens if needed, or keep it */
+        /* Let's keep it but arguably simplified. For now keeping it visible. */
+    }
+
+    .login-feature-item {
+        justify-content: center;
+        /* Center align items */
+        text-align: left;
+    }
+}
