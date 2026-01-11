@@ -904,7 +904,7 @@ async function renderPetDashboard(petData) {
 
             <div class="pet-stats-container">
                 <div class="pet-progress-section">
-                    <div class="progress-label">
+                    <div class="pet-progress-label">
                         <span>Expérience</span>
                         <span>${currentPet.xp || 0} / ${xpNeeded} XP</span>
                     </div>

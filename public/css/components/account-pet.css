@@ -338,7 +338,7 @@ body.light-theme .pet-profile-card {
     margin-bottom: 2rem;
 }
 
-.progress-label {
+.pet-progress-label {
     display: flex;
     justify-content: space-between;
     margin-bottom: 0.5rem;
