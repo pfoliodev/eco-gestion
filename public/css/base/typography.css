@@ -11,7 +11,8 @@
 main {
     position: relative;
     min-height: 85vh;
-    /* Prevent footer jump */
+    padding-top: 80px;
+    /* Offset for fixed header (64px + gap) */
     width: 100%;
 }
 

@@ -4,8 +4,9 @@
 
 /* Main Container for Sticky Header */
 #header-container {
-    position: sticky;
+    position: fixed;
     top: 0;
+    left: 0;
     z-index: 1000;
     width: 100%;
 }
