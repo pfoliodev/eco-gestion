@@ -1,0 +1,443 @@
+/* Pantheon Page Styles */
+
+/* Base Layout */
+.pantheon-container {
+    max-width: 1000px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+    font-family: 'Inter', sans-serif;
+}
+
+.pantheon-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.pantheon-logo-container {
+    margin-bottom: 1.5rem;
+}
+
+.pantheon-logo {
+    width: 150px;
+    height: 150px;
+    object-fit: contain;
+    filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.1));
+}
+
+.pantheon-title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--text-main);
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.02em;
+    text-transform: uppercase;
+    background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.pantheon-subtitle {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+/* Leaderboard Card */
+.leaderboard-card {
+    background: var(--surface-color);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+}
+
+.leaderboard-header {
+    display: flex;
+    padding: 1rem 1.5rem;
+    background: rgba(251, 191, 36, 0.1);
+    /* Subtle Gold Tint */
+    border-bottom: 1px solid var(--border-color);
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+html[data-theme="dark"] .leaderboard-header {
+    background: rgba(251, 191, 36, 0.05);
+}
+
+.leaderboard-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.leaderboard-item {
+    display: flex;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    transition: background-color 0.2s;
+}
+
+.leaderboard-item:last-child {
+    border-bottom: none;
+}
+
+.leaderboard-item:hover {
+    background-color: var(--surface-hover);
+}
+
+/* Columns */
+.col-rank {
+    width: 80px;
+    text-align: center;
+    font-weight: 700;
+}
+
+.col-user {
+    flex: 2;
+    padding-left: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.col-count {
+    width: 80px;
+    /* Was col-badges */
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.badge-count-pill {
+    background: rgba(251, 191, 36, 0.2);
+    color: #b45309;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+html[data-theme="dark"] .badge-count-pill {
+    color: #fbbf24;
+    background: rgba(251, 191, 36, 0.15);
+}
+
+.col-badges-list {
+    flex: 3;
+    /* Was col-progress */
+    padding-left: 1.5rem;
+    display: flex;
+    align-items: center;
+}
+
+/* Badges Grid for Collection Display */
+.badges-grid {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.pantheon-badge-icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface-hover);
+    border-radius: 50%;
+    font-size: 1.5rem;
+    border: 1px solid var(--border-color);
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+    position: relative;
+    /* For tooltip positioning */
+}
+
+.pantheon-badge-icon:hover {
+    transform: translateY(-2px) scale(1.1);
+    z-index: 10;
+    background: var(--surface-color);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-color: #fbbf24;
+}
+
+.pantheon-badge-icon img {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+}
+
+/* Custom Tooltip */
+.pantheon-badge-icon[data-tooltip]:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 110%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(15, 23, 42, 0.95);
+    color: white;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    pointer-events: none;
+    z-index: 20;
+    font-weight: 500;
+    animation: fadeIn 0.2s ease-out;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Tooltip Arrow */
+.pantheon-badge-icon[data-tooltip]:hover::before {
+    content: '';
+    position: absolute;
+    bottom: 95%;
+    /* Slightly overlapping to close gap */
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 6px;
+    border-style: solid;
+    border-color: rgba(15, 23, 42, 0.95) transparent transparent transparent;
+    z-index: 20;
+    animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translate(-50%, 5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translate(-50%, 0);
+    }
+}
+
+.more-badges {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+    margin-left: 0.25rem;
+}
+
+/* Rank Styles */
+.rank-badge {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    font-size: 1.2rem;
+    font-weight: 800;
+    margin: 0 auto;
+}
+
+.rank-text {
+    font-size: 1.2rem;
+    color: var(--text-secondary);
+}
+
+/* Top 3 Styling */
+.rank-1 .rank-badge {
+    background: linear-gradient(135deg, #FFF7D1 0%, #FFD700 100%);
+    color: #92400E;
+    border: 2px solid #CA8A04;
+    box-shadow: 0 4px 6px -1px rgba(234, 179, 8, 0.3);
+}
+
+.rank-2 .rank-badge {
+    background: linear-gradient(135deg, #F3F4F6 0%, #D1D5DB 100%);
+    color: #374151;
+    border: 2px solid #9CA3AF;
+    box-shadow: 0 4px 6px -1px rgba(156, 163, 175, 0.3);
+}
+
+.rank-3 .rank-badge {
+    background: linear-gradient(135deg, #FEF3C7 0%, #D97706 100%);
+    color: #78350F;
+    border: 2px solid #B45309;
+    box-shadow: 0 4px 6px -1px rgba(217, 119, 6, 0.3);
+}
+
+/* User Info */
+.user-avatar-container {
+    position: relative;
+    width: 48px;
+    height: 48px;
+    margin-right: 1rem;
+}
+
+.user-avatar {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--surface-color);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.user-pet-wrapper {
+    position: absolute;
+    bottom: -5px;
+    right: -5px;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 5;
+}
+
+.user-pet-icon {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0) 70%);
+    border-radius: 50%;
+    transition: transform 0.2s;
+}
+
+.user-pet-wrapper:hover .user-pet-icon {
+    transform: scale(1.4);
+}
+
+/* Pet Icon Tooltip (on wrapper span, not img) */
+.user-pet-wrapper[data-tooltip]:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 130%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: white;
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+    pointer-events: none;
+    z-index: 100;
+    font-weight: 600;
+    animation: tooltipFadeIn 0.2s ease-out;
+}
+
+.user-pet-wrapper[data-tooltip]:hover::before {
+    content: '';
+    position: absolute;
+    bottom: 115%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 6px;
+    border-style: solid;
+    border-color: #6366f1 transparent transparent transparent;
+    z-index: 100;
+    animation: tooltipFadeIn 0.2s ease-out;
+}
+
+@keyframes tooltipFadeIn {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+.user-name {
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.user-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.user-subtext {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+/* Progress Bar */
+.progress-container {
+    width: 100%;
+    height: 12px;
+    background-color: var(--border-color);
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #F59E0B 0%, #D97706 100%);
+    border-radius: 6px;
+    transition: width 1s ease-out;
+}
+
+.progress-label {
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.65rem;
+    color: white;
+    /* Contrast needed */
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    font-weight: 700;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .pantheon-title {
+        font-size: 1.75rem;
+    }
+
+    .leaderboard-header {
+        display: none;
+        /* Hide header on mobile for simpler view */
+    }
+
+    .leaderboard-item {
+        flex-wrap: wrap;
+        padding: 1rem;
+        gap: 0.5rem;
+    }
+
+    .col-rank {
+        width: 40px;
+    }
+
+    .col-user {
+        flex: 1;
+        width: calc(100% - 60px);
+        /* Fill rest */
+        padding-left: 0.5rem;
+    }
+
+    .col-badges {
+        width: auto;
+        margin-left: 50px;
+        order: 3;
+        font-size: 0.9rem;
+    }
+
+    .col-progress {
+        width: 100%;
+        order: 4;
+        padding-left: 50px;
+        margin-top: 0.25rem;
+    }
+}

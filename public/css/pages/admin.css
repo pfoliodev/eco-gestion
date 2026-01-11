@@ -25,7 +25,7 @@
 
 .admin-section.active {
     display: block;
-    animation: fadeIn 0.2s ease-out;
+    /* No animation - instant transition */
 }
 
 /* Sidebar shared styles (could be in a component) */

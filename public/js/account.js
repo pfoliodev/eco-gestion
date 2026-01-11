@@ -65,15 +65,13 @@ export async function loadAccount() {
     await loadUserFavorites();
     await loadUserSucces();
     await loadUserStats();
-    await loadUserStats();
     await loadInventory();
     await loadUserPet();
-    initProfileForm();
+    await loadUserGymBadges();
+
     initProfileForm();
     initAccountSidebar();
-    await loadUserSucces();
-    await loadUserGymBadges(); // NEW
-    await loadUserStats();
+    initSuccesFilters();
 }
 
 // Initialize account sidebar navigation
@@ -296,12 +294,17 @@ async function loadUserStats() {
 
     try {
         // Fetch all data in parallel
-        const [coursesViewed, quizHistory, favorites, succes] = await Promise.all([
+        // Fetch all data in parallel
+        const [coursesViewed, quizHistory, succes, userDocSnap] = await Promise.all([
             getCoursesViewedCount(userId),
             getQuizHistory(userId),
-            getFavoritesCount(userId),
-            getUserSucces()
+            getUserSucces(),
+            getDoc(doc(db, 'users', userId))
         ]);
+
+        const userData = userDocSnap.exists() ? userDocSnap.data() : {};
+        const favoritesCount = (userData.favorites || []).length;
+        const totalTimeSpent = userData.totalTimeSpent || 0;
 
         // Calculate stats from quiz history
         const quizCount = quizHistory.length;
@@ -322,8 +325,11 @@ async function loadUserStats() {
             quizCount,
             avgScore,
             succesCount: succes.length,
-            favoritesCount: favorites,
-            bestTime
+            avgScore,
+            succesCount: succes.length,
+            favoritesCount,
+            bestTime,
+            totalTimeSpent
         });
 
         // Render quiz history table
@@ -395,6 +401,15 @@ function renderUserStats(stats) {
     setStatValue('user-stat-succes-count', stats.succesCount);
     setStatValue('user-stat-favorites-count', stats.favoritesCount);
     setStatValue('user-stat-best-time', stats.bestTime ? formatDuration(stats.bestTime) : '-');
+    setStatValue('user-stat-time-spent', formatTotalTime(stats.totalTimeSpent));
+}
+
+function formatTotalTime(seconds) {
+    if (!seconds) return '0m';
+    const hours = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    if (hours > 0) return `${hours}h ${mins}m`;
+    return `${mins}m`;
 }
 
 function formatDuration(seconds) {
@@ -889,7 +904,7 @@ async function renderPetDashboard(petData) {
 
             <div class="pet-stats-container">
                 <div class="pet-progress-section">
-                    <div class="progress-label">
+                    <div class="pet-progress-label">
                         <span>Expérience</span>
                         <span>${currentPet.xp || 0} / ${xpNeeded} XP</span>
                     </div>
@@ -1280,6 +1295,9 @@ async function loadInventory() {
                 const currentItemId = currentPet.itemId;
 
                 inventory.forEach(item => {
+                    // Skip virtual items (these exist only in memory, like the active pet projection)
+                    if (item.isVirtual) return;
+
                     if (item.equipped) {
                         const matchesInstance = currentInstanceId && item.instanceId === currentInstanceId;
                         const matchesItem = currentItemId && item.itemId === currentItemId;

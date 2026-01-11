@@ -1,5 +1,6 @@
 import { initTinyMCE, showPage, notyf } from './ui.js';
 import { db, auth } from './firebase.js';
+import { doc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js";
 import { initAuth } from './auth.js';
 import { initForm, loadCourses, renderCourses, updateFilters, viewCourse, editCourse, deleteCourse, loadRecentCourses } from './course.js';
 import { initAdminSidebar, loadUsers } from './admin.js';
@@ -57,6 +58,9 @@ function initNavigation() {
             else if (href === '#mon-compte') {
                 loadAccount();
                 showPage('mon-compte');
+            }
+            else if (href === '#pantheon') {
+                showPage('pantheon');
             }
         }
     });
@@ -233,7 +237,8 @@ async function initApp() {
             { containerId: 'page-mon-compte', path: '/templates/pages/account.html' },
             { containerId: 'page-privacy-policy', path: '/templates/pages/privacy-policy.html' },
             { containerId: 'page-legal-notice', path: '/templates/pages/legal-notice.html' },
-            { containerId: 'page-shop', path: '/templates/pages/shop.html' }
+            { containerId: 'page-shop', path: '/templates/pages/shop.html' },
+            { containerId: 'page-pantheon', path: '/templates/pages/pantheon.html' }
         ]);
 
         // Initialize app after templates are loaded
@@ -292,6 +297,11 @@ document.addEventListener('pageChange', (e) => {
         renderCourses();
         updateFilters();
     }
+    if (e.detail.pageId === 'pantheon') {
+        import('./pantheon.js').then(module => {
+            module.initPantheon();
+        });
+    }
 });
 
 // ============================================
@@ -338,3 +348,16 @@ window.revealDragon = async () => {
 
 // Hint for the curious
 console.log("%cLa curiosité est récompensée... Essaye de taper revealDragon()", "color: transparent;");
+// Time Tracking
+setInterval(async () => {
+    if (auth.currentUser) {
+        try {
+            const userRef = doc(db, 'users', auth.currentUser.uid);
+            await updateDoc(userRef, {
+                totalTimeSpent: increment(60)
+            });
+        } catch (e) {
+            // fail silently
+        }
+    }
+}, 60000);

@@ -1,5 +1,5 @@
 import { db, coursesCollection, auth } from './firebase.js';
-import { getDocs, doc, deleteDoc, updateDoc, addDoc, serverTimestamp, collection } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js";
+import { getDocs, doc, deleteDoc, updateDoc, addDoc, serverTimestamp, collection, query, where } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js";
 import { state, setCourses, setCurrentCourseId, setUserProgress } from './state.js';
 import { notyf, showPage } from './ui.js';
 import { updateCourseFlashcardsSidebar } from './flashcard-ui.js';
@@ -59,16 +59,27 @@ export async function loadCourses() {
         }
 
         // Load Evaluations
+        // Load Evaluations (only if logged in)
         try {
-            state.evaluations = await getEvaluations();
+            if (auth.currentUser) {
+                state.evaluations = await getEvaluations();
 
-            // Preload unlock statuses if logged in (for UI feedback)
-            if (auth.currentUser && state.evaluations.length > 0) {
-                state.evaluationStatuses = await preloadEvaluationStatuses(state.evaluations);
+                // Preload unlock statuses if logged in (for UI feedback)
+                if (state.evaluations.length > 0) {
+                    state.evaluationStatuses = await preloadEvaluationStatuses(state.evaluations);
+                } else {
+                    state.evaluationStatuses = {};
+                }
             } else {
+                state.evaluations = [];
                 state.evaluationStatuses = {};
             }
         } catch (e) { console.error("Error loading evaluations", e); }
+
+        // Preload quiz progress for category cards (if logged in)
+        if (auth.currentUser) {
+            await preloadQuizProgress();
+        }
 
         // Update global stats (for Home page)
         updateGlobalStats();
@@ -113,6 +124,32 @@ export function renderCategories() {
     if (backBtn) backBtn.style.display = 'none';
     if (title) title.textContent = 'Mes Cours';
 
+    // HERO SECTION LOGIC
+    const heroSection = document.getElementById('hero-section');
+    if (heroSection) {
+        heroSection.style.display = 'block';
+        // Greeting
+        const hour = new Date().getHours();
+        const greetingText = hour < 18 ? 'Bonjour' : 'Bonsoir';
+        const userName = auth.currentUser ? (auth.currentUser.displayName || 'Étudiant') : 'visiteur';
+        const greetingEl = document.getElementById('hero-greeting');
+        if (greetingEl) greetingEl.innerHTML = `${greetingText}, <span style="color: #fbbf24;">${userName}</span> !`;
+
+        // Resume Button
+        const resumeBtn = document.getElementById('hero-resume-btn');
+        const lastCourseId = localStorage.getItem('lastViewedCourseId');
+        if (lastCourseId && resumeBtn) {
+            const lastCourse = state.courses.find(c => c.id === lastCourseId);
+            if (lastCourse) {
+                resumeBtn.style.display = 'inline-flex';
+                document.getElementById('hero-last-course').textContent = lastCourse.title;
+                resumeBtn.onclick = () => viewCourse(lastCourseId);
+            }
+        }
+    }
+    const titleHeader = document.getElementById('courses-title');
+    if (titleHeader) titleHeader.style.display = 'none'; // Hide standard title when in category view
+
     // Count courses per category
     const counts = {};
     state.courses.forEach(c => {
@@ -145,6 +182,27 @@ export function renderCategories() {
         const imageHtml = config.image
             ? `<img src="${config.image}" alt="Professeur ${config.label}" class="category-prof-img">`
             : `<div class="category-prof-img" style="font-size: 80px; display: flex; align-items: center; justify-content: center;">📚</div>`;
+
+        // Progress Bar Logic
+        const progress = getCategoryProgress(catName);
+        let progressHtml = '';
+
+        if (progress >= 0) {
+            if (progress > 0) {
+                progressHtml = `
+                <div class="category-progress-container" title="${progress}% terminé">
+                    <div class="category-progress-info">
+                        <span class="category-count-text">📚 ${count} cours</span>
+                        <span class="category-percent-text">${progress}%</span>
+                    </div>
+                    <div class="category-progress-track">
+                        <div class="category-progress-fill" style="width: ${progress}%"></div>
+                    </div>
+                </div>`;
+            } else {
+                progressHtml = `<span class="category-count">📚 ${count} cours</span>`;
+            }
+        }
 
         // Cinematic Button logic
         let playBtnHtml = '';
@@ -190,15 +248,75 @@ export function renderCategories() {
         <div class="category-card ${config.className}" onclick="selectCategory('${catName.replace(/'/g, "\\'")}')">
             ${playBtnHtml}
             ${evalBtnHtml}
+
             ${imageHtml}
+            
             <div class="category-content">
                 <h3 class="category-name">${config.label}</h3>
-                <span class="category-count">${count} cours</span>
+                ${progressHtml}
             </div>
             <div class="category-arrow">➜</div>
         </div>
         `;
     }).join('');
+}
+
+// Preload quiz progress data for categories
+// Stores: state.categoryQuizStats = { 'CategoryName': { total: X, completed: Y } }
+async function preloadQuizProgress() {
+    if (!auth.currentUser || !state.courses) return;
+
+    try {
+        // 1. Load all quizzes
+        const quizzesSnap = await getDocs(collection(db, 'quizzes'));
+        const allQuizzes = quizzesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+        // 2. Load user's completed quiz IDs (unique quizzes the user has attempted)
+        const resultsQuery = query(collection(db, 'quiz_results'), where('userId', '==', auth.currentUser.uid));
+        const resultsSnap = await getDocs(resultsQuery);
+        const completedQuizIds = new Set(resultsSnap.docs.map(d => d.data().quizId));
+
+        // 3. Map quizzes to their course's category
+        const courseIdToCategory = {};
+        state.courses.forEach(c => {
+            courseIdToCategory[c.id] = normalizeCategory(c.category);
+        });
+
+        // 4. Calculate stats per category
+        state.categoryQuizStats = {};
+
+        allQuizzes.forEach(quiz => {
+            const category = courseIdToCategory[quiz.courseId];
+            if (!category) return; // Quiz for unknown/archived course
+
+            if (!state.categoryQuizStats[category]) {
+                state.categoryQuizStats[category] = { total: 0, completed: 0 };
+            }
+
+            state.categoryQuizStats[category].total++;
+
+            if (completedQuizIds.has(quiz.id)) {
+                state.categoryQuizStats[category].completed++;
+            }
+        });
+
+    } catch (e) {
+        console.error("Error preloading quiz progress:", e);
+        state.categoryQuizStats = {};
+    }
+}
+
+// Helper to calculate category progress (based on quizzes completed)
+function getCategoryProgress(categoryName) {
+    // Use preloaded quiz stats if available
+    if (state.categoryQuizStats && state.categoryQuizStats[categoryName]) {
+        const stats = state.categoryQuizStats[categoryName];
+        if (stats.total === 0) return 0;
+        return Math.round((stats.completed / stats.total) * 100);
+    }
+
+    // Fallback: return 0 if no quiz data
+    return 0;
 }
 
 // Helpers for Cinematics
@@ -318,9 +436,17 @@ export function renderCourses() {
     // Switch view to courses
     if (categoryGrid) categoryGrid.style.display = 'none';
     grid.style.display = 'grid';
+
+    // Hide Hero logic on course view
+    const heroSection = document.getElementById('hero-section');
+    if (heroSection) heroSection.style.display = 'none';
+
     if (courseControls) courseControls.style.display = 'flex';
     if (backBtn) backBtn.style.display = 'inline-flex';
-    if (title) title.textContent = currentCategory;
+    if (title) {
+        title.style.display = 'block';
+        title.textContent = currentCategory;
+    }
 
     const searchTerm = document.getElementById('course-search')?.value.toLowerCase() || '';
     const subjectFilter = document.getElementById('course-filter')?.value || '';

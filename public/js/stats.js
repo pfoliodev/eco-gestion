@@ -6,6 +6,11 @@ import { db } from './firebase.js';
 import {
     collection,
     getDocs,
+    getDoc,
+    setDoc,
+    doc,
+    serverTimestamp,
+    increment,
     query,
     where,
     orderBy,
@@ -13,40 +18,86 @@ import {
 } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js";
 
 const courseViewsCollection = collection(db, 'courseViews');
+const siteVisitsCollection = collection(db, 'site_visits'); // NEW
 const quizResultsCollection = collection(db, 'quiz_results');
 const usersCollection = collection(db, 'users');
 const coursesCollection = collection(db, 'courses');
 
 // ============================================
+// SITE VISITS TRACKING
+// ============================================
+
+export async function trackSiteVisit(userId) {
+    if (!userId) return;
+    try {
+        const visitRef = doc(db, 'site_visits', userId);
+        // We just mark that this user HAS visited the site (and when last)
+        await setDoc(visitRef, {
+            userId,
+            lastVisit: serverTimestamp(),
+            visitCount: increment(1)
+        }, { merge: true });
+    } catch (e) {
+        console.error("Error tracking site visit", e);
+    }
+}
+
+/**
+ * Get count of unique site visitors
+ */
+async function getSiteVisitorsCount() {
+    try {
+        const snap = await getDocs(siteVisitsCollection);
+        return snap.size;
+    } catch {
+        return 0;
+    }
+}
+
+// ============================================
 // COURSE STATISTICS
 // ============================================
+
+let cachedViewStats = null;
+let lastFetchTime = 0;
+const PROMISE_CACHE_TTL = 5000; // 5 seconds cache
+
+async function fetchViewStatsRaw() {
+    const now = Date.now();
+    if (cachedViewStats && (now - lastFetchTime < PROMISE_CACHE_TTL)) {
+        return cachedViewStats;
+    }
+
+    const snapshot = await getDocs(courseViewsCollection);
+    const perCourse = {};
+    const globalUsers = new Set();
+
+    snapshot.docs.forEach(doc => {
+        const data = doc.data();
+        const courseId = data.courseId;
+        if (!courseId) return;
+
+        if (!perCourse[courseId]) {
+            perCourse[courseId] = { uniqueViews: 0, totalViews: 0 };
+        }
+        perCourse[courseId].uniqueViews += 1;
+        perCourse[courseId].totalViews += (data.viewCount || 1);
+
+        if (data.userId) globalUsers.add(data.userId);
+    });
+
+    cachedViewStats = { perCourse, globalUnique: globalUsers.size };
+    lastFetchTime = now;
+    return cachedViewStats;
+}
 
 /**
  * Get statistics for all courses
  * @returns {Object} courseId -> { uniqueViews, totalViews }
  */
 export async function getCourseViewStats() {
-    try {
-        const snapshot = await getDocs(courseViewsCollection);
-        const stats = {};
-
-        snapshot.docs.forEach(doc => {
-            const data = doc.data();
-            const courseId = data.courseId;
-            if (!courseId) return;
-
-            if (!stats[courseId]) {
-                stats[courseId] = { uniqueViews: 0, totalViews: 0 };
-            }
-            stats[courseId].uniqueViews += 1;
-            stats[courseId].totalViews += (data.viewCount || 1);
-        });
-
-        return stats;
-    } catch (error) {
-        console.error('Error fetching course view stats:', error);
-        return {};
-    }
+    const data = await fetchViewStatsRaw();
+    return data.perCourse;
 }
 
 /**
@@ -301,22 +352,23 @@ export async function getTopUsers(topN = 10) {
  */
 export async function getOverviewStats() {
     try {
-        const [courseStats, quizStats, userStats] = await Promise.all([
-            getCourseViewStats(),
+        const [viewData, quizStats, userStats, siteVisitors] = await Promise.all([
+            fetchViewStatsRaw(),
             getOverallQuizStats(),
-            getUserActivityStats()
+            getUserActivityStats(),
+            getSiteVisitorsCount()
         ]);
 
+        const courseStats = viewData.perCourse;
+
         // Calculate total views
-        let totalUniqueViews = 0;
         let totalViews = 0;
         Object.values(courseStats).forEach(s => {
-            totalUniqueViews += s.uniqueViews;
             totalViews += s.totalViews;
         });
 
         return {
-            totalUniqueViews,
+            totalUniqueViews: siteVisitors,
             totalViews,
             totalQuizAttempts: quizStats.totalAttempts,
             avgQuizScore: quizStats.avgScore,

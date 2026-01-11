@@ -8,6 +8,11 @@
     box-sizing: border-box;
 }
 
+html {
+    overflow-y: scroll;
+    /* Force scrollbar to prevent horizontal layout shift during transitions */
+}
+
 body {
     font-family: var(--font-body);
     line-height: 1.5;

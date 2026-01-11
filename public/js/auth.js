@@ -5,7 +5,7 @@ import { onAuthStateChanged, signInWithEmailAndPassword, signOut, GoogleAuthProv
 import { setIsAdmin, setUser, state, setUserProgress } from './state.js';
 import { getAllUserBestScores } from './quiz.js';
 import { notyf, showPage } from './ui.js';
-import { getUserBalance, initBalanceListener, updateBalanceDisplay, addCoins } from './coins.js';
+import { getUserBalance, initBalanceListener, stopBalanceListener, updateBalanceDisplay, addCoins } from './coins.js';
 import { ECONOMY } from './config/economy.js';
 
 export async function createUserProfile(userId, email, firstName = '', lastName = '', photoURL = null, isNewUser = true) {
@@ -128,6 +128,7 @@ export function initAuth() {
         dropdownLogout.addEventListener('click', async () => {
             profileDropdown.classList.remove('active');
             try {
+                stopBalanceListener(); // Stop listener before signing out
                 await signOut(auth);
                 notyf.success('Déconnexion réussie.');
                 showPage('accueil');
@@ -142,6 +143,11 @@ export function initAuth() {
             const userRole = await getUserRole(user.uid);
             setIsAdmin(userRole === 'admin');
             setUser(user); // Set user in state
+
+            // Track Site Visit
+            import('./stats.js').then(module => {
+                module.trackSiteVisit(user.uid);
+            });
 
             // --- DAILY BONUS & PET LOGIC ---
             import('./gamification.js').then(module => {
@@ -220,7 +226,14 @@ export function initAuth() {
                     updateBalanceDisplay(newBalance);
                 });
             }
+
+            // Redirect to home if on login/register page
+            const activePage = document.querySelector('.page.active');
+            if (activePage && (activePage.id === 'login' || activePage.id === 'register')) {
+                showPage('accueil');
+            }
         } else {
+            stopBalanceListener(); // Ensure listener is stopped
             setIsAdmin(false);
             setUser(null); // Clear user from state
 
@@ -264,7 +277,7 @@ export function initAuth() {
             try {
                 await signInWithEmailAndPassword(auth, email, password);
                 notyf.success('Connexion réussie !');
-                showPage('cours');
+                showPage('accueil');
             } catch (error) {
                 console.error("Login error:", error);
                 let errorMessage = 'Email ou mot de passe incorrect.';
@@ -280,7 +293,7 @@ export function initAuth() {
             try {
                 await signInWithPopup(auth, provider);
                 notyf.success('Connexion Google réussie !');
-                showPage('cours');
+                showPage('accueil');
             } catch (error) {
                 console.error('Google login error:', error);
                 let errorMessage = 'Erreur lors de la connexion Google.';
@@ -329,7 +342,7 @@ export function initAuth() {
                 await createUserProfile(userCredential.user.uid, email, firstName, lastName);
 
                 notyf.success('Inscription réussie ! Bienvenue !');
-                showPage('cours');
+                showPage('accueil');
             } catch (error) {
                 console.error('Registration error:', error);
                 let errorMessage = 'Erreur lors de l\'inscription.';
@@ -372,7 +385,7 @@ export function initAuth() {
                 }
 
                 notyf.success('Inscription Google réussie !');
-                showPage('cours');
+                showPage('accueil');
             } catch (error) {
                 console.error('Google registration error:', error);
                 let errorMessage = 'Erreur lors de l\'inscription Google.';

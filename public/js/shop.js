@@ -293,6 +293,7 @@ export async function getUserInventory(category = null) {
             // Add virtual inventory item with full pet data
             items.push({
                 id: shopItemId,
+                isVirtual: true, // Mark as virtual so we don't try to update it in DB
                 itemId: shopItemId,
                 itemName: currentPet.name,
                 category: ECONOMY.CATEGORIES.COMPANION,

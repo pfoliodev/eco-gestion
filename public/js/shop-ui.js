@@ -48,6 +48,17 @@ export async function initShopPage() {
 
 function renderLoginRequired() {
     const grid = document.getElementById('shop-items-grid');
+    const filtersEl = document.querySelector('.shop-filters');
+    const balanceEl = document.querySelector('.shop-balance-display');
+    const limitedSection = document.getElementById('limited-section');
+    const sectionTitles = document.querySelectorAll('.shop-section .section-title');
+
+    // Hide all shop elements
+    if (filtersEl) filtersEl.style.display = 'none';
+    if (balanceEl) balanceEl.style.display = 'none';
+    if (limitedSection) limitedSection.style.display = 'none';
+    sectionTitles.forEach(el => el.style.display = 'none');
+
     if (grid) {
         grid.innerHTML = `
             <div class="shop-login-required">
