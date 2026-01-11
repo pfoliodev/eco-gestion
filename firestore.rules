@@ -121,6 +121,11 @@ service cloud.firestore {
       allow create, update: if request.auth != null && request.auth.uid == userId;
     }
 
+    // Collection Group Rule for userSucces (required for Pantheon leaderboard)
+    match /{path=**}/userSucces/{succesId} {
+      allow read: if request.auth != null;
+    }
+
     // Settings collection (feature flags)
     match /settings/{settingId} {
       allow read: if true;
