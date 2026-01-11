@@ -267,13 +267,38 @@ html[data-theme="dark"] .badge-count-pill {
 }
 
 /* User Info */
+.user-avatar-container {
+    position: relative;
+    width: 48px;
+    height: 48px;
+    margin-right: 1rem;
+}
+
 .user-avatar {
-    width: 40px;
-    height: 40px;
+    width: 100%;
+    height: 100%;
     border-radius: 50%;
     object-fit: cover;
     border: 2px solid var(--surface-color);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.user-pet-icon {
+    position: absolute;
+    bottom: -5px;
+    right: -5px;
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0) 70%);
+    border-radius: 50%;
+    transition: transform 0.2s;
+}
+
+.user-pet-icon:hover {
+    transform: scale(1.5);
+    z-index: 10;
 }
 
 .user-name {

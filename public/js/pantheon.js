@@ -135,14 +135,26 @@ async function fetchLeaderboardData() {
         // 50 users * 10-20 reads is fine.
 
         const quizCount = qSnap.size; // Total attempts
-        // Or unique quizzes? Prompt says "nombre de qcm effectué" (Total attempts usually).
+
+        // Fetch user's active pet
+        let activePet = null;
+        try {
+            const petQuery = query(collection(db, 'users', stat.userId, 'pets'), where('isActive', '==', true), limit(1));
+            const petSnap = await getDocs(petQuery);
+            if (!petSnap.empty) {
+                activePet = petSnap.docs[0].data();
+            }
+        } catch (err) {
+            console.error(`Error fetching pet for ${stat.userId}`, err);
+        }
 
         return {
             ...stat,
             displayName: userData.firstname ? `${userData.firstname} ${userData.lastname || ''}` : (userData.email.split('@')[0]),
             photoURL: userData.photoURL,
             quizCount: quizCount,
-            badges: stat.badges // Pass processed badges
+            badges: stat.badges, // Pass processed badges
+            activePet: activePet // Pass active pet
         };
     }));
 
@@ -186,7 +198,10 @@ function renderLeaderboard(container, users) {
                 ${rankDisplay}
             </div>
             <div class="col-user">
-                <img src="${user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName)}&background=random`}" class="user-avatar" alt="${user.displayName}">
+                <div class="user-avatar-container">
+                    <img src="${user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName)}&background=random`}" class="user-avatar" alt="${user.displayName}">
+                    ${user.activePet && user.activePet.image ? `<img src="${user.activePet.image}" class="user-pet-icon" title="Compagnon: ${user.activePet.name}">` : ''}
+                </div>
                 <div class="user-details">
                     <span class="user-name">${user.displayName}</span>
                     <span class="user-subtext">${user.quizCount} QCM complétés</span>
