@@ -149,7 +149,7 @@ function renderLeaderboard(container, users) {
         // Generate Badge Icons HTML
         const badgeIconsHtml = user.badges.map(b => `
             <div class="pantheon-badge-icon" title="${b.name}">
-                ${b.icon.includes('/') ? `<img src="${b.icon}">` : b.icon}
+                ${b.image ? `<img src="${b.image}">` : '🏅'}
             </div>
         `).join('');
 
