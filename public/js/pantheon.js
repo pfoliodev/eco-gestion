@@ -200,7 +200,7 @@ function renderLeaderboard(container, users) {
             <div class="col-user">
                 <div class="user-avatar-container">
                     <img src="${user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName)}&background=random`}" class="user-avatar" alt="${user.displayName}">
-                    ${user.activePet && user.activePet.image ? `<img src="${user.activePet.image}" class="user-pet-icon" data-tooltip="🐾 ${user.activePet.name} (Niv. ${user.activePet.level || 1})">` : ''}
+                    ${user.activePet && user.activePet.image ? `<span class="user-pet-wrapper" data-tooltip="🐾 ${user.activePet.name} (Niv. ${user.activePet.level || 1})"><img src="${user.activePet.image}" class="user-pet-icon"></span>` : ''}
                 </div>
                 <div class="user-details">
                     <span class="user-name">${user.displayName}</span>

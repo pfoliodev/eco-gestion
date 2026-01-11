@@ -283,26 +283,35 @@ html[data-theme="dark"] .badge-count-pill {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.user-pet-icon {
+.user-pet-wrapper {
     position: absolute;
     bottom: -5px;
     right: -5px;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 5;
+}
+
+.user-pet-icon {
     width: 24px;
     height: 24px;
     object-fit: contain;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
-    background: radial-gradient(circle, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0) 70%);
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0) 70%);
     border-radius: 50%;
     transition: transform 0.2s;
 }
 
-.user-pet-icon:hover {
-    transform: scale(1.5);
-    z-index: 10;
+.user-pet-wrapper:hover .user-pet-icon {
+    transform: scale(1.4);
 }
 
-/* Pet Icon Tooltip */
-.user-pet-icon[data-tooltip]:hover::after {
+/* Pet Icon Tooltip (on wrapper span, not img) */
+.user-pet-wrapper[data-tooltip]:hover::after {
     content: attr(data-tooltip);
     position: absolute;
     bottom: 130%;
@@ -321,7 +330,7 @@ html[data-theme="dark"] .badge-count-pill {
     animation: tooltipFadeIn 0.2s ease-out;
 }
 
-.user-pet-icon[data-tooltip]:hover::before {
+.user-pet-wrapper[data-tooltip]:hover::before {
     content: '';
     position: absolute;
     bottom: 115%;
