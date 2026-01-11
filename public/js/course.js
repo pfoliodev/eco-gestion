@@ -1,5 +1,5 @@
 import { db, coursesCollection, auth } from './firebase.js';
-import { getDocs, doc, deleteDoc, updateDoc, addDoc, serverTimestamp, collection } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js";
+import { getDocs, doc, deleteDoc, updateDoc, addDoc, serverTimestamp, collection, query, where } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js";
 import { state, setCourses, setCurrentCourseId, setUserProgress } from './state.js';
 import { notyf, showPage } from './ui.js';
 import { updateCourseFlashcardsSidebar } from './flashcard-ui.js';
@@ -75,6 +75,11 @@ export async function loadCourses() {
                 state.evaluationStatuses = {};
             }
         } catch (e) { console.error("Error loading evaluations", e); }
+
+        // Preload quiz progress for category cards (if logged in)
+        if (auth.currentUser) {
+            await preloadQuizProgress();
+        }
 
         // Update global stats (for Home page)
         updateGlobalStats();
@@ -256,24 +261,62 @@ export function renderCategories() {
     }).join('');
 }
 
-// Helper to calculate category progress
+// Preload quiz progress data for categories
+// Stores: state.categoryQuizStats = { 'CategoryName': { total: X, completed: Y } }
+async function preloadQuizProgress() {
+    if (!auth.currentUser || !state.courses) return;
+
+    try {
+        // 1. Load all quizzes
+        const quizzesSnap = await getDocs(collection(db, 'quizzes'));
+        const allQuizzes = quizzesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+        // 2. Load user's completed quiz IDs (unique quizzes the user has attempted)
+        const resultsQuery = query(collection(db, 'quiz_results'), where('userId', '==', auth.currentUser.uid));
+        const resultsSnap = await getDocs(resultsQuery);
+        const completedQuizIds = new Set(resultsSnap.docs.map(d => d.data().quizId));
+
+        // 3. Map quizzes to their course's category
+        const courseIdToCategory = {};
+        state.courses.forEach(c => {
+            courseIdToCategory[c.id] = normalizeCategory(c.category);
+        });
+
+        // 4. Calculate stats per category
+        state.categoryQuizStats = {};
+
+        allQuizzes.forEach(quiz => {
+            const category = courseIdToCategory[quiz.courseId];
+            if (!category) return; // Quiz for unknown/archived course
+
+            if (!state.categoryQuizStats[category]) {
+                state.categoryQuizStats[category] = { total: 0, completed: 0 };
+            }
+
+            state.categoryQuizStats[category].total++;
+
+            if (completedQuizIds.has(quiz.id)) {
+                state.categoryQuizStats[category].completed++;
+            }
+        });
+
+    } catch (e) {
+        console.error("Error preloading quiz progress:", e);
+        state.categoryQuizStats = {};
+    }
+}
+
+// Helper to calculate category progress (based on quizzes completed)
 function getCategoryProgress(categoryName) {
-    if (!state.userProgress || !state.courses) return 0;
+    // Use preloaded quiz stats if available
+    if (state.categoryQuizStats && state.categoryQuizStats[categoryName]) {
+        const stats = state.categoryQuizStats[categoryName];
+        if (stats.total === 0) return 0;
+        return Math.round((stats.completed / stats.total) * 100);
+    }
 
-    // Get all courses in this category
-    const catCourses = state.courses.filter(c => normalizeCategory(c.category) === categoryName);
-    if (catCourses.length === 0) return 0;
-
-    // Count how many are validated (percent >= 100 or validated: true)
-    let validatedCount = 0;
-    catCourses.forEach(c => {
-        const prog = state.userProgress[c.id];
-        if (prog && (prog.validated || prog.percent >= 100)) {
-            validatedCount++;
-        }
-    });
-
-    return Math.round((validatedCount / catCourses.length) * 100);
+    // Fallback: return 0 if no quiz data
+    return 0;
 }
 
 // Helpers for Cinematics
