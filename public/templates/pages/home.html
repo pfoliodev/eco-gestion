@@ -1,10 +1,22 @@
 <div class="container">
+    <!-- Hero Section -->
+    <div id="hero-section" class="hero-section" style="display: none; margin-bottom: 2rem;">
+        <div class="hero-content">
+            <h1 id="hero-greeting">Bonjour !</h1>
+            <p id="hero-subtitle">Prêt à continuer votre apprentissage ?</p>
+            <button id="hero-resume-btn" class="btn-primary btn-lg" style="margin-top: 1rem; display: none;">
+                ▶ Reprendre : <span id="hero-last-course">Cours</span>
+            </button>
+        </div>
+    </div>
+
     <div class="courses-header">
         <div class="courses-header-left">
             <button id="back-to-categories-btn" class="btn-back" style="display: none;">
                 ← Retour aux catégories
             </button>
-            <h2 id="courses-title">Mes Cours</h2>
+            <h2 id="courses-title" style="display: none;">Mes Cours</h2>
+            <!-- Title hidden by default if Hero is active, shown when inside category -->
         </div>
         <button id="add-course-btn" class="btn-primary">+ Ajouter un cours</button>
     </div>

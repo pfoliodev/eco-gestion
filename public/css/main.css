@@ -27,6 +27,7 @@
 @import './components/pdf-export.css';
 @import './components/footer.css';
 @import './components/coins.css';
+@import './components/hero.css';
 
 /* Pages */
 @import './pages/home.css';

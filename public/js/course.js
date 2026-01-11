@@ -11,6 +11,8 @@ import { applyFeatureFlags } from './features.js';
 import { playProfessorCinematic } from './cinematic.js';
 import { getEvaluations, startEvaluation, checkEvaluationUnlockStatus, preloadEvaluationStatuses } from './evaluations.js';
 
+import { initTilt } from './lib/vanilla-tilt.js';
+
 // Module state for category navigation
 let currentCategory = null;
 
@@ -113,6 +115,32 @@ export function renderCategories() {
     if (backBtn) backBtn.style.display = 'none';
     if (title) title.textContent = 'Mes Cours';
 
+    // HERO SECTION LOGIC
+    const heroSection = document.getElementById('hero-section');
+    if (heroSection) {
+        heroSection.style.display = 'block';
+        // Greeting
+        const hour = new Date().getHours();
+        const greetingText = hour < 18 ? 'Bonjour' : 'Bonsoir';
+        const userName = auth.currentUser ? (auth.currentUser.displayName || 'Étudiant') : 'visiteur';
+        const greetingEl = document.getElementById('hero-greeting');
+        if (greetingEl) greetingEl.innerHTML = `${greetingText}, <span style="color: #fbbf24;">${userName}</span> !`;
+
+        // Resume Button
+        const resumeBtn = document.getElementById('hero-resume-btn');
+        const lastCourseId = localStorage.getItem('lastViewedCourseId');
+        if (lastCourseId && resumeBtn) {
+            const lastCourse = state.courses.find(c => c.id === lastCourseId);
+            if (lastCourse) {
+                resumeBtn.style.display = 'inline-flex';
+                document.getElementById('hero-last-course').textContent = lastCourse.title;
+                resumeBtn.onclick = () => viewCourse(lastCourseId);
+            }
+        }
+    }
+    const titleHeader = document.getElementById('courses-title');
+    if (titleHeader) titleHeader.style.display = 'none'; // Hide standard title when in category view
+
     // Count courses per category
     const counts = {};
     state.courses.forEach(c => {
@@ -145,6 +173,30 @@ export function renderCategories() {
         const imageHtml = config.image
             ? `<img src="${config.image}" alt="Professeur ${config.label}" class="category-prof-img">`
             : `<div class="category-prof-img" style="font-size: 80px; display: flex; align-items: center; justify-content: center;">📚</div>`;
+
+        // Progress Ring Calculation
+        const progress = getCategoryProgress(catName);
+        const radius = 58;
+        const circumference = 2 * Math.PI * radius;
+        const offset = circumference - (progress / 100) * circumference;
+        const strokeColor = progress === 100 ? '#10b981' : (progress > 0 ? '#3b82f6' : 'rgba(255,255,255,0.1)'); // Green if done, Blue if started
+
+        const ringHtml = `
+        <div class="progress-ring-container">
+            <svg width="130" height="130">
+                <circle
+                    class="progress-ring__circle"
+                    stroke="${strokeColor}"
+                    stroke-width="4"
+                    fill="transparent"
+                    r="${radius}"
+                    cx="65"
+                    cy="65"
+                    style="stroke-dasharray: ${circumference} ${circumference}; stroke-dashoffset: ${offset};"
+                />
+            </svg>
+        </div>
+        `;
 
         // Cinematic Button logic
         let playBtnHtml = '';
@@ -190,7 +242,9 @@ export function renderCategories() {
         <div class="category-card ${config.className}" onclick="selectCategory('${catName.replace(/'/g, "\\'")}')">
             ${playBtnHtml}
             ${evalBtnHtml}
+
             ${imageHtml}
+            ${ringHtml}
             <div class="category-content">
                 <h3 class="category-name">${config.label}</h3>
                 <span class="category-count">${count} cours</span>
@@ -199,6 +253,29 @@ export function renderCategories() {
         </div>
         `;
     }).join('');
+
+    // Initialize Tilt after render
+    setTimeout(() => initTilt('.category-card'), 100);
+}
+
+// Helper to calculate category progress
+function getCategoryProgress(categoryName) {
+    if (!state.userProgress || !state.courses) return 0;
+
+    // Get all courses in this category
+    const catCourses = state.courses.filter(c => normalizeCategory(c.category) === categoryName);
+    if (catCourses.length === 0) return 0;
+
+    // Count how many are validated (percent >= 100 or validated: true)
+    let validatedCount = 0;
+    catCourses.forEach(c => {
+        const prog = state.userProgress[c.id];
+        if (prog && (prog.validated || prog.percent >= 100)) {
+            validatedCount++;
+        }
+    });
+
+    return Math.round((validatedCount / catCourses.length) * 100);
 }
 
 // Helpers for Cinematics
@@ -318,9 +395,17 @@ export function renderCourses() {
     // Switch view to courses
     if (categoryGrid) categoryGrid.style.display = 'none';
     grid.style.display = 'grid';
+
+    // Hide Hero logic on course view
+    const heroSection = document.getElementById('hero-section');
+    if (heroSection) heroSection.style.display = 'none';
+
     if (courseControls) courseControls.style.display = 'flex';
     if (backBtn) backBtn.style.display = 'inline-flex';
-    if (title) title.textContent = currentCategory;
+    if (title) {
+        title.style.display = 'block';
+        title.textContent = currentCategory;
+    }
 
     const searchTerm = document.getElementById('course-search')?.value.toLowerCase() || '';
     const subjectFilter = document.getElementById('course-filter')?.value || '';
