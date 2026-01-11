@@ -22,6 +22,63 @@ import { DAILY_QUESTS, WEEKLY_QUESTS, QUEST_CONFIG } from './config/quests.js';
 import { addCoins } from './coins.js';
 
 // ============================================
+// DYNAMIC CONFIGURATION
+// ============================================
+
+let cachedConfig = {
+    daily: DAILY_QUESTS,
+    weekly: WEEKLY_QUESTS,
+    config: QUEST_CONFIG
+};
+
+/**
+ * Load quest configuration from Firestore
+ * Falls back to static config if missing
+ */
+export async function loadQuestConfig() {
+    try {
+        const configRef = doc(db, 'settings', 'questConfig');
+        const configSnap = await getDoc(configRef);
+
+        if (configSnap.exists()) {
+            const data = configSnap.data();
+            cachedConfig = {
+                daily: data.daily || DAILY_QUESTS,
+                weekly: data.weekly || WEEKLY_QUESTS,
+                config: { ...QUEST_CONFIG, ...(data.params || {}) }
+            };
+            console.log("Loaded dynamic quest config");
+        }
+    } catch (e) {
+        console.warn("Failed to load quest config, using defaults:", e);
+    }
+}
+
+/**
+ * Save new configuration (Admin Only)
+ */
+export async function saveQuestConfig(newConfig) {
+    try {
+        const configRef = doc(db, 'settings', 'questConfig');
+        await setDoc(configRef, newConfig, { merge: true });
+
+        // Update local cache
+        if (newConfig.daily) cachedConfig.daily = newConfig.daily;
+        if (newConfig.weekly) cachedConfig.weekly = newConfig.weekly;
+        if (newConfig.params) cachedConfig.config = { ...cachedConfig.config, ...newConfig.params };
+
+        return { success: true };
+    } catch (e) {
+        console.error("Error saving config:", e);
+        return { success: false, error: e };
+    }
+}
+
+export function getDailyQuests() { return cachedConfig.daily; }
+export function getWeeklyQuests() { return cachedConfig.weekly; }
+export function getQuestParams() { return cachedConfig.config; }
+
+// ============================================
 // QUEST ASSIGNMENT
 // ============================================
 
@@ -92,7 +149,8 @@ export async function assignDailyQuests() {
         return data.type === 'daily' && data.assignedAt?.toDate() >= todayStart.toDate();
     });
 
-    if (existingDailies.length >= QUEST_CONFIG.DAILY_COUNT) {
+    if (existingDailies.length >= getQuestParams().DAILY_COUNT) {
+        // console.log("Daily quests already assigned");
         return; // Already has today's quests
     }
 
@@ -103,8 +161,13 @@ export async function assignDailyQuests() {
         }
     }
 
-    // Assign new daily quests
-    const selected = pickRandom(DAILY_QUESTS, QUEST_CONFIG.DAILY_COUNT);
+    // Assign new quests
+    const availableQuests = getDailyQuests();
+    const countToAssign = getQuestParams().DAILY_COUNT - existingDailies.length;
+
+    if (countToAssign <= 0) return;
+
+    const selected = pickRandom(availableQuests, countToAssign);
     const todayEnd = getTodayEnd();
 
     for (const quest of selected) {
@@ -145,7 +208,7 @@ export async function assignWeeklyQuests() {
         return data.type === 'weekly' && data.assignedAt?.toDate() >= weekStart.toDate();
     });
 
-    if (existingWeeklies.length >= QUEST_CONFIG.WEEKLY_COUNT) {
+    if (existingWeeklies.length >= getQuestParams().WEEKLY_COUNT) {
         return; // Already has this week's quests
     }
 
@@ -157,7 +220,9 @@ export async function assignWeeklyQuests() {
     }
 
     // Assign new weekly quests
-    const selected = pickRandom(WEEKLY_QUESTS, QUEST_CONFIG.WEEKLY_COUNT);
+    const availableQuests = getWeeklyQuests();
+    const countToAssign = getQuestParams().WEEKLY_COUNT;
+    const selected = pickRandom(availableQuests, countToAssign);
     const weekEnd = getWeekEnd();
 
     for (const quest of selected) {

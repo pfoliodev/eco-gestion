@@ -50,8 +50,13 @@
     <!-- Modals loaded dynamically -->
     <div id="modals-container"></div>
 
-    <!-- Floating Action Button -->
-    <button id="bug-fab" class="fab" title="Signaler un bug">🐞</button>
+    <!-- Floating Action Buttons -->
+    <div class="fab-container">
+        <button id="quest-fab" class="fab quest-fab" title="Mes Quêtes">📜
+            <span id="quest-fab-badge" class="fab-badge" style="display: none;">0</span>
+        </button>
+        <button id="bug-fab" class="fab" title="Signaler un bug">🐞</button>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.js"></script>
     <script type="module" src="js/main.js?v=20240105_2"></script>

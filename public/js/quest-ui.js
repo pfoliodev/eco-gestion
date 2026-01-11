@@ -10,11 +10,11 @@ import { updateBalanceDisplay } from './coins.js';
 import { auth } from './firebase.js';
 
 // ============================================
-// RENDERING
+// RENDERING (ACCOUNT PAGE)
 // ============================================
 
 /**
- * Render the full quests section
+ * Render the full quests section (Account Page)
  * @param {HTMLElement} container - Container element
  */
 export async function renderQuestsSection(container) {
@@ -45,10 +45,7 @@ export async function renderQuestsSection(container) {
                         <span class="quests-reset-timer" id="daily-reset-timer"></span>
                     </div>
                     <div class="quests-grid" id="daily-quests-grid">
-                        ${daily.length > 0
-                ? daily.map(q => renderQuestCard(q)).join('')
-                : '<p class="no-quests">Aucune quête quotidienne active.</p>'
-            }
+                        ${renderQuestListHTML(daily)}
                     </div>
                 </div>
 
@@ -59,17 +56,14 @@ export async function renderQuestsSection(container) {
                         <span class="quests-reset-timer" id="weekly-reset-timer"></span>
                     </div>
                     <div class="quests-grid" id="weekly-quests-grid">
-                        ${weekly.length > 0
-                ? weekly.map(q => renderQuestCard(q)).join('')
-                : '<p class="no-quests">Aucune quête hebdomadaire active.</p>'
-            }
+                        ${renderQuestListHTML(weekly)}
                     </div>
                 </div>
             </div>
         `;
 
-        // Attach claim handlers
-        attachClaimHandlers(container);
+        // Attach claim handlers (refresh full section)
+        attachClaimHandlers(container, () => renderQuestsSection(container));
 
         // Update reset timers
         updateResetTimers();
@@ -78,6 +72,16 @@ export async function renderQuestsSection(container) {
         console.error('Error rendering quests:', error);
         container.innerHTML = '<p class="error-msg">Erreur de chargement des quêtes.</p>';
     }
+}
+
+/**
+ * Helper to render HTML for a list of quests
+ */
+function renderQuestListHTML(quests) {
+    if (!quests || quests.length === 0) {
+        return '<p class="no-quests">Aucune quête active.</p>';
+    }
+    return quests.map(q => renderQuestCard(q)).join('');
 }
 
 /**
@@ -127,9 +131,14 @@ function renderQuestCard(quest) {
 
 /**
  * Attach click handlers to claim buttons
+ * @param {HTMLElement} containerScope - Scope to search for buttons
+ * @param {Function} refreshCallback - Function to call after successful claim
  */
-function attachClaimHandlers(container) {
-    container.querySelectorAll('.btn-claim-quest').forEach(btn => {
+function attachClaimHandlers(containerScope, refreshCallback) {
+    containerScope.querySelectorAll('.btn-claim-quest').forEach(btn => {
+        // Clone to remove old listeners if re-binding not handled upstream
+        // But here we re-render HTML usually so it's fresh elements.
+
         btn.addEventListener('click', async (e) => {
             e.preventDefault();
             const questId = btn.dataset.questId;
@@ -146,8 +155,12 @@ function attachClaimHandlers(container) {
                 const newBalance = await getUserBalance();
                 updateBalanceDisplay(newBalance);
 
-                // Refresh quest display
-                await renderQuestsSection(container.closest('.account-section') || container);
+                // Update Badge
+                await updateQuestBadge();
+
+                // Refresh UI via callback
+                if (refreshCallback) await refreshCallback();
+
             } else {
                 notyf.error(result.error || 'Erreur lors de la récupération');
                 btn.disabled = false;
@@ -164,42 +177,131 @@ function updateResetTimers() {
     const dailyTimer = document.getElementById('daily-reset-timer');
     const weeklyTimer = document.getElementById('weekly-reset-timer');
 
-    if (dailyTimer) {
-        const now = new Date();
+    if (dailyTimer) dailyTimer.textContent = getResetText('daily');
+    if (weeklyTimer) weeklyTimer.textContent = getResetText('weekly');
+}
+
+function getResetText(type) {
+    const now = new Date();
+    if (type === 'daily') {
         const midnight = new Date(now);
         midnight.setHours(24, 0, 0, 0);
         const diff = midnight - now;
         const hours = Math.floor(diff / (1000 * 60 * 60));
         const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        dailyTimer.textContent = `Reset dans ${hours}h ${minutes}m`;
-    }
-
-    if (weeklyTimer) {
-        const now = new Date();
+        return `Reset dans ${hours}h ${minutes}m`;
+    } else {
         const dayOfWeek = now.getDay();
         const daysUntilMonday = dayOfWeek === 0 ? 1 : (8 - dayOfWeek);
-        weeklyTimer.textContent = `Reset dans ${daysUntilMonday} jour${daysUntilMonday > 1 ? 's' : ''}`;
+        return `Reset dans ${daysUntilMonday} jour${daysUntilMonday > 1 ? 's' : ''}`;
     }
+}
+
+// ============================================
+// GLOBAL MODALUI
+// ============================================
+
+let currentModalTab = 'daily';
+
+export async function initQuestModal() {
+    const fab = document.getElementById('quest-fab');
+    const modal = document.getElementById('quest-modal');
+    const closeBtn = document.getElementById('close-quest-modal');
+    const tabs = document.querySelectorAll('.quest-tab');
+
+    // Setup FAB
+    if (fab) {
+        fab.addEventListener('click', () => {
+            // Only open if logged in
+            if (!auth.currentUser) {
+                window.location.hash = '#login';
+                return;
+            }
+            openQuestModal();
+        });
+    }
+
+    if (!modal) return;
+
+    // Close button
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+            modal.style.display = 'none';
+        });
+    }
+
+    // Outside click
+    window.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+
+    // Tab Switching
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            tabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            currentModalTab = tab.dataset.tab;
+            renderModalContent();
+        });
+    });
+}
+
+async function openQuestModal() {
+    const modal = document.getElementById('quest-modal');
+    if (!modal) return;
+
+    modal.style.display = 'flex';
+    renderModalContent();
+}
+
+async function renderModalContent() {
+    const list = document.getElementById('quest-modal-list');
+    const timer = document.getElementById('quest-modal-timer');
+
+    if (!list) return;
+
+    list.innerHTML = '<div class="loading-spinner">...</div>';
+
+    const { daily, weekly } = await getActiveQuests();
+    const quests = currentModalTab === 'daily' ? daily : weekly;
+
+    list.innerHTML = renderQuestListHTML(quests);
+
+    if (timer) {
+        timer.textContent = getResetText(currentModalTab);
+    }
+
+    attachClaimHandlers(list, () => renderModalContent());
 }
 
 // ============================================
 // BADGE NOTIFICATION
 // ============================================
 
-/**
- * Update the quest badge count in the sidebar
- */
 export async function updateQuestBadge() {
-    const badge = document.getElementById('quest-badge');
-    if (!badge) return;
-
     const count = await getClaimableQuestCount();
 
-    if (count > 0) {
+    // Sidebar badge
+    const badge = document.getElementById('quest-badge');
+    if (badge) {
         badge.textContent = count;
-        badge.style.display = 'flex';
-    } else {
-        badge.style.display = 'none';
+        badge.style.display = count > 0 ? 'flex' : 'none';
+    }
+
+    // FAB Badge (New)
+    const fabBadge = document.getElementById('quest-fab-badge');
+    if (fabBadge) {
+        fabBadge.textContent = '!';
+        fabBadge.style.display = count > 0 ? 'flex' : 'none';
+
+        // Add pulse animation if claimable
+        if (count > 0) {
+            fabBadge.style.animation = 'bounce 1s infinite';
+        } else {
+            fabBadge.style.animation = 'none';
+        }
     }
 }
 
@@ -207,9 +309,6 @@ export async function updateQuestBadge() {
 // COMPLETION TOAST
 // ============================================
 
-/**
- * Show a toast when a quest is completed
- */
 export function showQuestCompleteToast(questTitle, rewards) {
     notyf.success({
         message: `✨ Quête terminée: ${questTitle}`,
@@ -221,9 +320,9 @@ export function showQuestCompleteToast(questTitle, rewards) {
 // INIT
 // ============================================
 
-/**
- * Initialize quest UI on page load
- */
 export async function initQuestUI() {
     await updateQuestBadge();
+    await initQuestModal();
 }
+
+

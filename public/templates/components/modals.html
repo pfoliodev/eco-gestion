@@ -65,6 +65,35 @@
     </div>
 </div>
 
+<!-- Quest Modal -->
+<div id="quest-modal" class="modal" style="display: none;">
+    <div class="modal-content quest-modal-content">
+        <div class="modal-header">
+            <h3>📜 Tableau des Quêtes</h3>
+            <button id="close-quest-modal" class="btn-icon">✕</button>
+        </div>
+
+        <div class="quest-tabs">
+            <button class="quest-tab active" data-tab="daily">
+                <span class="tab-icon">☀️</span> Quêtes du Jour
+            </button>
+            <button class="quest-tab" data-tab="weekly">
+                <span class="tab-icon">📅</span> Quêtes Hebdo
+            </button>
+        </div>
+
+        <div class="quest-modal-body">
+            <div id="quest-modal-list" class="quests-grid single-column">
+                <!-- Quests injected here -->
+            </div>
+        </div>
+
+        <div class="quest-modal-footer">
+            <span id="quest-modal-timer" class="quests-reset-timer"></span>
+        </div>
+    </div>
+</div>
+
 <!-- Quiz Editor Modal -->
 <div id="quiz-editor-modal" class="modal">
     <div class="modal-content" style="max-width: 800px;">

@@ -12,6 +12,7 @@ import { initGDPR } from './gdpr.js';
 import { loadReminders, loadAdminReminders, initReminderForm } from './reminders.js';
 import { initFlashcards } from './flashcard-ui.js';
 import { initQuizEditor } from './quiz-ui.js';
+import { initQuestUI } from './quest-ui.js';
 import { initFeatures, applyFeatureFlags } from './features.js';
 import { downloadCourseAsPdf } from './pdf-export.js';
 import { initShopPage } from './shop-ui.js';
@@ -257,6 +258,7 @@ async function initApp() {
         loadReminders();
         initFlashcards();
         initQuizEditor();
+        initQuestUI();
 
         // Dynamic import for carousel to avoid blocking
         import('./carousel.js').then(module => {
