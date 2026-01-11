@@ -136,10 +136,10 @@ async function fetchLeaderboardData() {
 
         const quizCount = qSnap.size; // Total attempts
 
-        // Fetch user's active pet
+        // Fetch user's active pet (pets are in top-level 'pets' collection with userId field)
         let activePet = null;
         try {
-            const petQuery = query(collection(db, 'users', stat.userId, 'pets'), where('isActive', '==', true), limit(1));
+            const petQuery = query(collection(db, 'pets'), where('userId', '==', stat.userId), where('isActive', '==', true), limit(1));
             const petSnap = await getDocs(petQuery);
             if (!petSnap.empty) {
                 activePet = petSnap.docs[0].data();
