@@ -320,9 +320,24 @@ export function showQuestCompleteToast(questTitle, rewards) {
 // INIT
 // ============================================
 
-export async function initQuestUI() {
-    await updateQuestBadge();
-    await initQuestModal();
+export function initQuestUI() {
+    // Listen for auth state changes
+    auth.onAuthStateChanged(async (user) => {
+        const fab = document.getElementById('quest-fab');
+        if (!fab) return;
+
+        if (user) {
+            fab.style.display = 'flex';
+            await updateQuestBadge();
+            await initQuestModal();
+        } else {
+            fab.style.display = 'none';
+        }
+    });
+
+    // Check account page containers if they exist
+    const container = document.getElementById('quests-container');
+    if (container) renderQuestsSection(container);
 }
 
 
