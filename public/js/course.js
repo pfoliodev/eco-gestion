@@ -11,8 +11,6 @@ import { applyFeatureFlags } from './features.js';
 import { playProfessorCinematic } from './cinematic.js';
 import { getEvaluations, startEvaluation, checkEvaluationUnlockStatus, preloadEvaluationStatuses } from './evaluations.js';
 
-import { initTilt } from './lib/vanilla-tilt.js';
-
 // Module state for category navigation
 let currentCategory = null;
 
@@ -174,29 +172,26 @@ export function renderCategories() {
             ? `<img src="${config.image}" alt="Professeur ${config.label}" class="category-prof-img">`
             : `<div class="category-prof-img" style="font-size: 80px; display: flex; align-items: center; justify-content: center;">📚</div>`;
 
-        // Progress Ring Calculation
+        // Progress Bar Logic
         const progress = getCategoryProgress(catName);
-        const radius = 58;
-        const circumference = 2 * Math.PI * radius;
-        const offset = circumference - (progress / 100) * circumference;
-        const strokeColor = progress === 100 ? '#10b981' : (progress > 0 ? '#3b82f6' : 'rgba(255,255,255,0.1)'); // Green if done, Blue if started
+        let progressHtml = '';
 
-        const ringHtml = `
-        <div class="progress-ring-container">
-            <svg width="130" height="130">
-                <circle
-                    class="progress-ring__circle"
-                    stroke="${strokeColor}"
-                    stroke-width="4"
-                    fill="transparent"
-                    r="${radius}"
-                    cx="65"
-                    cy="65"
-                    style="stroke-dasharray: ${circumference} ${circumference}; stroke-dashoffset: ${offset};"
-                />
-            </svg>
-        </div>
-        `;
+        if (progress >= 0) {
+            if (progress > 0) {
+                progressHtml = `
+                <div class="category-progress-container" title="${progress}% terminé">
+                    <div class="category-progress-info">
+                        <span class="category-count-text">📚 ${count} cours</span>
+                        <span class="category-percent-text">${progress}%</span>
+                    </div>
+                    <div class="category-progress-track">
+                        <div class="category-progress-fill" style="width: ${progress}%"></div>
+                    </div>
+                </div>`;
+            } else {
+                progressHtml = `<span class="category-count">📚 ${count} cours</span>`;
+            }
+        }
 
         // Cinematic Button logic
         let playBtnHtml = '';
@@ -244,18 +239,15 @@ export function renderCategories() {
             ${evalBtnHtml}
 
             ${imageHtml}
-            ${ringHtml}
+            
             <div class="category-content">
                 <h3 class="category-name">${config.label}</h3>
-                <span class="category-count">${count} cours</span>
+                ${progressHtml}
             </div>
             <div class="category-arrow">➜</div>
         </div>
         `;
     }).join('');
-
-    // Initialize Tilt after render
-    setTimeout(() => initTilt('.category-card'), 100);
 }
 
 // Helper to calculate category progress
