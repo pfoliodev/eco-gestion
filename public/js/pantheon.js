@@ -153,7 +153,7 @@ function renderLeaderboard(container, users) {
                 </div>
             </div>
             <div class="col-badges">
-                ${user.badgeCount} Badges
+                ${user.badgeCount} Succès
             </div>
             <div class="col-progress">
                 <div class="progress-container">
