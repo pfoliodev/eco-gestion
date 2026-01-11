@@ -597,6 +597,18 @@
     /* Remove potential conflicting shadows */
 }
 
+/* Force Headings and Bold text to use main text color in Dark Mode */
+[data-theme="dark"] .course-detail-content h1,
+[data-theme="dark"] .course-detail-content h2,
+[data-theme="dark"] .course-detail-content h3,
+[data-theme="dark"] .course-detail-content h4,
+[data-theme="dark"] .course-detail-content h5,
+[data-theme="dark"] .course-detail-content h6,
+[data-theme="dark"] .course-detail-content strong,
+[data-theme="dark"] .course-detail-content b {
+    color: var(--text-main) !important;
+}
+
 /* Specific fix for tables */
 [data-theme="dark"] .course-detail-content table,
 [data-theme="dark"] .course-detail-content th,
