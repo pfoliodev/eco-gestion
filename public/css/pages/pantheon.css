@@ -224,140 +224,141 @@ html[data-theme="dark"] .badge-count-pill {
     color: var(--text-secondary);
     font-weight: 600;
     margin-left: 0.25rem;
+}
 
-    /* Rank Styles */
-    .rank-badge {
+/* Rank Styles */
+.rank-badge {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    font-size: 1.2rem;
+    font-weight: 800;
+    margin: 0 auto;
+}
+
+.rank-text {
+    font-size: 1.2rem;
+    color: var(--text-secondary);
+}
+
+/* Top 3 Styling */
+.rank-1 .rank-badge {
+    background: linear-gradient(135deg, #FFF7D1 0%, #FFD700 100%);
+    color: #92400E;
+    border: 2px solid #CA8A04;
+    box-shadow: 0 4px 6px -1px rgba(234, 179, 8, 0.3);
+}
+
+.rank-2 .rank-badge {
+    background: linear-gradient(135deg, #F3F4F6 0%, #D1D5DB 100%);
+    color: #374151;
+    border: 2px solid #9CA3AF;
+    box-shadow: 0 4px 6px -1px rgba(156, 163, 175, 0.3);
+}
+
+.rank-3 .rank-badge {
+    background: linear-gradient(135deg, #FEF3C7 0%, #D97706 100%);
+    color: #78350F;
+    border: 2px solid #B45309;
+    box-shadow: 0 4px 6px -1px rgba(217, 119, 6, 0.3);
+}
+
+/* User Info */
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--surface-color);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.user-name {
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.user-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.user-subtext {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+/* Progress Bar */
+.progress-container {
+    width: 100%;
+    height: 12px;
+    background-color: var(--border-color);
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #F59E0B 0%, #D97706 100%);
+    border-radius: 6px;
+    transition: width 1s ease-out;
+}
+
+.progress-label {
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.65rem;
+    color: white;
+    /* Contrast needed */
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    font-weight: 700;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .pantheon-title {
+        font-size: 1.75rem;
+    }
+
+    .leaderboard-header {
+        display: none;
+        /* Hide header on mobile for simpler view */
+    }
+
+    .leaderboard-item {
+        flex-wrap: wrap;
+        padding: 1rem;
+        gap: 0.5rem;
+    }
+
+    .col-rank {
         width: 40px;
-        height: 40px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 8px;
-        font-size: 1.2rem;
-        font-weight: 800;
-        margin: 0 auto;
     }
 
-    .rank-text {
-        font-size: 1.2rem;
-        color: var(--text-secondary);
+    .col-user {
+        flex: 1;
+        width: calc(100% - 60px);
+        /* Fill rest */
+        padding-left: 0.5rem;
     }
 
-    /* Top 3 Styling */
-    .rank-1 .rank-badge {
-        background: linear-gradient(135deg, #FFF7D1 0%, #FFD700 100%);
-        color: #92400E;
-        border: 2px solid #CA8A04;
-        box-shadow: 0 4px 6px -1px rgba(234, 179, 8, 0.3);
+    .col-badges {
+        width: auto;
+        margin-left: 50px;
+        order: 3;
+        font-size: 0.9rem;
     }
 
-    .rank-2 .rank-badge {
-        background: linear-gradient(135deg, #F3F4F6 0%, #D1D5DB 100%);
-        color: #374151;
-        border: 2px solid #9CA3AF;
-        box-shadow: 0 4px 6px -1px rgba(156, 163, 175, 0.3);
-    }
-
-    .rank-3 .rank-badge {
-        background: linear-gradient(135deg, #FEF3C7 0%, #D97706 100%);
-        color: #78350F;
-        border: 2px solid #B45309;
-        box-shadow: 0 4px 6px -1px rgba(217, 119, 6, 0.3);
-    }
-
-    /* User Info */
-    .user-avatar {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        object-fit: cover;
-        border: 2px solid var(--surface-color);
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-
-    .user-name {
-        font-weight: 600;
-        color: var(--text-main);
-    }
-
-    .user-details {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .user-subtext {
-        font-size: 0.75rem;
-        color: var(--text-secondary);
-    }
-
-    /* Progress Bar */
-    .progress-container {
+    .col-progress {
         width: 100%;
-        height: 12px;
-        background-color: var(--border-color);
-        border-radius: 6px;
-        overflow: hidden;
-        position: relative;
+        order: 4;
+        padding-left: 50px;
+        margin-top: 0.25rem;
     }
-
-    .progress-bar {
-        height: 100%;
-        background: linear-gradient(90deg, #F59E0B 0%, #D97706 100%);
-        border-radius: 6px;
-        transition: width 1s ease-out;
-    }
-
-    .progress-label {
-        position: absolute;
-        right: 5px;
-        top: 50%;
-        transform: translateY(-50%);
-        font-size: 0.65rem;
-        color: white;
-        /* Contrast needed */
-        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-        font-weight: 700;
-    }
-
-    /* Responsive */
-    @media (max-width: 768px) {
-        .pantheon-title {
-            font-size: 1.75rem;
-        }
-
-        .leaderboard-header {
-            display: none;
-            /* Hide header on mobile for simpler view */
-        }
-
-        .leaderboard-item {
-            flex-wrap: wrap;
-            padding: 1rem;
-            gap: 0.5rem;
-        }
-
-        .col-rank {
-            width: 40px;
-        }
-
-        .col-user {
-            flex: 1;
-            width: calc(100% - 60px);
-            /* Fill rest */
-            padding-left: 0.5rem;
-        }
-
-        .col-badges {
-            width: auto;
-            margin-left: 50px;
-            order: 3;
-            font-size: 0.9rem;
-        }
-
-        .col-progress {
-            width: 100%;
-            order: 4;
-            padding-left: 50px;
-            margin-top: 0.25rem;
-        }
-    }
+}
