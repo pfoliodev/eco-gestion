@@ -54,28 +54,18 @@ export function showPage(pageId) {
         return;
     }
 
-    const activePage = document.querySelector('.page.active');
+    // INSTANT SWITCH (No transition delay)
+    // Matches 'main' branch behavior which user prefers (+ scroll fix)
 
-    // Safety: If same page, do nothing
-    if (activePage === targetPage) return;
+    // Hide all pages first (clean slate)
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active', 'exiting'));
 
-    if (activePage) {
-        // TRANSITION: Fade Out Old -> Fade In New
-        activePage.classList.add('exiting');
+    // Show new page
+    targetPage.classList.add('active');
 
-        transitionTimeout = setTimeout(() => {
-            activePage.classList.remove('active', 'exiting');
-            targetPage.classList.add('active');
-            window.scrollTo(0, 0); // Reset scroll
-            transitionTimeout = null;
+    // Reset scroll immediately
+    window.scrollTo(0, 0);
 
-            // Trigger specific page logic after transition
-            document.dispatchEvent(new CustomEvent('pageChange', { detail: { pageId } }));
-        }, 180); // Slightly faster than CSS (0.2s) to avoid gaps
-    } else {
-        // INSTANT (First load)
-        targetPage.classList.add('active');
-        window.scrollTo(0, 0); // Reset scroll
-        document.dispatchEvent(new CustomEvent('pageChange', { detail: { pageId } }));
-    }
+    // Dispatch event
+    document.dispatchEvent(new CustomEvent('pageChange', { detail: { pageId } }));
 }

@@ -34,12 +34,18 @@ p {
 /* Page Transitions */
 .page {
     display: none;
-    animation: fadeIn 0.2s ease-out;
+    /* animation: fadeIn 0.2s ease-out; Removed for instant transition */
 }
 
 .page.active {
     display: block;
 }
+
+/* 
+@keyframes fadeIn ... 
+@keyframes fadeOut ... 
+.page.exiting ... 
+*/
 
 @keyframes fadeIn {
     from {
