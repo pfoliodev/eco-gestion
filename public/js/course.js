@@ -59,13 +59,19 @@ export async function loadCourses() {
         }
 
         // Load Evaluations
+        // Load Evaluations (only if logged in)
         try {
-            state.evaluations = await getEvaluations();
+            if (auth.currentUser) {
+                state.evaluations = await getEvaluations();
 
-            // Preload unlock statuses if logged in (for UI feedback)
-            if (auth.currentUser && state.evaluations.length > 0) {
-                state.evaluationStatuses = await preloadEvaluationStatuses(state.evaluations);
+                // Preload unlock statuses if logged in (for UI feedback)
+                if (state.evaluations.length > 0) {
+                    state.evaluationStatuses = await preloadEvaluationStatuses(state.evaluations);
+                } else {
+                    state.evaluationStatuses = {};
+                }
             } else {
+                state.evaluations = [];
                 state.evaluationStatuses = {};
             }
         } catch (e) { console.error("Error loading evaluations", e); }

@@ -17,12 +17,24 @@ export async function initPantheon() {
     const listElement = document.getElementById('leaderboard-list');
     if (!listElement) return;
 
+    if (!auth.currentUser) {
+        listElement.innerHTML = `
+            <div class="lock-state" style="text-align: center; padding: 3rem; background: var(--surface-color); border-radius: var(--radius-lg); border: 1px solid var(--border-color);">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">🔒</div>
+                <h3 style="margin-bottom: 0.5rem; color: var(--text-main);">Classement verrouillé</h3>
+                <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Connectez-vous pour voir le classement et vos badges.</p>
+                <button onclick="showPage('login')" class="btn btn-primary">Se connecter</button>
+            </div>
+        `;
+        return;
+    }
+
     try {
         const leaderboardData = await fetchLeaderboardData();
         renderLeaderboard(listElement, leaderboardData);
     } catch (error) {
         console.error("Error loading pantheon:", error);
-        listElement.innerHTML = '<div class="error-state">Impossible de charger le classement.</div>';
+        listElement.innerHTML = '<div class="error-state">Impossible de charger le classement (Erreur de permission ou réseau).</div>';
     }
 }
 
