@@ -234,7 +234,8 @@ async function initApp() {
             { containerId: 'page-mon-compte', path: '/templates/pages/account.html' },
             { containerId: 'page-privacy-policy', path: '/templates/pages/privacy-policy.html' },
             { containerId: 'page-legal-notice', path: '/templates/pages/legal-notice.html' },
-            { containerId: 'page-shop', path: '/templates/pages/shop.html' }
+            { containerId: 'page-shop', path: '/templates/pages/shop.html' },
+            { containerId: 'page-pantheon', path: '/templates/pages/pantheon.html' }
         ]);
 
         // Initialize app after templates are loaded
@@ -292,6 +293,11 @@ document.addEventListener('pageChange', (e) => {
     if (e.detail.pageId === 'accueil') {
         renderCourses();
         updateFilters();
+    }
+    if (e.detail.pageId === 'pantheon') {
+        import('./pantheon.js').then(module => {
+            module.initPantheon();
+        });
     }
 });
 
