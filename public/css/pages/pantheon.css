@@ -142,14 +142,14 @@ html[data-theme="dark"] .badge-count-pill {
 }
 
 .pantheon-badge-icon {
-    width: 32px;
-    height: 32px;
+    width: 48px;
+    height: 48px;
     display: flex;
     align-items: center;
     justify-content: center;
     background: var(--surface-hover);
     border-radius: 50%;
-    font-size: 1.2rem;
+    font-size: 1.5rem;
     border: 1px solid var(--border-color);
     transition: transform 0.2s;
     cursor: help;
@@ -164,8 +164,8 @@ html[data-theme="dark"] .badge-count-pill {
 }
 
 .pantheon-badge-icon img {
-    width: 20px;
-    height: 20px;
+    width: 32px;
+    height: 32px;
     object-fit: contain;
 }
 

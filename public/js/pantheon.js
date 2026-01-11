@@ -59,8 +59,10 @@ async function fetchLeaderboardData() {
 
         userStats[userId].badgeCount++;
         // data.id or docSnap.id is the badgeId.
-        // In gym-badges.js, the doc ID IS the badgeId (e.g. 'badge_eco_gestion')
-        userStats[userId].unlockedBadges.push(docSnap.id);
+        userStats[userId].unlockedBadges.push({
+            id: docSnap.id,
+            date: unlockedAt
+        });
 
         if (unlockedAt > userStats[userId].lastBadgeDate) {
             userStats[userId].lastBadgeDate = unlockedAt;
@@ -70,7 +72,10 @@ async function fetchLeaderboardData() {
     // Attach icons to user stats
     Object.values(userStats).forEach(stat => {
         stat.badges = stat.unlockedBadges
-            .map(id => badgeMap[id])
+            .map(item => {
+                const def = badgeMap[item.id];
+                return def ? { ...def, unlockedAt: item.date } : null;
+            })
             .filter(b => b) // Filter out unknown IDs
             .slice(0, 10);
     });
@@ -147,11 +152,13 @@ function renderLeaderboard(container, users) {
         const isPodium = rank <= 3;
 
         // Generate Badge Icons HTML
-        const badgeIconsHtml = user.badges.map(b => `
-            <div class="pantheon-badge-icon" title="${b.name}">
+        const badgeIconsHtml = user.badges.map(b => {
+            const unlockDate = new Date(b.unlockedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+            return `
+            <div class="pantheon-badge-icon" title="${b.name} (Obtenu le ${unlockDate})">
                 ${b.image ? `<img src="${b.image}">` : '🏅'}
             </div>
-        `).join('');
+        `}).join('');
 
         let rankDisplay = `<span class="rank-text">${rank}.</span>`;
         if (isPodium) {
