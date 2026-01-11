@@ -10,6 +10,7 @@ import { getUserInventory, equipItem, unequipItem, useConsumable } from './shop.
 import { getUserBalance, formatCoins, getTransactionHistory } from './coins.js';
 import { STARTER_PETS, PROFESSOR, XP_CONFIG, EVOLUTION_LEVELS } from './config/pets.js';
 import { ECONOMY } from './config/economy.js';
+import { renderQuestsSection, updateQuestBadge } from './quest-ui.js';
 import {
     calculatePetStats,
     getQualityTier,
@@ -109,6 +110,10 @@ function initAccountSidebar() {
 
                 if (section === 'gym-badges') {
                     loadUserGymBadges();
+                }
+
+                if (section === 'quests') {
+                    loadQuestsSection();
                 }
             }
         });
@@ -1968,3 +1973,16 @@ window.handleEvolutionClick = async () => {
         }
     }
 };
+
+// ============================================
+// QUESTS SECTION
+// ============================================
+
+async function loadQuestsSection() {
+    const container = document.getElementById('quests-container');
+    if (container) {
+        await renderQuestsSection(container);
+    }
+    // Update badge count
+    await updateQuestBadge();
+}

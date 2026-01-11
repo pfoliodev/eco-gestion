@@ -7,6 +7,7 @@ import { getAllUserBestScores } from './quiz.js';
 import { notyf, showPage } from './ui.js';
 import { getUserBalance, initBalanceListener, stopBalanceListener, updateBalanceDisplay, addCoins } from './coins.js';
 import { ECONOMY } from './config/economy.js';
+import { initializeQuests, onLogin } from './quests.js';
 
 export async function createUserProfile(userId, email, firstName = '', lastName = '', photoURL = null, isNewUser = true) {
     try {
@@ -225,6 +226,15 @@ export function initAuth() {
                 initBalanceListener((newBalance) => {
                     updateBalanceDisplay(newBalance);
                 });
+
+                // Initialize Quests
+                try {
+                    await initializeQuests();
+                    await onLogin();
+                    console.log("✅ Quests initialized");
+                } catch (e) {
+                    console.error("Error initializing quests:", e);
+                }
             }
 
             // Redirect to home if on login/register page
@@ -235,7 +245,10 @@ export function initAuth() {
         } else {
             stopBalanceListener(); // Ensure listener is stopped
             setIsAdmin(false);
+            setIsAdmin(false);
             setUser(null); // Clear user from state
+            setUserProgress({}); // Clear user progress
+            if (state.categoryQuizStats) state.categoryQuizStats = {}; // Clear derived stats
 
             if (loginNavLink) loginNavLink.style.display = 'flex';
             if (profileDropdown) profileDropdown.style.display = 'none';

@@ -45,8 +45,18 @@ service cloud.firestore {
       match /gymBadges/{badgeId} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
+      // User Quests subcollection
+      match /quests/{questId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
     }
     
+    // Quizzes Definitions
+    match /quizzes/{quizId} {
+        allow read: if request.auth != null;
+        allow create, update, delete: if isAdmin();
+    }
+
     // Quiz Results collection
     match /quiz_results/{resultId} {
         // Allow public read for leaderboard stats (or restrict to counting if possible, but read is standard)
@@ -88,11 +98,7 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
-    // Quizzes collection
-    match /quizzes/{quizId} {
-        allow read: if request.auth != null;
-        allow create, update, delete: if isAdmin();
-    }
+
 
     // Evaluations collection
     match /evaluations/{evalId} {

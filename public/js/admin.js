@@ -12,6 +12,7 @@ import { adminGiftCoins } from './coins.js';
 import { CATEGORIES_CONFIG } from './config/categories.js';
 import { createEvaluation, updateEvaluation, deleteEvaluation, getEvaluations } from './evaluations.js';
 import { getAllQuizTags, getQuestionCountByTags } from './quiz.js';
+import { initQuestAdmin } from './admin-quests.js';
 
 export async function loadUsers() {
     if (!state.isAdmin) return;
@@ -291,6 +292,9 @@ export function initAdminSidebar() {
             }
             if (section === 'pets') {
                 loadPetsAdmin();
+            }
+            if (section === 'quests') {
+                initQuestAdmin();
             }
             if (section === 'database') {
                 loadDatabase();
