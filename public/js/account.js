@@ -1295,6 +1295,9 @@ async function loadInventory() {
                 const currentItemId = currentPet.itemId;
 
                 inventory.forEach(item => {
+                    // Skip virtual items (these exist only in memory, like the active pet projection)
+                    if (item.isVirtual) return;
+
                     if (item.equipped) {
                         const matchesInstance = currentInstanceId && item.instanceId === currentInstanceId;
                         const matchesItem = currentItemId && item.itemId === currentItemId;
