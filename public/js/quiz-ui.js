@@ -14,6 +14,7 @@ import { state } from './state.js';
 import { auth, db } from './firebase.js';
 import { addCoins, showCoinGainAnimation, updateBalanceDisplay } from './coins.js';
 import { unlockGymBadge, getBadgeForQuiz } from './gym-badges.js';
+import { onQuizComplete } from './quests.js';
 
 import { calculateQuizReward } from './config/economy.js';
 import { processXPGain, calculatePetStats } from './utils/pet-utils.js';
@@ -653,6 +654,18 @@ function renderQuizPlayer() {
     window.finishQuiz = async () => {
         if (quizTimerInterval) clearInterval(quizTimerInterval);
 
+        // UI: Show loading state immediately to improve perceived performance
+        const container = document.getElementById('quiz-player-container');
+        if (container) {
+            container.innerHTML = `
+                <div class="quiz-loading-result" style="text-align: center; padding: 4rem 2rem; background: var(--surface-color); border-radius: 16px; border: 1px solid var(--border-color);">
+                    <div class="loading-spinner" style="margin-bottom: 1rem;"></div>
+                    <h3 style="color: var(--text-main);">Calcul des résultats...</h3>
+                    <p style="color: var(--text-secondary);">Le Professeur corrige votre copie 📝</p>
+                </div>
+            `;
+        }
+
         // Calculate score
         let score = 0;
         currentQuizQuestions.forEach((q, i) => {
@@ -719,6 +732,9 @@ function renderQuizPlayer() {
             // Update streaks
             await updateStreakData();
             await updatePerfectStreakData(score === currentQuizQuestions.length);
+
+            // Update quest progress
+            await onQuizComplete(score === currentQuizQuestions.length);
 
             // Check and unlock badges after quiz completion
             await checkAndUnlockSucces(currentQuiz.id, score, currentQuizQuestions.length, currentQuiz.title, currentQuiz.courseId, { duration });
@@ -798,18 +814,32 @@ async function showQuizResults(score, total) {
     else if (percentage >= 50) { message = "Bien joué !"; emoji = "👍"; }
     else { message = "Continue à réviser !"; emoji = "💪"; }
 
-    // Check for next quiz
-    let nextQuizBtn = '';
-    try {
-        const quizzes = await getQuizzesByCourse(currentQuiz.courseId);
-        const currentIndex = quizzes.findIndex(q => q.id === currentQuiz.id);
-        if (currentIndex !== -1 && currentIndex < quizzes.length - 1) {
-            const nextQuiz = quizzes[currentIndex + 1];
-            nextQuizBtn = `<button class="btn-success" onclick="startQuiz('${nextQuiz.id}')">QCM Suivant →</button>`;
+    // Async check for next quiz (Non-blocking)
+    const loadNextQuizBtn = async () => {
+        try {
+            const quizzes = await getQuizzesByCourse(currentQuiz.courseId);
+            const currentIndex = quizzes.findIndex(q => q.id === currentQuiz.id);
+            if (currentIndex !== -1 && currentIndex < quizzes.length - 1) {
+                const nextQuiz = quizzes[currentIndex + 1];
+                const btnHtml = `<button class="btn-success" onclick="startQuiz('${nextQuiz.id}')">QCM Suivant →</button>`;
+
+                // Inject if still on results page
+                const actionsDiv = container.querySelector('.quiz-result-actions');
+                if (actionsDiv) {
+                    const temp = document.createElement('div');
+                    temp.innerHTML = btnHtml;
+                    actionsDiv.prepend(temp.firstElementChild);
+                }
+            }
+        } catch (e) {
+            console.error("Error finding next quiz", e);
         }
-    } catch (e) {
-        console.error("Error finding next quiz", e);
-    }
+    };
+
+    // Start fetching next quiz in background
+    loadNextQuizBtn();
+
+    let nextQuizBtn = ''; // Use empty for initial render
 
     // -- BOSS VICTORY CHECK --
     if (currentQuiz.isEvaluation) {

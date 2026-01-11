@@ -54,6 +54,11 @@ _#/|##########/\######(   /\   )######/\##########|\#_
                 <span class="sidebar-icon">🪙</span>
                 <span class="sidebar-text">Inventaire</span>
             </a>
+            <a href="#" class="sidebar-link" data-account-section="quests" style="position: relative;">
+                <span class="sidebar-icon">📜</span>
+                <span class="sidebar-text">Quêtes</span>
+                <span class="quest-badge" id="quest-badge" style="display: none;"></span>
+            </a>
         </nav>
     </aside>
 
@@ -292,6 +297,14 @@ _#/|##########/\######(   /\   )######/\##########|\#_
                 <div id="transactions-list" class="transactions-list">
                     <div style="text-align: center; padding: 2rem;">Chargement...</div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Quests Section -->
+        <div id="account-section-quests" class="account-section">
+            <h2>📜 Mes Quêtes</h2>
+            <div id="quests-container">
+                <div class="loading-spinner">Chargement des quêtes...</div>
             </div>
         </div>
     </main>

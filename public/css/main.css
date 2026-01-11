@@ -28,6 +28,7 @@
 @import './components/footer.css';
 @import './components/coins.css';
 @import './components/hero.css';
+@import './components/quests.css';
 
 /* Pages */
 @import './pages/home.css';
@@ -39,6 +40,7 @@
 @import './pages/quiz.css';
 @import './pages/shop.css';
 @import './pages/pantheon.css';
+@import './pages/login.css';
 
 /* Utilities */
 @import './utilities/helpers.css';
