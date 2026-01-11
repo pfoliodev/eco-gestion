@@ -45,6 +45,26 @@ p {
     }
 }
 
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    to {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+}
+
+.page.exiting {
+    display: block;
+    animation: fadeOut 0.2s ease-in forwards;
+    /* faster exit */
+    pointer-events: none;
+    /* prevent clicks during exit */
+}
+
 @keyframes float {
 
     0%,

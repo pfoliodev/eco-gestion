@@ -28,24 +28,52 @@ export function initTinyMCE(selector = '#editor-container', options = {}) {
     });
 }
 
-export function showPage(pageId) {
-    const pages = document.querySelectorAll('.page');
-    pages.forEach(page => page.classList.remove('active'));
+let transitionTimeout = null;
 
+export function showPage(pageId) {
     let targetPage = document.getElementById(pageId);
     if (!targetPage) {
         targetPage = document.getElementById(`page-${pageId}`);
     }
 
-    if (targetPage) {
-        targetPage.classList.add('active');
-        // If the target is a container wrapping the content, ensure the content is visible
-        // (This is redundant if the CSS handles it, but good for safety)
-    } else {
+    if (!targetPage) {
         console.warn(`Page not found: ${pageId}`);
+        return;
     }
 
-    // Trigger specific page logic if needed (handled in main/other modules)
-    const event = new CustomEvent('pageChange', { detail: { pageId } });
-    document.dispatchEvent(event);
+    // 1. Handle Rapid Clicks / Interruptions
+    if (transitionTimeout) {
+        clearTimeout(transitionTimeout);
+        transitionTimeout = null;
+        // Instantly hide all pages to reset state
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active', 'exiting'));
+        // Instantly show new page
+        targetPage.classList.add('active');
+        // Dispatch event immediately
+        document.dispatchEvent(new CustomEvent('pageChange', { detail: { pageId } }));
+        return;
+    }
+
+    const activePage = document.querySelector('.page.active');
+
+    // Safety: If same page, do nothing
+    if (activePage === targetPage) return;
+
+    if (activePage) {
+        // TRANSITION: Fade Out Old -> Fade In New
+        activePage.classList.add('exiting');
+
+        transitionTimeout = setTimeout(() => {
+            activePage.classList.remove('active', 'exiting');
+            targetPage.classList.add('active');
+            transitionTimeout = null;
+
+            // Trigger specific page logic after transition
+            document.dispatchEvent(new CustomEvent('pageChange', { detail: { pageId } }));
+        }, 180); // Slightly faster than CSS (0.2s) to avoid gaps
+    } else {
+        // INSTANT (First load)
+        targetPage.classList.add('active');
+        document.dispatchEvent(new CustomEvent('pageChange', { detail: { pageId } }));
+    }
 }
