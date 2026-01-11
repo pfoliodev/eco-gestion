@@ -40,6 +40,7 @@ async function fetchLeaderboardData() {
 
     // 2. Fetch definitions for icons
     const allSucces = await getAllSuccesDefinitions();
+    const userStats = {}; // Definition restored
     const succesMap = {};
     allSucces.forEach(s => succesMap[s.id] = s);
 
