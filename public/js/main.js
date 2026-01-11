@@ -32,7 +32,7 @@ function initNavigation() {
             const href = link.getAttribute('href');
 
             if (href === '#accueil') showPage('accueil');
-            else if (href === '#cours') showPage('cours');
+            else if (href === '#evenements') showPage('evenements');
             else if (href === '#ajouter') {
                 document.getElementById('form-title').textContent = 'Nouveau cours';
                 document.getElementById('course-form').reset();
@@ -71,14 +71,14 @@ function initEventListeners() {
     document.getElementById('card-courses')?.addEventListener('click', () => {
         const typeFilter = document.getElementById('course-type-filter');
         if (typeFilter) typeFilter.value = 'cours';
-        showPage('cours');
+        showPage('accueil');
         renderCourses();
     });
 
     document.getElementById('card-exercises')?.addEventListener('click', () => {
         const typeFilter = document.getElementById('course-type-filter');
         if (typeFilter) typeFilter.value = 'exercice';
-        showPage('cours');
+        showPage('accueil');
         renderCourses();
     });
 
@@ -92,8 +92,8 @@ function initEventListeners() {
         tinymce.get('editor-container')?.setContent('');
         showPage('ajouter');
     });
-    document.getElementById('cancel-form-btn')?.addEventListener('click', () => showPage('cours'));
-    document.getElementById('back-to-courses-btn')?.addEventListener('click', () => showPage('cours'));
+    document.getElementById('cancel-form-btn')?.addEventListener('click', () => showPage('accueil'));
+    document.getElementById('back-to-courses-btn')?.addEventListener('click', () => showPage('accueil'));
     document.getElementById('edit-course-btn')?.addEventListener('click', editCourse);
     document.getElementById('delete-course-btn')?.addEventListener('click', deleteCourse);
 
@@ -220,7 +220,7 @@ async function initApp() {
             { containerId: 'footer-container', path: '/templates/components/footer.html' },
             { containerId: 'cookie-banner-container', path: '/templates/components/cookie-banner.html' },
             { containerId: 'page-accueil', path: '/templates/pages/home.html' },
-            { containerId: 'page-cours', path: '/templates/pages/courses.html' },
+            { containerId: 'page-evenements', path: '/templates/pages/events.html' },
             { containerId: 'page-ajouter', path: '/templates/pages/course-form.html' },
             { containerId: 'page-course-detail', path: '/templates/pages/course-detail.html' },
             { containerId: 'page-flashcards', path: '/templates/pages/flashcards.html' },
@@ -273,8 +273,8 @@ function updateQcmCardButton() {
     if (!buttonContainer) return;
 
     if (state.user) {
-        // User is logged in - show "Voir les cours"
-        buttonContainer.innerHTML = '<button class="btn-primary" onclick="showPage(\'cours\')">Voir les cours</button>';
+        // User is logged in - show "Voir les cours" (Home)
+        buttonContainer.innerHTML = '<button class="btn-primary" onclick="showPage(\'accueil\')">Voir les cours</button>';
     } else {
         // User is not logged in - show "Se connecter"
         buttonContainer.innerHTML = '<button class="btn-primary" onclick="showPage(\'login\')">Se connecter</button>';
@@ -288,7 +288,7 @@ window.updateQcmCardButton = updateQcmCardButton;
 document.addEventListener('pageChange', (e) => {
     applyFeatureFlags();
     updateQcmCardButton(); // Update button when page changes
-    if (e.detail.pageId === 'cours') {
+    if (e.detail.pageId === 'accueil') {
         renderCourses();
         updateFilters();
     }
