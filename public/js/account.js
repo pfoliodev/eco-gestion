@@ -65,15 +65,13 @@ export async function loadAccount() {
     await loadUserFavorites();
     await loadUserSucces();
     await loadUserStats();
-    await loadUserStats();
     await loadInventory();
     await loadUserPet();
-    initProfileForm();
+    await loadUserGymBadges();
+
     initProfileForm();
     initAccountSidebar();
-    await loadUserSucces();
-    await loadUserGymBadges(); // NEW
-    await loadUserStats();
+    initSuccesFilters();
 }
 
 // Initialize account sidebar navigation
