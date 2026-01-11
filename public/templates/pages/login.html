@@ -1,29 +1,64 @@
-<div class="container" style="max-width: 500px;">
-    <h2>Connexion</h2>
-    <form id="login-form">
-        <div class="form-group">
-            <label for="login-email">Email</label>
-            <input type="email" id="login-email" required>
+<div class="login-container">
+    <!-- Hero / Features Section -->
+    <div class="login-hero">
+        <h1>Bienvenue</h1>
+        <p class="subtitle">Inscrivez-vous sur votre plateforme d'apprentissage gamifiée.</p>
+
+        <ul class="login-features-list">
+            <li class="login-feature-item">
+                <div class="login-feature-icon">📜</div>
+                <div class="login-feature-text">
+                    <h3>Quêtes Quotidiennes</h3>
+                    <p>Gagnez des coins en complétant vos objectifs.</p>
+                </div>
+            </li>
+            <li class="login-feature-item">
+                <div class="login-feature-icon">🏆</div>
+                <div class="login-feature-text">
+                    <h3>Classement & Badges</h3>
+                    <p>Mesurez-vous aux autres étudiants.</p>
+                </div>
+            </li>
+            <li class="login-feature-item">
+                <div class="login-feature-icon">🛍️</div>
+                <div class="login-feature-text">
+                    <h3>Boutique Exclusive</h3>
+                    <p>Personnalisez votre compagnon.</p>
+                </div>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Login Form Section -->
+    <div class="login-form-wrapper">
+        <h2>Connexion</h2>
+        <form id="login-form">
+            <div class="form-group">
+                <label for="login-email">Email</label>
+                <input type="email" id="login-email" required placeholder="votre@email.com">
+            </div>
+            <div class="form-group">
+                <label for="login-password">Mot de passe</label>
+                <input type="password" id="login-password" required placeholder="••••••••">
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn-primary" style="width: 100%;">Se connecter</button>
+                <button type="button" id="google-login-btn" class="btn-google"
+                    style="margin-top: 10px; background-color: #DB4437; color: white; width: 100%; justify-content: center; display: flex; align-items: center; border: none; padding: 0.75rem; border-radius: var(--radius-md); font-weight: 600; cursor: pointer; transition: filter 0.2s;">
+                    <img src="images/google-icon.png" alt="Google"
+                        style="width: 20px; height: 20px; margin-right: 10px; background: white; border-radius: 50%; padding: 2px;">
+                    Se connecter avec Google
+                </button>
+            </div>
+        </form>
+        <div
+            style="text-align: center; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
+            <p style="color: var(--text-secondary);">
+                Vous n'avez pas de compte ?
+                <a href="#register" style="color: var(--primary-color); text-decoration: none; font-weight: 500;">
+                    Créer un compte
+                </a>
+            </p>
         </div>
-        <div class="form-group">
-            <label for="login-password">Mot de passe</label>
-            <input type="password" id="login-password" required>
-        </div>
-        <div class="form-actions">
-            <button type="submit" class="btn-primary">Se connecter</button>
-            <button type="button" id="google-login-btn" class="btn-google"
-                style="margin-top: 10px; background-color: #4285F4; color: white;">
-                Se connecter avec Google
-            </button>
-        </div>
-    </form>
-    <div
-        style="text-align: center; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
-        <p style="color: var(--text-secondary);">
-            Vous n'avez pas de compte ?
-            <a href="#register" style="color: var(--primary-color); text-decoration: none; font-weight: 500;">
-                Créer un compte
-            </a>
-        </p>
     </div>
 </div>
