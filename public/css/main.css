@@ -29,6 +29,7 @@
 @import './components/coins.css';
 @import './components/hero.css';
 @import './components/quests.css';
+@import './components/command-palette.css';
 
 /* Pages */
 @import './pages/home.css';

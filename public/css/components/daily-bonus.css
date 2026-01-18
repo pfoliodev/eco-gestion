@@ -125,3 +125,47 @@
     opacity: 0.5;
     cursor: not-allowed;
 }
+
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+    .daily-bonus-modal {
+        padding: 1.5rem !important;
+        width: 95% !important;
+    }
+
+    .daily-title {
+        font-size: 1.5rem;
+    }
+
+    .daily-subtitle {
+        font-size: 0.95rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .streak-grid {
+        gap: 0.5rem;
+    }
+
+    .streak-card {
+        width: 60px;
+        padding: 0.75rem;
+    }
+
+    .streak-day {
+        font-size: 0.7rem;
+    }
+
+    .streak-icon {
+        font-size: 1.2rem;
+    }
+
+    .streak-amount {
+        font-size: 0.8rem;
+    }
+
+    .btn-claim {
+        padding: 0.875rem 2rem;
+        font-size: 1rem;
+        width: 100%;
+    }
+}

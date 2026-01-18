@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eco-Gestion B1C2 - Plateforme d'Apprentissage Gamifiée</title>
+    <meta name="description"
+        content="La plateforme d'apprentissage nouvelle génération avec gamification, quêtes, pets virtuels et système de récompenses.">
+    <link rel="stylesheet" href="css/landing.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <!-- Navigation -->
+    <nav class="landing-nav">
+        <div class="nav-content">
+            <div class="nav-logo">
+                <span class="logo-icon">🎓</span>
+                <span class="logo-text">Eco-Gestion</span>
+            </div>
+            <div class="nav-links">
+                <a href="#features">Fonctionnalités</a>
+                <a href="#gamification">Gamification</a>
+                <a href="#demo">Démo</a>
+                <a href="index.html" class="btn-cta">Commencer</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-background">
+            <div class="gradient-orb orb-1"></div>
+            <div class="gradient-orb orb-2"></div>
+            <div class="gradient-orb orb-3"></div>
+        </div>
+
+        <div class="hero-content">
+            <div class="hero-badge">
+                <span class="badge-dot"></span>
+                Nouvelle Génération d'Apprentissage
+            </div>
+
+            <h1 class="hero-title">
+                Transformez vos
+                <span class="gradient-text">Études</span>
+                en <span class="gradient-text">Aventure</span>
+            </h1>
+
+            <p class="hero-subtitle">
+                Eco-Gestion B1C2 combine l'excellence académique avec la gamification moderne.
+                <br>Apprenez, progressez, et débloquez des récompenses tout en maîtrisant votre cursus.
+            </p>
+
+            <div class="hero-cta">
+                <a href="index.html" class="btn-primary-hero">
+                    <span>Commencer Gratuitement</span>
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <path d="M7.5 15L12.5 10L7.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                    </svg>
+                </a>
+                <button class="btn-secondary-hero"
+                    onclick="document.querySelector('#features').scrollIntoView({behavior: 'smooth'})">
+                    <span>Découvrir les fonctionnalités</span>
+                </button>
+            </div>
+
+            <div class="hero-stats">
+                <div class="stat-item">
+                    <div class="stat-number">500+</div>
+                    <div class="stat-label">Cours disponibles</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">50+</div>
+                    <div class="stat-label">Quêtes actives</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">100%</div>
+                    <div class="stat-label">Gratuit</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="hero-image">
+            <div class="floating-card card-1">
+                <div class="card-icon">🏆</div>
+                <div class="card-content">
+                    <div class="card-title">Succès débloqué!</div>
+                    <div class="card-subtitle">Premier cours complété</div>
+                </div>
+            </div>
+
+            <div class="floating-card card-2">
+                <div class="card-icon">🔥</div>
+                <div class="card-content">
+                    <div class="card-title">Série de 7 jours</div>
+                    <div class="card-subtitle">+50 coins bonus</div>
+                </div>
+            </div>
+
+            <div class="floating-card card-3">
+                <div class="card-icon">⭐</div>
+                <div class="card-content">
+                    <div class="card-title">Niveau supérieur!</div>
+                    <div class="card-subtitle">Vous êtes maintenant niveau 5</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Grid -->
+    <section id="features" class="features">
+        <div class="section-header">
+            <span class="section-badge">Fonctionnalités</span>
+            <h2 class="section-title">Tout ce dont vous avez besoin pour réussir</h2>
+            <p class="section-subtitle">Une plateforme complète pensée pour l'apprentissage moderne</p>
+        </div>
+
+        <div class="features-grid">
+            <!-- Feature 1 -->
+            <div class="feature-card">
+                <div class="feature-icon">📚</div>
+                <h3 class="feature-title">Bibliothèque de Cours Complète</h3>
+                <p class="feature-description">
+                    Accédez à des centaines de cours en Économie, Gestion, Marketing, RH, et plus encore.
+                    Contenu riche avec vidéos, exercices et TP pratiques.
+                </p>
+                <ul class="feature-list">
+                    <li>✓ Cours théoriques détaillés</li>
+                    <li>✓ Exercices pratiques</li>
+                    <li>✓ Vidéos pédagogiques</li>
+                    <li>✓ Export PDF</li>
+                </ul>
+            </div>
+
+            <!-- Feature 2 -->
+            <div class="feature-card featured">
+                <div class="feature-badge">★ Populaire</div>
+                <div class="feature-icon">🎮</div>
+                <h3 class="feature-title">Système de Gamification Complet</h3>
+                <p class="feature-description">
+                    Transformez votre apprentissage en aventure ! Quêtes, succès, pets virtuels,
+                    système de niveau et récompenses quotidiennes.
+                </p>
+                <ul class="feature-list">
+                    <li>✓ 50+ Quêtes à accomplir</li>
+                    <li>✓ Système de succès</li>
+                    <li>✓ Pets évolutifs</li>
+                    <li>✓ Bonus quotidiens</li>
+                </ul>
+            </div>
+
+            <!-- Feature 3 -->
+            <div class="feature-card">
+                <div class="feature-icon">👑</div>
+                <h3 class="feature-title">Panthéon & Classement</h3>
+                <p class="feature-description">
+                    Comparez vos performances avec les autres étudiants. Gravissez les échelons
+                    et devenez une légende du campus !
+                </p>
+                <ul class="feature-list">
+                    <li>✓ Classement en temps réel</li>
+                    <li>✓ Statistiques détaillées</li>
+                    <li>✓ Badges de prestige</li>
+                    <li>✓ Hall of Fame</li>
+                </ul>
+            </div>
+
+            <!-- Feature 4 -->
+            <div class="feature-card">
+                <div class="feature-icon">🛍️</div>
+                <h3 class="feature-title">Boutique & Économie Virtuelle</h3>
+                <p class="feature-description">
+                    Gagnez des Coins et dépensez-les dans la boutique pour des avatars,
+                    pets, et boosts exclusifs !
+                </p>
+                <ul class="feature-list">
+                    <li>✓ Monnaie virtuelle (Coins)</li>
+                    <li>✓ Items cosmétiques</li>
+                    <li>✓ Boosts de progression</li>
+                    <li>✓ Pets rares</li>
+                </ul>
+            </div>
+
+            <!-- Feature 5 -->
+            <div class="feature-card">
+                <div class="feature-icon">🃏</div>
+                <h3 class="feature-title">Flashcards Intelligence</h3>
+                <p class="feature-description">
+                    Système de mémorisation espacée avec flashcards interactives.
+                    Apprenez plus efficacement avec la science de la répétition.
+                </p>
+                <ul class="feature-list">
+                    <li>✓ Algorithme de répétition espacée</li>
+                    <li>✓ Suivi de progression</li>
+                    <li>✓ Création personnalisée</li>
+                    <li>✓ Mode étude optimisé</li>
+                </ul>
+            </div>
+
+            <!-- Feature 6 -->
+            <div class="feature-card">
+                <div class="feature-icon">⌘</div>
+                <h3 class="feature-title">Palette de Commandes</h3>
+                <p class="feature-description">
+                    Navigation ultra-rapide avec la palette de commandes. Recherchez et accédez
+                    à n'importe quelle fonctionnalité en un instant.
+                </p>
+                <ul class="feature-list">
+                    <li>✓ Raccourci Ctrl+K</li>
+                    <li>✓ Recherche fuzzy</li>
+                    <li>✓ Actions rapides</li>
+                    <li>✓ Navigation clavier</li>
+                </ul>
+            </div>
+
+            <!-- Feature 7 - Prof Battle -->
+            <div class="feature-card">
+                <div class="feature-icon">👨‍🏫</div>
+                <h3 class="feature-title">Prof Battles</h3>
+                <p class="feature-description">
+                    Affrontez vos professeurs à la fin de chaque module ! Réussissez pour débloquer
+                    des badges prestigieux et prouver votre maîtrise.
+                </p>
+                <ul class="feature-list">
+                    <li>✓ Duel épique par module</li>
+                    <li>✓ Badges exclusifs</li>
+                    <li>✓ Récompenses spéciales</li>
+                    <li>✓ Difficulté progressive</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Gamification Showcase -->
+    <section id="gamification" class="gamification">
+        <div class="section-header">
+            <span class="section-badge">Gamification</span>
+            <h2 class="section-title">Apprenez en vous amusant</h2>
+            <p class="section-subtitle">Un système de progression motivant et addictif</p>
+        </div>
+
+        <div class="gamification-grid">
+            <div class="gamification-item">
+                <div class="gamification-visual">
+                    <div class="quest-preview">
+                        <div class="quest-icon">📜</div>
+                        <div class="quest-title">Première Victoire</div>
+                        <div class="quest-progress">
+                            <div class="progress-bar" style="width: 75%"></div>
+                        </div>
+                        <div class="quest-reward">+100 🪙</div>
+                    </div>
+                </div>
+                <h3>Système de Quêtes</h3>
+                <p>Accomplissez des quêtes quotidiennes, hebdomadaires et d'histoire pour gagner des récompenses.</p>
+            </div>
+
+            <div class="gamification-item">
+                <div class="gamification-visual">
+                    <div class="pet-preview">
+                        <div class="pet-emoji">🐱</div>
+                        <div class="pet-name">Minou</div>
+                        <div class="pet-level">Niveau 5</div>
+                    </div>
+                </div>
+                <h3>Pets Virtuels</h3>
+                <p>Adoptez et faites évoluer votre compagnon virtuel qui grandit avec votre progression !</p>
+            </div>
+
+            <div class="gamification-item">
+                <div class="gamification-visual">
+                    <div class="streak-preview">
+                        <div class="streak-number">7</div>
+                        <div class="streak-emoji">🔥</div>
+                        <div class="streak-label">Jours de série</div>
+                    </div>
+                </div>
+                <h3>Bonus Quotidiens</h3>
+                <p>Connectez-vous chaque jour pour des récompenses croissantes. Maintenez votre série !</p>
+            </div>
+
+            <div class="gamification-item">
+                <div class="gamification-visual">
+                    <div class="success-preview">
+                        <div class="success-icon">🏆</div>
+                        <div class="success-glow"></div>
+                    </div>
+                </div>
+                <h3>Succès & Badges</h3>
+                <p>Débloquez des dizaines de succès en explorant toutes les fonctionnalités de la plateforme.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Demo Section -->
+    <section id="demo" class="demo">
+        <div class="demo-content">
+            <div class="demo-text">
+                <span class="section-badge">Interface Moderne</span>
+                <h2 class="section-title">Design Premium & Intuitif</h2>
+                <p class="demo-description">
+                    Interface soignée avec mode sombre, animations fluides et expérience utilisateur
+                    optimale sur tous les appareils.
+                </p>
+
+                <div class="demo-features-list">
+                    <div class="demo-feature-item">
+                        <div class="demo-feature-icon">🌓</div>
+                        <div>
+                            <div class="demo-feature-title">Mode Sombre</div>
+                            <div class="demo-feature-desc">Passez en mode sombre pour protéger vos yeux</div>
+                        </div>
+                    </div>
+
+                    <div class="demo-feature-item">
+                        <div class="demo-feature-icon">📱</div>
+                        <div>
+                            <div class="demo-feature-title">100% Responsive</div>
+                            <div class="demo-feature-desc">Parfait sur mobile, tablette et desktop</div>
+                        </div>
+                    </div>
+
+                    <div class="demo-feature-item">
+                        <div class="demo-feature-icon">⚡</div>
+                        <div>
+                            <div class="demo-feature-title">Performance Optimale</div>
+                            <div class="demo-feature-desc">Chargement rapide et navigation fluide</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="demo-visual">
+                <div class="browser-mockup">
+                    <div class="browser-bar">
+                        <div class="browser-dots">
+                            <span></span><span></span><span></span>
+                        </div>
+                        <div class="browser-url">eco-gestion.app</div>
+                    </div>
+                    <div class="browser-content">
+                        <div class="mockup-screenshots">
+                            <img src="images/landing/screenshot-home.png" alt="Page d'accueil" class="screenshot-img">
+                            <img src="images/landing/screenshot-qcm.png" alt="Interface QCM" class="screenshot-img">
+                            <img src="images/landing/screenshot-shop.png" alt="Boutique" class="screenshot-img">
+                            <img src="images/landing/screenshot-pet.png" alt="Pet virtuel" class="screenshot-img">
+                            <img src="images/landing/screenshot-achievements.png" alt="Mes Succès"
+                                class="screenshot-img">
+                            <img src="images/landing/screenshot-pantheon.png" alt="Panthéon" class="screenshot-img">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Final -->
+    <section class="cta-final">
+        <div class="cta-content">
+            <h2 class="cta-title">Prêt à commencer votre aventure ?</h2>
+            <p class="cta-subtitle">Rejoignez des centaines d'étudiants qui transforment leur apprentissage</p>
+            <a href="index.html" class="btn-cta-large">
+                Commencer Gratuitement
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                </svg>
+            </a>
+            <p class="cta-notice">✨ Aucune carte bancaire requise • Accès instantané</p>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="landing-footer">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <div class="footer-logo">
+                    <span class="logo-icon">🎓</span>
+                    <span class="logo-text">Eco-Gestion</span>
+                </div>
+                <p class="footer-tagline">La plateforme d'apprentissage gamifiée pour B1C2</p>
+            </div>
+
+            <div class="footer-links">
+                <div class="footer-column">
+                    <h4>Produit</h4>
+                    <a href="#features">Fonctionnalités</a>
+                    <a href="#gamification">Gamification</a>
+                    <a href="index.html">Commencer</a>
+                </div>
+
+                <div class="footer-column">
+                    <h4>Légal</h4>
+                    <a href="index.html#privacy-policy">Confidentialité</a>
+                    <a href="index.html#legal-notice">Mentions légales</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <p>&copy; 2026 Eco-Gestion B1C2. Fait avec ❤️ pour les étudiants.</p>
+        </div>
+    </footer>
+
+    <script src="js/landing.js"></script>
+</body>
+
+</html>

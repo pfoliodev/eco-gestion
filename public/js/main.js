@@ -17,6 +17,7 @@ import { initFeatures, applyFeatureFlags } from './features.js';
 import { downloadCourseAsPdf } from './pdf-export.js';
 import { initShopPage } from './shop-ui.js';
 import { seedDefaultSucces } from './succes.js';
+import './command-palette.js';
 // seedDefaultSucces(); // Uncomment to seed, then comment out. 
 // Actually, let's run it once safely if possible or just rely on manual trigger if I can't.
 // User didn't ask for admin panel seeding.
@@ -25,6 +26,44 @@ import { seedDefaultSucces } from './succes.js';
 
 window.viewCourse = viewCourse;
 window.showPage = showPage;
+window.db = db;
+window.auth = auth;
+window.currentUser = null; // Will be set by auth.js
+
+// Global navigation function for command palette
+window.navigateTo = (page, options = {}) => {
+    if (page === 'accueil') {
+        showPage('accueil');
+    } else if (page === 'evenements') {
+        showPage('evenements');
+    } else if (page === 'pantheon') {
+        showPage('pantheon');
+    } else if (page === 'mon-compte') {
+        loadAccount();
+        showPage('mon-compte');
+    } else if (page === 'shop') {
+        showPage('shop');
+        initShopPage();
+    } else if (page === 'admin') {
+        if (state.isAdmin) {
+            loadUsers();
+            showPage('admin');
+        } else {
+            notyf.error("Accès non autorisé.");
+        }
+    } else if (page === 'ajouter') {
+        document.getElementById('form-title').textContent = 'Nouveau cours';
+        document.getElementById('course-form').reset();
+        document.getElementById('course-id').value = '';
+        if (auth.currentUser) {
+            document.getElementById('course-author').value = auth.currentUser.displayName || auth.currentUser.email.split('@')[0];
+        }
+        tinymce.get('editor-container')?.setContent('');
+        showPage('ajouter');
+    } else if (page === 'course-detail' && options.courseId) {
+        viewCourse(options.courseId);
+    }
+};
 
 function initNavigation() {
     document.addEventListener('click', (e) => {
