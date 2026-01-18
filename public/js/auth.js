@@ -151,7 +151,7 @@ export function initAuth() {
             });
 
             // --- DAILY BONUS & PET LOGIC ---
-            import('./gamification.js').then(module => {
+            import('./daily-bonus.js').then(module => {
                 module.checkDailyBonus(user);
             });
 

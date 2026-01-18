@@ -1,0 +1,127 @@
+/* Daily Bonus Modal - SIMPLIFIED VERSION FOR DEBUGGING */
+.daily-bonus-overlay {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: rgba(0, 0, 0, 0.8) !important;
+    z-index: 99999 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.daily-bonus-modal {
+    position: relative !important;
+    background: #1e293b !important;
+    border: 2px solid #FFD700 !important;
+    border-radius: 24px !important;
+    padding: 2rem !important;
+    width: 90% !important;
+    max-width: 600px !important;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.9) !important;
+    margin: 0 auto !important;
+}
+
+.daily-bonus-content {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+}
+
+.daily-title {
+    font-size: 2rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+    color: #FFD700;
+    text-transform: uppercase;
+}
+
+.daily-subtitle {
+    color: #94a3b8;
+    font-size: 1.1rem;
+    margin-bottom: 2rem;
+}
+
+/* Streak Grid */
+.streak-grid {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 2rem;
+}
+
+.streak-card {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid #475569;
+    border-radius: 12px;
+    padding: 1rem;
+    width: 80px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    opacity: 0.6;
+}
+
+.streak-card.active {
+    opacity: 1;
+    background: rgba(59, 130, 246, 0.2);
+    border-color: #3b82f6;
+}
+
+.streak-card.completed {
+    opacity: 1;
+    background: rgba(16, 185, 129, 0.2);
+    border-color: #10b981;
+}
+
+.streak-card.today {
+    border: 2px solid #FFD700;
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+}
+
+.streak-day {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #94a3b8;
+}
+
+.streak-icon {
+    font-size: 1.5rem;
+}
+
+.streak-amount {
+    font-weight: 700;
+    color: #e2e8f0;
+    font-size: 0.9rem;
+}
+
+/* Claim Button */
+.btn-claim {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    border: none;
+    padding: 1rem 3rem;
+    border-radius: 12px;
+    font-size: 1.2rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+}
+
+.btn-claim:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 12px rgba(0, 0, 0, 0.3);
+}
+
+.btn-claim:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
