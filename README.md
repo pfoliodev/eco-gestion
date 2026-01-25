@@ -34,6 +34,18 @@ Une application web moderne pour gérer, réviser et partager des cours d'écono
   - Et bien d'autres...
 - **Affichage sur le profil** avec progression
 
+### 🦕 Compagnons & Gamification Avancée
+- **Professeur Vladimir Inalta** : Votre mentor qui vous guide dans l'aventure.
+- **3 Compagnons de départ** :
+  - 🧚‍♀️ **Féerale** (Intelligence/Créativité) : Évolue grâce à l'entraide.
+  - ⚡ **Voltor** (Vitesse/Énergie) : Adore la rapidité et la précision.
+  - 🌑 **Ombrage** (Sagesse/Observation) : Apprend de ses erreurs.
+- **Évolution** : Vos compagnons grandissent et évoluent au niveau 16 (ex: Voltor → Voltonnerre).
+- **Statistiques & Bonus** :
+  - 🧠 **Intelligence** : Bonus d'XP sur les quiz.
+  - 🎨 **Créativité** : Chance de trouver des Coins bonus ("Inspiration Créative").
+  - 🤝 **Social** : Augmente le bonus de connexion quotidienne.
+
 ### ❤️ Favoris et Suivi
 - **Ajout aux favoris** : Marquez vos cours préférés
 - **Historique de visites** : Voir qui a consulté chaque cours
